@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Andres Madrid | Software Developer</title>
+  <meta
+    name="description"
+    content="Portfolio of Andres Madrid, a Software Developer building scalable, secure, and efficient websites."
+  />
+
+  <!-- ====== Icono de la pestaña (favicon, integrado, no necesita archivo) ====== -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23FA4040'/><text x='50' y='71' font-size='62' font-weight='bold' text-anchor='middle' fill='white' font-family='monospace'>A</text></svg>" />
+
+  <!-- ====== Fuente (puedes cambiarla aquí) ====== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="styles.css" />
+  <script src="script.js"></script>
+</head>
+
+<body>
+  <!-- ====== Fondo animado ====== -->
+  <div class="animated-background" aria-hidden="true">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <!-- =========================================================
+       HEADER
+       ========================================================= -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="#home" class="logo gradient-text">AM</a>
+
+      <!-- Navegación de escritorio -->
+      <nav class="nav-desktop">
+        <a href="#home" class="nav-link">Home</a>
+        <a href="#about" class="nav-link">About</a>
+        <a href="#experience" class="nav-link">Experience</a>
+        <a href="#projects" class="nav-link">Projects</a>
+        <a href="#education" class="nav-link">Education</a>
+        <a href="#contact" class="nav-link">Contact Me</a>
+        <button class="btn btn-ghost btn-icon" id="theme-toggle" aria-label="Toggle theme">
+          <!-- íconos sol/luna -->
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          <svg class="icon-moon" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+      </nav>
+
+      <!-- Acciones móviles -->
+      <div class="header-actions menu-btn">
+        <button class="btn btn-ghost btn-icon" id="theme-toggle-mobile" aria-label="Toggle theme">
+          <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          <svg class="icon-moon" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </button>
+        <button class="btn btn-ghost btn-icon" id="menu-toggle" aria-label="Toggle Menu">
+          <svg id="icon-menu" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          <svg id="icon-close" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Menú móvil -->
+    <nav class="nav-mobile container" id="nav-mobile">
+      <a href="#home" class="nav-link">Home</a>
+      <a href="#about" class="nav-link">About</a>
+      <a href="#experience" class="nav-link">Experience</a>
+      <a href="#projects" class="nav-link">Projects</a>
+      <a href="#education" class="nav-link">Education</a>
+      <a href="#contact" class="nav-link">Contact Me</a>
+    </nav>
+  </header>
+
+  <main>
+    <!-- =========================================================
+         HERO
+         ========================================================= -->
+    <section id="home" class="hero">
+      <div class="container">
+        <h1>Hi, I'm <span class="gradient-text">Andres Madrid</span></h1>
+        <p class="role">Software Developer</p>
+        <p class="tagline">
+          Develop scalable, secure, and efficient websites
+        </p>
+
+        <div class="hero-buttons">
+          <a href="#contact" class="btn btn-primary btn-lg rounded-full">Get In Touch</a>
+          <a
+            href="https://resume.nihal.com.np/nihal_maskey.pdf"
+            target="_blank" rel="noopener noreferrer"
+            class="btn btn-outline btn-lg rounded-full"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            Download Resume
+          </a>
+        </div>
+
+        <div class="hero-socials">
+          <a href="https://github.com/afMadridv" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+            <span class="sr-only">GitHub</span>
+          </a>
+          <a href="https://www.linkedin.com/in/andr%C3%A9s-felipe-madrid-villar-9987693a8/" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+            <span class="sr-only">LinkedIn</span>
+          </a>
+          <a href="mailto:mvandres08@gmail.com" class="btn btn-ghost btn-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <span class="sr-only">Email</span>
+          </a>
+        </div>
+
+        <a href="#about" class="scroll-indicator" aria-label="Ir a la sección About">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         ABOUT
+         ========================================================= -->
+    <div class="bg-muted">
+      <section id="about" class="section-pad">
+        <div class="container">
+          <div class="section-head text-center">
+            <h2 class="section-title">About Me</h2>
+            <p class="section-subtitle">
+              Experienced Senior Software Engineer with over five years of expertise as a Full Stack
+              Developer, specializing in JavaScript, TypeScript, React.js, Node.js, Laravel, and AWS.
+            </p>
+          </div>
+
+          <p class="lead">
+            Skilled in designing scalable, secure, and efficient systems, with a proven track record of
+            collaborating with remote, cross-functional teams across the US, Australia, and Nepal.
+            Demonstrated success in delivering impactful solutions within highly regulated environments,
+            including healthcare projects, with expertise in HIPAA and SOC2 compliance. Proficient in
+            optimizing system performance and mentoring teams to achieve sustained technical excellence.
+          </p>
+
+          <div class="grid grid-2" style="margin-top: 3rem;">
+            <!-- Feature 1 -->
+            <div class="card card-hover">
+              <div class="card-body feature">
+                <div class="icon-circle">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+                </div>
+                <h3 style="font-size:1.25rem;font-weight:700;">Frontend Development</h3>
+                <p class="text-muted">Expertise in JavaScript, HTML, CSS and React.js</p>
+              </div>
+            </div>
+            <!-- Feature 2 -->
+            <div class="card card-hover">
+              <div class="card-body feature">
+                <div class="icon-circle">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
+                </div>
+                <h3 style="font-size:1.25rem;font-weight:700;">Cloud Solutions</h3>
+                <p class="text-muted">Proficient with AWS services including SQS, EventBridge, Lambda, and Step Functions</p>
+              </div>
+            </div>
+            <!-- Feature 3 -->
+            <div class="card card-hover">
+              <div class="card-body feature">
+                <div class="icon-circle">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+                <h3 style="font-size:1.25rem;font-weight:700;">Team Leadership</h3>
+                <p class="text-muted">Led diverse teams of 15+ members across development, design, DevOps, and QA</p>
+              </div>
+            </div>
+            <!-- Feature 4 -->
+            <div class="card card-hover">
+              <div class="card-body feature">
+                <div class="icon-circle">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                </div>
+                <h3 style="font-size:1.25rem;font-weight:700;">Global Collaboration</h3>
+                <p class="text-muted">Coordinated with remote teams across the Colombia</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- =========================================================
+         EXPERIENCE  (edita cada bloque .timeline-item para tus empleos)
+         ========================================================= -->
+    <section id="experience" class="section-pad">
+      <div class="container">
+        <div class="section-head text-center">
+          <h2 class="section-title">Experience</h2>
+          <p class="section-subtitle">My professional journey and key accomplishments</p>
+        </div>
+
+        <div class="timeline">
+          <!-- Empleo -->
+          <div class="timeline-item">
+            <div class="card exp-card">
+              <div class="card-body">
+                <div class="exp-head">
+                  <div>
+                    <h3 class="exp-title">Lead Engineer</h3>
+                    <p class="text-muted">Leapfrog Technology / Trayt Health</p>
+                  </div>
+                  <div class="exp-meta">
+                    <span class="badge badge-outline">Jan 2025 - Present</span>
+                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
+                  </div>
+                </div>
+                <ul>
+                  <li class="achievement"><span class="dot"></span><span>Leading the engineering team in developing innovative healthcare solutions for Trayt Health</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Architecting scalable and secure systems for handling sensitive healthcare data</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Implementing advanced AWS infrastructure for high availability and compliance</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Mentoring junior engineers and establishing best practices for code quality and security</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Collaborating with product and design teams to deliver exceptional user experiences</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empleo -->
+          <div class="timeline-item">
+            <div class="card exp-card">
+              <div class="card-body">
+                <div class="exp-head">
+                  <div>
+                    <h3 class="exp-title">Senior Software Engineer</h3>
+                    <p class="text-muted">Leapfrog Technology / Trayt Health</p>
+                  </div>
+                  <div class="exp-meta">
+                    <span class="badge badge-outline">July 2023 - Jan 2025</span>
+                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
+                  </div>
+                </div>
+                <ul>
+                  <li class="achievement"><span class="dot"></span><span>Coordinated development efforts with remote teams across the US, Australia, and Nepal to deliver complex healthcare solutions for Trayt Health</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Reduced the frontend bundle size by 20% through advanced optimization techniques</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Optimized backend API performance, achieving over 200% faster response times</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Leveraged AWS services (SQS, EventBridge, Lambda, Step Functions) to automate critical tasks</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Mentored and coached team members, accelerating onboarding and enhancing team productivity</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empleo -->
+          <div class="timeline-item">
+            <div class="card exp-card">
+              <div class="card-body">
+                <div class="exp-head">
+                  <div>
+                    <h3 class="exp-title">Software Engineer</h3>
+                    <p class="text-muted">Leapfrog Technology</p>
+                  </div>
+                  <div class="exp-meta">
+                    <span class="badge badge-outline">Sep 2021 - July 2023</span>
+                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
+                  </div>
+                </div>
+                <ul>
+                  <li class="achievement"><span class="dot"></span><span>Led and managed a diverse software development team comprising over 15 members</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Designed and implemented solutions that consistently exceeded performance benchmarks</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Streamlined project planning by working closely with product owners</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Orchestrated the successful release of major application versions</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Emerged as the primary point of contact for both project stakeholders and management</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empleo -->
+          <div class="timeline-item">
+            <div class="card exp-card">
+              <div class="card-body">
+                <div class="exp-head">
+                  <div>
+                    <h3 class="exp-title">Associate Software Engineer</h3>
+                    <p class="text-muted">Leapfrog Technology</p>
+                  </div>
+                  <div class="exp-meta">
+                    <span class="badge badge-outline">Sep 2020 - Sep 2021</span>
+                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
+                  </div>
+                </div>
+                <ul>
+                  <li class="achievement"><span class="dot"></span><span>Collaborated with senior developers and product owners to deliver high-quality applications</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Employed a meticulous approach to debugging code and identifying root causes of issues</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Contributed to system improvement efforts by conducting thorough system analysis</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Played a pivotal role in enhancing system performance through strategic optimization</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Innovatively designed and developed a browser extension, streamlining workflow processes</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empleo -->
+          <div class="timeline-item">
+            <div class="card exp-card">
+              <div class="card-body">
+                <div class="exp-head">
+                  <div>
+                    <h3 class="exp-title">Software Engineer Intern</h3>
+                    <p class="text-muted">Leapfrog Technology</p>
+                  </div>
+                  <div class="exp-meta">
+                    <span class="badge badge-outline">Jun 2020 - Sep 2020</span>
+                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
+                  </div>
+                </div>
+                <ul>
+                  <li class="achievement"><span class="dot"></span><span>Acquired proficiency in JavaScript and harnessed the browser canvas API</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Recreated Pac-man game with vanilla JS while integrating various path-finding algorithms</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Successfully delved into backend development with Node.js and honed frontend skills with React.js</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empleo -->
+          <div class="timeline-item">
+            <div class="card exp-card">
+              <div class="card-body">
+                <div class="exp-head">
+                  <div>
+                    <h3 class="exp-title">Web Application Developer</h3>
+                    <p class="text-muted">Technorio Inc.</p>
+                  </div>
+                  <div class="exp-meta">
+                    <span class="badge badge-outline">Jan 2019 - Jun 2020</span>
+                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
+                  </div>
+                </div>
+                <ul>
+                  <li class="achievement"><span class="dot"></span><span>Delivered projects across diverse industries, including insurance management, video streaming, and ticket management</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Collaborated closely with the business development team, offering engineering insights</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Utilized GitHub actions to automate deployment pipelines</span></li>
+                  <li class="achievement"><span class="dot"></span><span>Applied server deployment expertise to successfully launch a range of web applications</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== SKILLS ====== -->
+        <div id="skills" style="margin-top: 4rem;">
+          <div class="section-head text-center">
+            <h3 class="section-title" style="font-size:clamp(1.5rem,3vw,1.875rem);">Skills</h3>
+            <p class="section-subtitle">My expertise and technical proficiencies</p>
+          </div>
+
+          <div class="grid grid-2 grid-3-lg">
+            <div class="card skill-card">
+              <div class="card-body">
+                <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Frontend</h3>
+                <div class="skill-badges">
+                  <span class="badge badge-secondary">JavaScript</span>
+                  <span class="badge badge-secondary">React.js</span>
+                  <span class="badge badge-secondary">HTML/CSS</span>
+                </div>
+              </div>
+            </div>
+            <div class="card skill-card">
+              <div class="card-body">
+                <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Backend</h3>
+                <div class="skill-badges">
+                  <span class="badge badge-secondary">Java</span>
+                  <span class="badge badge-secondary">Python</span>
+                </div>
+              </div>
+            </div>
+            <div class="card skill-card">
+              <div class="card-body">
+                <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Database</h3>
+                <div class="skill-badges">
+                  <span class="badge badge-secondary">MySQL</span>
+                  <span class="badge badge-secondary">PostgreSQL</span>
+                </div>
+              </div>
+            </div>
+            <div class="card skill-card">
+              <div class="card-body">
+                <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Tools &amp; Methodologies</h3>
+                <div class="skill-badges">
+                  <span class="badge badge-secondary">GitHub</span>
+                  <span class="badge badge-secondary">Figma</span>
+                  <span class="badge badge-secondary">Claude</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         PROJECTS
+         ========================================================= -->
+    <section id="projects" class="section-pad">
+      <div class="container">
+        <div class="section-head text-center">
+          <h2 class="section-title">Projects</h2>
+          <p class="section-subtitle">A selection of my personal and professional projects</p>
+        </div>
+
+        <div class="grid grid-2 grid-3-lg">
+          <!-- Proyecto -->
+          <div class="card project-card">
+            <div class="card-body">
+              <h3 style="font-size:1.125rem;font-weight:700;">Pacman</h3>
+              <p class="text-muted" style="font-size:0.875rem;margin-top:0.5rem;flex:1;">A recreation of the classic Pacman game with vanilla JavaScript, implementing various path-finding algorithms for ghost movement.</p>
+              <div class="project-tags">
+                <span class="tag">JavaScript</span>
+                <span class="tag">Canvas API</span>
+                <span class="tag">Path-finding Algorithms</span>
+              </div>
+              <div class="project-links">
+                <a href="https://github.com/maskeynihal/pacman" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                  Code
+                </a>
+                <a href="https://maskeynihal.github.io/pacman/" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                  Live
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Proyecto -->
+          <div class="card project-card">
+            <div class="card-body">
+              <h3 style="font-size:1.125rem;font-weight:700;">Flappy Bird</h3>
+              <p class="text-muted" style="font-size:0.875rem;margin-top:0.5rem;flex:1;">A clone of the popular Flappy Bird game built with vanilla JavaScript and HTML5 Canvas.</p>
+              <div class="project-tags">
+                <span class="tag">JavaScript</span>
+                <span class="tag">Canvas API</span>
+                <span class="tag">Game Development</span>
+              </div>
+              <div class="project-links">
+                <a href="https://github.com/maskeynihal/flappy-bird" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                  Code
+                </a>
+                <a href="https://maskeynihal.github.io/flappy-bird/" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                  Live
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Proyecto -->
+          <div class="card project-card">
+            <div class="card-body">
+              <h3 style="font-size:1.125rem;font-weight:700;">Pursue - Job Handling with AWS</h3>
+              <p class="text-muted" style="font-size:0.875rem;margin-top:0.5rem;flex:1;">A JavaScript package for handling job processing using AWS services like SQS, Lambda, and Step Functions.</p>
+              <div class="project-tags">
+                <span class="tag">Node.js</span>
+                <span class="tag">AWS</span>
+                <span class="tag">SQS</span>
+              </div>
+              <div class="project-links">
+                <a href="https://github.com/maskeynihal/pursue" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                  Code
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Proyecto -->
+          <div class="card project-card">
+            <div class="card-body">
+              <h3 style="font-size:1.125rem;font-weight:700;">Mailer</h3>
+              <p class="text-muted" style="font-size:0.875rem;margin-top:0.5rem;flex:1;">A JavaScript package to prepare and send emails using AWS SES, with templating support.</p>
+              <div class="project-tags">
+                <span class="tag">Node.js</span>
+                <span class="tag">AWS</span>
+                <span class="tag">SES</span>
+              </div>
+              <div class="project-links">
+                <a href="https://github.com/maskeynihal/mailer" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                  Code
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         EDUCATION
+         ========================================================= -->
+    <section id="education" class="section-pad">
+      <div class="container">
+        <div class="section-head text-center">
+          <h2 class="section-title">Education</h2>
+          <p class="section-subtitle">My academic background and qualifications</p>
+        </div>
+
+        <div class="card edu-card">
+          <div class="edu-head">
+            <div class="icon-circle">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+            </div>
+            <div>
+              <h3 style="font-size:1.25rem;font-weight:700;">Ingeneria de Sistemas</h3>
+              <p class="text-muted">Universidad de la Costa (2025- Presente)</p>
+            </div>
+          </div>
+          <div style="padding:1.5rem;">
+            <p class="text-muted">
+              Completed a comprehensive computer engineering program with a focus on software development,
+              algorithms, data structures, and system design. Gained a strong foundation in computer science
+              principles and engineering practices that have been instrumental in my professional career.
+            </p>
+          </div>
+        </div>
+        <div class="card edu-card">
+          <div class="edu-head">
+            <div class="icon-circle">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+            </div>
+            <div>
+              <h3 style="font-size:1.25rem;font-weight:700;">Tecnico en Desarrollo de Software y Aplicaciones Móviles</h3>
+              <p class="text-muted">Corporacion Bolivariana del Norte (2022-2024)</p>
+            </div>
+          </div>
+          <div style="padding:1.5rem;">
+            <p class="text-muted">
+              Completed a comprehensive computer engineering program with a focus on software development,
+              algorithms, data structures, and system design. Gained a strong foundation in computer science
+              principles and engineering practices that have been instrumental in my professional career.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- =========================================================
+         CONTACT
+         ========================================================= -->
+    <div class="bg-muted">
+      <section id="contact" class="section-pad">
+        <div class="container">
+          <div class="section-head text-center">
+            <h2 class="section-title">Get In Touch</h2>
+            <p class="section-subtitle">Have a project in mind or want to discuss opportunities? I'd love to hear from you!</p>
+          </div>
+
+          <div class="contact-grid">
+            <!-- Formulario (usa Formspree; cambia la URL del action por la tuya) -->
+            <div class="card">
+              <div class="card-body">
+                <form action="https://formspree.io/f/xanoenzo" method="POST">
+                  <div class="form-row">
+                    <div class="field">
+                      <label for="name">Name</label>
+                      <input class="input" id="name" name="name" placeholder="Your name" required />
+                    </div>
+                    <div class="field">
+                      <label for="email">Email</label>
+                      <input class="input" id="email" name="email" type="email" placeholder="Your email" required />
+                    </div>
+                  </div>
+                  <div class="field">
+                    <label for="subject">Subject</label>
+                    <input class="input" id="subject" name="subject" placeholder="Subject of your message" required />
+                  </div>
+                  <div class="field">
+                    <label for="message">Message</label>
+                    <textarea class="textarea" id="message" name="message" placeholder="Your message" required></textarea>
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width:100%;">Send Message</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Información de contacto -->
+            <div style="display:flex;flex-direction:column;gap:1.5rem;">
+              <div class="card">
+                <div class="card-body contact-info-item">
+                  <div class="icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                  </div>
+                  <div>
+                    <h3 style="font-weight:600;">Email</h3>
+                    <a href="mailto:mvandres08@gmail.com" class="text-muted">mvandres08@gmail.com</a>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-body contact-info-item">
+                  <div class="icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  </div>
+                  <div>
+                    <h3 style="font-weight:600;">Location</h3>
+                    <a href="https://maps.google.com/?q=Santa+Marta,+Colombia" target="_blank" rel="noopener noreferrer" class="text-muted">Santa Marta, Colombia</a>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-body contact-info-item">
+                  <div class="icon-circle">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </div>
+                  <div>
+                    <h3 style="font-weight:600;">Phone</h3>
+                    <p class="text-muted">Available on request</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-body">
+                  <h3 style="font-weight:600;margin-bottom:0.25rem;">Connect with me</h3>
+                  <p class="text-muted" style="font-size:0.875rem;margin-bottom:1rem;">Find me on these platforms</p>
+                  <div style="display:flex;gap:0.75rem;">
+                    <a href="https://github.com/maskeynihal" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                      <span class="sr-only">GitHub</span>
+                    </a>
+                    <a href="https://linkedin.com/in/maskeynihal" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+                      <span class="sr-only">LinkedIn</span>
+                    </a>
+                    <a href="mailto:mvandres08@gmail.com" class="btn btn-outline btn-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                      <span class="sr-only">Email</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- =========================================================
+       FOOTER
+       ========================================================= -->
+  <footer class="site-footer">
+    <div class="container">
+      <p>&copy; <span id="year"></span> Andres Madrid. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- =========================================================
+       JAVASCRIPT  (tema oscuro, menú móvil, año, nav activa)
+       ========================================================= -->
+</body>
+</html>

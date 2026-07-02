@@ -1,0 +1,5 @@
+# Config local de Claude Code / preview
+.claude/
+
+# Copia temporal para previsualizar
+index.html
