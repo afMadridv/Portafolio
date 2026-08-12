@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Andres Madrid | Software Developer</title>
+  <title>Andres Madrid | Desarrollador de Software</title>
   <meta
     name="description"
-    content="Portfolio of Andres Madrid, a Software Developer building scalable, secure, and efficient websites."
+    content="Portafolio de Andres Madrid, desarrollador de software que construye sitios web escalables, seguros y eficientes."
   />
 
   <!-- ====== Icono de la pestaña (favicon, integrado, no necesita archivo) ====== -->
@@ -16,15 +16,20 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Silkscreen:wght@400;700&display=swap"
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="styles.css" />
-  <script src="script.js"></script>
+  <!-- El ?v= evita que el navegador sirva la versión vieja en caché.
+       Si tocas styles.css o script.js y no ves el cambio, sube el número. -->
+  <link rel="stylesheet" href="styles.css?v=6" />
+  <script src="script.js?v=6"></script>
 </head>
 
 <body>
+  <!-- ====== Barra de progreso de lectura ====== -->
+  <div class="scroll-progress" id="scroll-progress" aria-hidden="true"></div>
+
   <!-- ====== Fondo animado ====== -->
   <div class="animated-background" aria-hidden="true">
     <div class="blob blob-1"></div>
@@ -41,13 +46,20 @@
 
       <!-- Navegación de escritorio -->
       <nav class="nav-desktop">
-        <a href="#home" class="nav-link">Home</a>
-        <a href="#about" class="nav-link">About</a>
-        <a href="#experience" class="nav-link">Experience</a>
-        <a href="#projects" class="nav-link">Projects</a>
-        <a href="#education" class="nav-link">Education</a>
-        <a href="#contact" class="nav-link">Contact Me</a>
-        <button class="btn btn-ghost btn-icon" id="theme-toggle" aria-label="Toggle theme">
+        <a href="#home" class="nav-link" data-i18n="nav.home">Inicio</a>
+        <a href="#about" class="nav-link" data-i18n="nav.about">Sobre mí</a>
+        <a href="#experience" class="nav-link" data-i18n="nav.skills">Habilidades</a>
+        <a href="#projects" class="nav-link" data-i18n="nav.projects">Proyectos</a>
+        <a href="#education" class="nav-link" data-i18n="nav.education">Educación</a>
+        <a href="#contact" class="nav-link" data-i18n="nav.contact">Contacto</a>
+
+        <!-- Cambiar idioma -->
+        <button class="btn btn-ghost btn-lang" id="lang-toggle" data-i18n-aria="aria.lang" aria-label="Cambiar idioma">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span class="lang-code" id="lang-code">EN</span>
+        </button>
+
+        <button class="btn btn-ghost btn-icon" id="theme-toggle" data-i18n-aria="aria.theme" aria-label="Cambiar tema">
           <!-- íconos sol/luna -->
           <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
           <svg class="icon-moon" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
@@ -56,11 +68,15 @@
 
       <!-- Acciones móviles -->
       <div class="header-actions menu-btn">
-        <button class="btn btn-ghost btn-icon" id="theme-toggle-mobile" aria-label="Toggle theme">
+        <button class="btn btn-ghost btn-lang" id="lang-toggle-mobile" data-i18n-aria="aria.lang" aria-label="Cambiar idioma">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span class="lang-code" id="lang-code-mobile">EN</span>
+        </button>
+        <button class="btn btn-ghost btn-icon" id="theme-toggle-mobile" data-i18n-aria="aria.theme" aria-label="Cambiar tema">
           <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
           <svg class="icon-moon" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
         </button>
-        <button class="btn btn-ghost btn-icon" id="menu-toggle" aria-label="Toggle Menu">
+        <button class="btn btn-ghost btn-icon" id="menu-toggle" data-i18n-aria="aria.menu" aria-label="Abrir menú">
           <svg id="icon-menu" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
           <svg id="icon-close" style="display:none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
@@ -69,12 +85,12 @@
 
     <!-- Menú móvil -->
     <nav class="nav-mobile container" id="nav-mobile">
-      <a href="#home" class="nav-link">Home</a>
-      <a href="#about" class="nav-link">About</a>
-      <a href="#experience" class="nav-link">Experience</a>
-      <a href="#projects" class="nav-link">Projects</a>
-      <a href="#education" class="nav-link">Education</a>
-      <a href="#contact" class="nav-link">Contact Me</a>
+      <a href="#home" class="nav-link" data-i18n="nav.home">Inicio</a>
+      <a href="#about" class="nav-link" data-i18n="nav.about">Sobre mí</a>
+      <a href="#experience" class="nav-link" data-i18n="nav.skills">Habilidades</a>
+      <a href="#projects" class="nav-link" data-i18n="nav.projects">Proyectos</a>
+      <a href="#education" class="nav-link" data-i18n="nav.education">Educación</a>
+      <a href="#contact" class="nav-link" data-i18n="nav.contact">Contacto</a>
     </nav>
   </header>
 
@@ -84,21 +100,21 @@
          ========================================================= -->
     <section id="home" class="hero">
       <div class="container">
-        <h1>Hi, I'm <span class="gradient-text">Andres Madrid</span></h1>
-        <p class="role">Software Developer</p>
-        <p class="tagline">
-          Develop scalable, secure, and efficient websites
+        <h1 class="hero-title"><span data-i18n="hero.greet">Hola, soy</span> <span class="name-accent">Andres Madrid</span></h1>
+        <p class="role" data-i18n="hero.role">Desarrollador de Software y VibeCoder</p>
+        <p class="tagline" data-i18n="hero.tagline">
+          Construyo sitios web escalables, seguros y eficientes
         </p>
 
         <div class="hero-buttons">
-          <a href="#contact" class="btn btn-primary btn-lg rounded-full">Get In Touch</a>
+          <a href="#contact" class="btn btn-primary btn-lg rounded-full" data-i18n="hero.cta">Hablemos</a>
           <a
             href="https://resume.nihal.com.np/nihal_maskey.pdf"
             target="_blank" rel="noopener noreferrer"
             class="btn btn-outline btn-lg rounded-full"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-            Download Resume
+            <span data-i18n="hero.resume">Descargar CV</span>
           </a>
         </div>
 
@@ -117,7 +133,7 @@
           </a>
         </div>
 
-        <a href="#about" class="scroll-indicator" aria-label="Ir a la sección About">
+        <a href="#about" class="scroll-indicator" data-i18n-aria="aria.scroll" aria-label="Ir a la sección Sobre mí">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
         </a>
       </div>
@@ -130,60 +146,39 @@
       <section id="about" class="section-pad">
         <div class="container">
           <div class="section-head text-center">
-            <h2 class="section-title">About Me</h2>
-            <p class="section-subtitle">
-              Experienced Senior Software Engineer with over five years of expertise as a Full Stack
-              Developer, specializing in JavaScript, TypeScript, React.js, Node.js, Laravel, and AWS.
+            <h2 class="section-title" data-i18n="about.title">Sobre mí</h2>
+            <p class="section-subtitle" data-i18n="about.subtitle">
+              Ingeniero de software con experiencia como desarrollador Full Stack, especializado en
+              JavaScript, TypeScript y Node.js.
             </p>
           </div>
 
-          <p class="lead">
-            Skilled in designing scalable, secure, and efficient systems, with a proven track record of
-            collaborating with remote, cross-functional teams across the US, Australia, and Nepal.
-            Demonstrated success in delivering impactful solutions within highly regulated environments,
-            including healthcare projects, with expertise in HIPAA and SOC2 compliance. Proficient in
-            optimizing system performance and mentoring teams to achieve sustained technical excellence.
+          <p class="lead" data-i18n="about.lead">
+            Diseño sistemas escalables, seguros y eficientes, con experiencia entregando soluciones
+            en entornos altamente regulados: construcción, mantenimiento eléctrico e
+            insolvencia y conciliación. Optimizo el rendimiento de los sistemas y acompaño
+            a los equipos para elevar su nivel técnico.
           </p>
 
           <div class="grid grid-2" style="margin-top: 3rem;">
             <!-- Feature 1 -->
-            <div class="card card-hover">
+            <div class="card card-hover card-accent">
               <div class="card-body feature">
                 <div class="icon-circle">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
                 </div>
-                <h3 style="font-size:1.25rem;font-weight:700;">Frontend Development</h3>
-                <p class="text-muted">Expertise in JavaScript, HTML, CSS and React.js</p>
+                <h3 class="feature-title" data-i18n="about.f1.title">Desarrollo Frontend</h3>
+                <p class="text-muted" data-i18n="about.f1.text">Manejo de JavaScript, HTML y CSS</p>
               </div>
             </div>
             <!-- Feature 2 -->
-            <div class="card card-hover">
-              <div class="card-body feature">
-                <div class="icon-circle">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg>
-                </div>
-                <h3 style="font-size:1.25rem;font-weight:700;">Cloud Solutions</h3>
-                <p class="text-muted">Proficient with AWS services including SQS, EventBridge, Lambda, and Step Functions</p>
-              </div>
-            </div>
-            <!-- Feature 3 -->
-            <div class="card card-hover">
-              <div class="card-body feature">
-                <div class="icon-circle">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                </div>
-                <h3 style="font-size:1.25rem;font-weight:700;">Team Leadership</h3>
-                <p class="text-muted">Led diverse teams of 15+ members across development, design, DevOps, and QA</p>
-              </div>
-            </div>
-            <!-- Feature 4 -->
-            <div class="card card-hover">
+            <div class="card card-hover card-accent">
               <div class="card-body feature">
                 <div class="icon-circle">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
                 </div>
-                <h3 style="font-size:1.25rem;font-weight:700;">Global Collaboration</h3>
-                <p class="text-muted">Coordinated with remote teams across the Colombia</p>
+                <h3 class="feature-title" data-i18n="about.f4.title">Colaboración remota</h3>
+                <p class="text-muted" data-i18n="about.f4.text">Trabajo coordinado con equipos distribuidos en Colombia</p>
               </div>
             </div>
           </div>
@@ -192,207 +187,54 @@
     </div>
 
     <!-- =========================================================
-         EXPERIENCE  (edita cada bloque .timeline-item para tus empleos)
+         SKILLS
          ========================================================= -->
     <section id="experience" class="section-pad">
       <div class="container">
-        <div class="section-head text-center">
-          <h2 class="section-title">Experience</h2>
-          <p class="section-subtitle">My professional journey and key accomplishments</p>
-        </div>
-
-        <div class="timeline">
-          <!-- Empleo -->
-          <div class="timeline-item">
-            <div class="card exp-card">
-              <div class="card-body">
-                <div class="exp-head">
-                  <div>
-                    <h3 class="exp-title">Lead Engineer</h3>
-                    <p class="text-muted">Leapfrog Technology / Trayt Health</p>
-                  </div>
-                  <div class="exp-meta">
-                    <span class="badge badge-outline">Jan 2025 - Present</span>
-                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
-                  </div>
-                </div>
-                <ul>
-                  <li class="achievement"><span class="dot"></span><span>Leading the engineering team in developing innovative healthcare solutions for Trayt Health</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Architecting scalable and secure systems for handling sensitive healthcare data</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Implementing advanced AWS infrastructure for high availability and compliance</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Mentoring junior engineers and establishing best practices for code quality and security</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Collaborating with product and design teams to deliver exceptional user experiences</span></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empleo -->
-          <div class="timeline-item">
-            <div class="card exp-card">
-              <div class="card-body">
-                <div class="exp-head">
-                  <div>
-                    <h3 class="exp-title">Senior Software Engineer</h3>
-                    <p class="text-muted">Leapfrog Technology / Trayt Health</p>
-                  </div>
-                  <div class="exp-meta">
-                    <span class="badge badge-outline">July 2023 - Jan 2025</span>
-                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
-                  </div>
-                </div>
-                <ul>
-                  <li class="achievement"><span class="dot"></span><span>Coordinated development efforts with remote teams across the US, Australia, and Nepal to deliver complex healthcare solutions for Trayt Health</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Reduced the frontend bundle size by 20% through advanced optimization techniques</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Optimized backend API performance, achieving over 200% faster response times</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Leveraged AWS services (SQS, EventBridge, Lambda, Step Functions) to automate critical tasks</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Mentored and coached team members, accelerating onboarding and enhancing team productivity</span></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empleo -->
-          <div class="timeline-item">
-            <div class="card exp-card">
-              <div class="card-body">
-                <div class="exp-head">
-                  <div>
-                    <h3 class="exp-title">Software Engineer</h3>
-                    <p class="text-muted">Leapfrog Technology</p>
-                  </div>
-                  <div class="exp-meta">
-                    <span class="badge badge-outline">Sep 2021 - July 2023</span>
-                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
-                  </div>
-                </div>
-                <ul>
-                  <li class="achievement"><span class="dot"></span><span>Led and managed a diverse software development team comprising over 15 members</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Designed and implemented solutions that consistently exceeded performance benchmarks</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Streamlined project planning by working closely with product owners</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Orchestrated the successful release of major application versions</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Emerged as the primary point of contact for both project stakeholders and management</span></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empleo -->
-          <div class="timeline-item">
-            <div class="card exp-card">
-              <div class="card-body">
-                <div class="exp-head">
-                  <div>
-                    <h3 class="exp-title">Associate Software Engineer</h3>
-                    <p class="text-muted">Leapfrog Technology</p>
-                  </div>
-                  <div class="exp-meta">
-                    <span class="badge badge-outline">Sep 2020 - Sep 2021</span>
-                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
-                  </div>
-                </div>
-                <ul>
-                  <li class="achievement"><span class="dot"></span><span>Collaborated with senior developers and product owners to deliver high-quality applications</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Employed a meticulous approach to debugging code and identifying root causes of issues</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Contributed to system improvement efforts by conducting thorough system analysis</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Played a pivotal role in enhancing system performance through strategic optimization</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Innovatively designed and developed a browser extension, streamlining workflow processes</span></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empleo -->
-          <div class="timeline-item">
-            <div class="card exp-card">
-              <div class="card-body">
-                <div class="exp-head">
-                  <div>
-                    <h3 class="exp-title">Software Engineer Intern</h3>
-                    <p class="text-muted">Leapfrog Technology</p>
-                  </div>
-                  <div class="exp-meta">
-                    <span class="badge badge-outline">Jun 2020 - Sep 2020</span>
-                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
-                  </div>
-                </div>
-                <ul>
-                  <li class="achievement"><span class="dot"></span><span>Acquired proficiency in JavaScript and harnessed the browser canvas API</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Recreated Pac-man game with vanilla JS while integrating various path-finding algorithms</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Successfully delved into backend development with Node.js and honed frontend skills with React.js</span></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <!-- Empleo -->
-          <div class="timeline-item">
-            <div class="card exp-card">
-              <div class="card-body">
-                <div class="exp-head">
-                  <div>
-                    <h3 class="exp-title">Web Application Developer</h3>
-                    <p class="text-muted">Technorio Inc.</p>
-                  </div>
-                  <div class="exp-meta">
-                    <span class="badge badge-outline">Jan 2019 - Jun 2020</span>
-                    <span class="text-muted" style="font-size:0.875rem;">Kathmandu, Nepal</span>
-                  </div>
-                </div>
-                <ul>
-                  <li class="achievement"><span class="dot"></span><span>Delivered projects across diverse industries, including insurance management, video streaming, and ticket management</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Collaborated closely with the business development team, offering engineering insights</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Utilized GitHub actions to automate deployment pipelines</span></li>
-                  <li class="achievement"><span class="dot"></span><span>Applied server deployment expertise to successfully launch a range of web applications</span></li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ====== SKILLS ====== -->
-        <div id="skills" style="margin-top: 4rem;">
+        <div id="skills">
           <div class="section-head text-center">
-            <h3 class="section-title" style="font-size:clamp(1.5rem,3vw,1.875rem);">Skills</h3>
-            <p class="section-subtitle">My expertise and technical proficiencies</p>
+            <h2 class="section-title" data-i18n="skills.title">Habilidades</h2>
+            <p class="section-subtitle" data-i18n="skills.subtitle">Mis conocimientos y herramientas técnicas</p>
           </div>
 
           <div class="grid grid-2 grid-3-lg">
-            <div class="card skill-card">
+            <div class="card skill-card card-accent">
               <div class="card-body">
-                <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Frontend</h3>
+                <h3 class="skill-title" data-i18n="skills.frontend">Frontend</h3>
                 <div class="skill-badges">
                   <span class="badge badge-secondary">JavaScript</span>
-                  <span class="badge badge-secondary">React.js</span>
                   <span class="badge badge-secondary">HTML/CSS</span>
                 </div>
               </div>
             </div>
-            <div class="card skill-card">
+            <div class="card skill-card card-accent">
               <div class="card-body">
-                <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Backend</h3>
+                <h3 class="skill-title" data-i18n="skills.backend">Backend</h3>
                 <div class="skill-badges">
                   <span class="badge badge-secondary">Java</span>
                   <span class="badge badge-secondary">Python</span>
                 </div>
               </div>
             </div>
-            <div class="card skill-card">
+            <div class="card skill-card card-accent">
               <div class="card-body">
-                <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Database</h3>
+                <h3 class="skill-title" data-i18n="skills.database">Bases de datos</h3>
                 <div class="skill-badges">
                   <span class="badge badge-secondary">MySQL</span>
                   <span class="badge badge-secondary">PostgreSQL</span>
                 </div>
               </div>
             </div>
-            <div class="card skill-card">
+            <div class="card skill-card card-accent">
               <div class="card-body">
-                <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Tools &amp; Methodologies</h3>
+                <h3 class="skill-title" data-i18n="skills.tools">Herramientas</h3>
                 <div class="skill-badges">
                   <span class="badge badge-secondary">GitHub</span>
                   <span class="badge badge-secondary">Figma</span>
                   <span class="badge badge-secondary">Claude</span>
+                  <span class="badge badge-secondary">Git</span>
+                  <span class="badge badge-secondary">VS Code</span>
+                  <span class="badge badge-secondary">Vercel</span>
                 </div>
               </div>
             </div>
@@ -407,94 +249,16 @@
     <section id="projects" class="section-pad">
       <div class="container">
         <div class="section-head text-center">
-          <h2 class="section-title">Projects</h2>
-          <p class="section-subtitle">A selection of my personal and professional projects</p>
+          <h2 class="section-title" data-i18n="projects.title">Proyectos</h2>
+          <p class="section-subtitle" data-i18n="projects.subtitle">Una selección de mis proyectos personales y profesionales</p>
         </div>
 
-        <div class="grid grid-2 grid-3-lg">
-          <!-- Proyecto -->
-          <div class="card project-card">
-            <div class="card-body">
-              <h3 style="font-size:1.125rem;font-weight:700;">Pacman</h3>
-              <p class="text-muted" style="font-size:0.875rem;margin-top:0.5rem;flex:1;">A recreation of the classic Pacman game with vanilla JavaScript, implementing various path-finding algorithms for ghost movement.</p>
-              <div class="project-tags">
-                <span class="tag">JavaScript</span>
-                <span class="tag">Canvas API</span>
-                <span class="tag">Path-finding Algorithms</span>
-              </div>
-              <div class="project-links">
-                <a href="https://github.com/maskeynihal/pacman" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-                  Code
-                </a>
-                <a href="https://maskeynihal.github.io/pacman/" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-                  Live
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Proyecto -->
-          <div class="card project-card">
-            <div class="card-body">
-              <h3 style="font-size:1.125rem;font-weight:700;">Flappy Bird</h3>
-              <p class="text-muted" style="font-size:0.875rem;margin-top:0.5rem;flex:1;">A clone of the popular Flappy Bird game built with vanilla JavaScript and HTML5 Canvas.</p>
-              <div class="project-tags">
-                <span class="tag">JavaScript</span>
-                <span class="tag">Canvas API</span>
-                <span class="tag">Game Development</span>
-              </div>
-              <div class="project-links">
-                <a href="https://github.com/maskeynihal/flappy-bird" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-                  Code
-                </a>
-                <a href="https://maskeynihal.github.io/flappy-bird/" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-                  Live
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Proyecto -->
-          <div class="card project-card">
-            <div class="card-body">
-              <h3 style="font-size:1.125rem;font-weight:700;">Pursue - Job Handling with AWS</h3>
-              <p class="text-muted" style="font-size:0.875rem;margin-top:0.5rem;flex:1;">A JavaScript package for handling job processing using AWS services like SQS, Lambda, and Step Functions.</p>
-              <div class="project-tags">
-                <span class="tag">Node.js</span>
-                <span class="tag">AWS</span>
-                <span class="tag">SQS</span>
-              </div>
-              <div class="project-links">
-                <a href="https://github.com/maskeynihal/pursue" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-                  Code
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <!-- Proyecto -->
-          <div class="card project-card">
-            <div class="card-body">
-              <h3 style="font-size:1.125rem;font-weight:700;">Mailer</h3>
-              <p class="text-muted" style="font-size:0.875rem;margin-top:0.5rem;flex:1;">A JavaScript package to prepare and send emails using AWS SES, with templating support.</p>
-              <div class="project-tags">
-                <span class="tag">Node.js</span>
-                <span class="tag">AWS</span>
-                <span class="tag">SES</span>
-              </div>
-              <div class="project-links">
-                <a href="https://github.com/maskeynihal/mailer" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-                  Code
-                </a>
-              </div>
-            </div>
-          </div>
+        <!-- Las tarjetas se generan solas desde la API pública de GitHub.
+             Cambia data-github-user si cambias de cuenta. -->
+        <p class="projects-status text-muted" id="projects-status" data-i18n="projects.loading">Cargando proyectos desde GitHub…</p>
+        <div class="grid grid-2 grid-3-lg" id="projects-grid" data-github-user="afMadridv"></div>
+        <div class="projects-more" id="projects-more" hidden>
+          <button type="button" class="btn btn-outline rounded-full" id="projects-more-btn">Ver más</button>
         </div>
       </div>
     </section>
@@ -505,48 +269,50 @@
     <section id="education" class="section-pad">
       <div class="container">
         <div class="section-head text-center">
-          <h2 class="section-title">Education</h2>
-          <p class="section-subtitle">My academic background and qualifications</p>
+          <h2 class="section-title" data-i18n="edu.title">Educación</h2>
+          <p class="section-subtitle" data-i18n="edu.subtitle">Mi formación académica</p>
         </div>
 
-        <div class="card edu-card">
+        <div class="card edu-card card-accent">
           <div class="edu-head">
             <div class="icon-circle">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
             </div>
             <div>
-              <h3 style="font-size:1.25rem;font-weight:700;">Ingeneria de Sistemas</h3>
-              <p class="text-muted">Universidad de la Costa (2025- Presente)</p>
+              <h3 class="edu-title" data-i18n="edu.e1.title">Ingeniería de Sistemas</h3>
+              <p class="text-muted" data-i18n="edu.e1.place">Universidad de la Costa (2025 - Presente)</p>
             </div>
+            <span class="badge badge-outline edu-badge" data-i18n="edu.ongoing">En curso</span>
           </div>
-          <div style="padding:1.5rem;">
-            <p class="text-muted">
-              Completed a comprehensive computer engineering program with a focus on software development,
-              algorithms, data structures, and system design. Gained a strong foundation in computer science
-              principles and engineering practices that have been instrumental in my professional career.
+          <div class="edu-body">
+            <p class="text-muted" data-i18n="edu.e1.text">
+              Formación en ingeniería de sistemas centrada en desarrollo de software, algoritmos,
+              estructuras de datos y diseño de sistemas.
             </p>
           </div>
         </div>
-        <div class="card edu-card">
+
+        <div class="card edu-card card-accent">
           <div class="edu-head">
             <div class="icon-circle">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
             </div>
             <div>
-              <h3 style="font-size:1.25rem;font-weight:700;">Tecnico en Desarrollo de Software y Aplicaciones Móviles</h3>
-              <p class="text-muted">Corporacion Bolivariana del Norte (2022-2024)</p>
+              <h3 class="edu-title" data-i18n="edu.e2.title">Técnico en Desarrollo de Software y Aplicaciones Móviles</h3>
+              <p class="text-muted" data-i18n="edu.e2.place">Corporación Bolivariana del Norte (2022 - 2024)</p>
             </div>
+            <span class="badge badge-outline edu-badge" data-i18n="edu.done">Finalizado</span>
           </div>
-          <div style="padding:1.5rem;">
-            <p class="text-muted">
-              Completed a comprehensive computer engineering program with a focus on software development,
-              algorithms, data structures, and system design. Gained a strong foundation in computer science
-              principles and engineering practices that have been instrumental in my professional career.
+          <div class="edu-body">
+            <p class="text-muted" data-i18n="edu.e2.text">
+              Programa técnico enfocado en el desarrollo de software y aplicaciones móviles, con
+              práctica en programación, bases de datos y despliegue.
             </p>
           </div>
         </div>
       </div>
     </section>
+
     <!-- =========================================================
          CONTACT
          ========================================================= -->
@@ -554,8 +320,8 @@
       <section id="contact" class="section-pad">
         <div class="container">
           <div class="section-head text-center">
-            <h2 class="section-title">Get In Touch</h2>
-            <p class="section-subtitle">Have a project in mind or want to discuss opportunities? I'd love to hear from you!</p>
+            <h2 class="section-title" data-i18n="contact.title">Hablemos</h2>
+            <p class="section-subtitle" data-i18n="contact.subtitle">¿Tienes un proyecto en mente o quieres hablar de una oportunidad? Escríbeme.</p>
           </div>
 
           <div class="contact-grid">
@@ -565,23 +331,23 @@
                 <form action="https://formspree.io/f/xanoenzo" method="POST">
                   <div class="form-row">
                     <div class="field">
-                      <label for="name">Name</label>
-                      <input class="input" id="name" name="name" placeholder="Your name" required />
+                      <label for="name" data-i18n="contact.name">Nombre</label>
+                      <input class="input" id="name" name="name" data-i18n-ph="contact.name.ph" placeholder="Tu nombre" required />
                     </div>
                     <div class="field">
-                      <label for="email">Email</label>
-                      <input class="input" id="email" name="email" type="email" placeholder="Your email" required />
+                      <label for="email" data-i18n="contact.email">Email</label>
+                      <input class="input" id="email" name="email" type="email" data-i18n-ph="contact.email.ph" placeholder="Tu email" required />
                     </div>
                   </div>
                   <div class="field">
-                    <label for="subject">Subject</label>
-                    <input class="input" id="subject" name="subject" placeholder="Subject of your message" required />
+                    <label for="subject" data-i18n="contact.subject">Asunto</label>
+                    <input class="input" id="subject" name="subject" data-i18n-ph="contact.subject.ph" placeholder="Asunto del mensaje" required />
                   </div>
                   <div class="field">
-                    <label for="message">Message</label>
-                    <textarea class="textarea" id="message" name="message" placeholder="Your message" required></textarea>
+                    <label for="message" data-i18n="contact.message">Mensaje</label>
+                    <textarea class="textarea" id="message" name="message" data-i18n-ph="contact.message.ph" placeholder="Tu mensaje" required></textarea>
                   </div>
-                  <button type="submit" class="btn btn-primary" style="width:100%;">Send Message</button>
+                  <button type="submit" class="btn btn-primary" style="width:100%;" data-i18n="contact.send">Enviar mensaje</button>
                 </form>
               </div>
             </div>
@@ -594,7 +360,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                   </div>
                   <div>
-                    <h3 style="font-weight:600;">Email</h3>
+                    <h3 class="contact-label">Email</h3>
                     <a href="mailto:mvandres08@gmail.com" class="text-muted">mvandres08@gmail.com</a>
                   </div>
                 </div>
@@ -605,8 +371,8 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                   </div>
                   <div>
-                    <h3 style="font-weight:600;">Location</h3>
-                    <a href="https://maps.google.com/?q=Santa+Marta,+Colombia" target="_blank" rel="noopener noreferrer" class="text-muted">Santa Marta, Colombia</a>
+                    <h3 class="contact-label" data-i18n="contact.location">Ubicación</h3>
+                    <a href="https://maps.google.com/?q=Santa+Marta,+Colombia" target="_blank" rel="noopener noreferrer" class="text-muted">Colombia</a>
                   </div>
                 </div>
               </div>
@@ -616,22 +382,22 @@
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   </div>
                   <div>
-                    <h3 style="font-weight:600;">Phone</h3>
-                    <p class="text-muted">Available on request</p>
+                    <h3 class="contact-label" data-i18n="contact.phone">Teléfono</h3>
+                    <p class="text-muted" data-i18n="contact.phone.value">Disponible bajo petición</p>
                   </div>
                 </div>
               </div>
 
               <div class="card">
                 <div class="card-body">
-                  <h3 style="font-weight:600;margin-bottom:0.25rem;">Connect with me</h3>
-                  <p class="text-muted" style="font-size:0.875rem;margin-bottom:1rem;">Find me on these platforms</p>
+                  <h3 class="contact-label" style="margin-bottom:0.25rem;" data-i18n="contact.connect">Conecta conmigo</h3>
+                  <p class="text-muted" style="font-size:0.875rem;margin-bottom:1rem;" data-i18n="contact.connect.sub">Búscame en estas plataformas</p>
                   <div style="display:flex;gap:0.75rem;">
-                    <a href="https://github.com/maskeynihal" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-icon">
+                    <a href="https://github.com/afMadridv" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-icon">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
                       <span class="sr-only">GitHub</span>
                     </a>
-                    <a href="https://linkedin.com/in/maskeynihal" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-icon">
+                    <a href="https://www.linkedin.com/in/andr%C3%A9s-felipe-madrid-villar-9987693a8/" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-icon">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
                       <span class="sr-only">LinkedIn</span>
                     </a>
@@ -654,12 +420,102 @@
        ========================================================= -->
   <footer class="site-footer">
     <div class="container">
-      <p>&copy; <span id="year"></span> Andres Madrid. All rights reserved.</p>
+      <p>&copy; <span id="year"></span> Andres Madrid. <span data-i18n="footer.rights">Todos los derechos reservados.</span></p>
+      <!-- Entrada al portal privado (discreta, a propósito) -->
+      <button type="button" class="footer-admin" id="admin-open" data-i18n-aria="aria.portal" aria-label="Portal privado">&#9679;</button>
     </div>
   </footer>
 
   <!-- =========================================================
-       JAVASCRIPT  (tema oscuro, menú móvil, año, nav activa)
+       STAR WARS — decorativo (caza TIE + Estrella de la Muerte)
        ========================================================= -->
+  <div class="sw-fx" id="sw-fx" aria-hidden="true">
+    <!-- Caza TIE -->
+    <div class="tie-fighter" id="tie-fighter">
+      <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+        <!-- ala izquierda -->
+        <rect x="0" y="1" width="4" height="14" fill="#242b36"/>
+        <rect x="1" y="2" width="2" height="12" fill="#3d4655"/>
+        <rect x="0" y="1" width="4" height="1" fill="#98a2b3"/>
+        <rect x="0" y="14" width="4" height="1" fill="#98a2b3"/>
+        <rect x="0" y="7" width="4" height="1" fill="#5b6575"/>
+        <!-- ala derecha -->
+        <rect x="12" y="1" width="4" height="14" fill="#242b36"/>
+        <rect x="13" y="2" width="2" height="12" fill="#3d4655"/>
+        <rect x="12" y="1" width="4" height="1" fill="#98a2b3"/>
+        <rect x="12" y="14" width="4" height="1" fill="#98a2b3"/>
+        <rect x="12" y="7" width="4" height="1" fill="#5b6575"/>
+        <!-- brazos -->
+        <rect x="4" y="7" width="2" height="2" fill="#6b7280"/>
+        <rect x="10" y="7" width="2" height="2" fill="#6b7280"/>
+        <!-- cabina -->
+        <rect x="6" y="5" width="4" height="6" fill="#4b5563"/>
+        <rect x="7" y="4" width="2" height="1" fill="#4b5563"/>
+        <rect x="7" y="11" width="2" height="1" fill="#4b5563"/>
+        <rect x="7" y="6" width="2" height="3" fill="#0f1420"/>
+        <rect x="7" y="6" width="1" height="1" fill="#9ca3af"/>
+      </svg>
+    </div>
+
+    <!-- Estrella de la Muerte -->
+    <div class="death-star" id="death-star">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="12" cy="12" r="11" fill="#7d8695"/>
+        <path d="M12 1a11 11 0 0 0 0 22z" fill="#98a2b3"/>
+        <circle cx="12" cy="12" r="11" fill="none" stroke="#5b6575" stroke-width="0.6"/>
+        <!-- trinchera ecuatorial -->
+        <rect x="1" y="11.4" width="22" height="1.2" fill="#4a5261"/>
+        <!-- plato del superláser -->
+        <circle cx="8.5" cy="7.2" r="3.4" fill="#5b6575"/>
+        <circle cx="8.5" cy="7.2" r="2.2" fill="#39404d"/>
+        <circle cx="8.5" cy="7.2" r="0.9" fill="#22303f"/>
+        <!-- paneles -->
+        <rect x="3" y="15.5" width="8" height="0.7" fill="#69727f"/>
+        <rect x="5" y="17.5" width="10" height="0.7" fill="#69727f"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       PORTAL PRIVADO — elegir qué repos se publican
+       ========================================================= -->
+  <div class="admin-overlay" id="admin-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="admin-title">
+    <div class="admin-panel">
+      <div class="admin-head">
+        <h2 id="admin-title" data-i18n="admin.title">Portal</h2>
+        <button type="button" class="btn btn-ghost btn-icon" id="admin-close" data-i18n-aria="aria.close" aria-label="Cerrar">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+
+      <div class="admin-body" id="admin-body">
+        <!-- Paso 1: clave -->
+        <div id="admin-gate">
+          <p class="admin-hint" data-i18n="admin.gate">Escribe la clave para elegir qué proyectos se publican.</p>
+          <div class="field">
+            <label for="admin-pass" data-i18n="admin.pass">Clave</label>
+            <input class="input" id="admin-pass" type="password" autocomplete="off" />
+          </div>
+          <p class="admin-error" id="admin-error"></p>
+        </div>
+
+        <!-- Paso 2: selección -->
+        <div id="admin-picker" hidden>
+          <p class="admin-hint" data-i18n="admin.pick">
+            Marca los repos que quieres publicar. Se muestran los 6 primeros y el
+            resto queda tras el botón "Ver más". Sin nada marcado, salen todos.
+          </p>
+          <div id="admin-repos"></div>
+        </div>
+      </div>
+
+      <div class="admin-foot">
+        <span class="admin-count" id="admin-count"></span>
+        <button type="button" class="btn btn-outline" id="admin-submit" data-i18n="admin.enter">Entrar</button>
+        <button type="button" class="btn btn-outline" id="admin-export" hidden data-i18n="admin.export">Descargar projects.json</button>
+        <button type="button" class="btn btn-primary" id="admin-save" hidden data-i18n="admin.save">Guardar</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

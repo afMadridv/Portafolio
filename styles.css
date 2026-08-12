@@ -3,22 +3,31 @@
    Formato HSL: "tono saturación% luminosidad%"
    ========================================================= */
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 3.9%;
+  /* Tema claro. El fondo NO es blanco puro: lleva un tinte cálido
+     hacia el rojo de marca para que las tarjetas (esas sí blancas)
+     se despeguen del fondo en vez de fundirse con él. */
+  --background: 20 40% 98%;
+  --foreground: 20 14% 10%;
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --primary: 0 69% 31%;            /* color principal (rojo #FA4040) */
+  --card-foreground: 20 14% 10%;
+  --primary: 0 74% 45%;            /* rojo vivo #C81E1E, 5.9:1 sobre blanco */
   --primary-foreground: 355.7 100% 97.3%;
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 0 69% 31%;
+  --secondary: 20 30% 94%;
+  --secondary-foreground: 20 14% 12%;
+  --muted: 20 30% 95%;
+  --muted-foreground: 20 9% 40%;
+  --border: 20 22% 88%;
+  --input: 20 22% 86%;
+  --ring: 0 74% 45%;
+  /* Sombras cálidas (en oscuro se anulan) */
+  --shadow-sm: 0 1px 2px hsl(20 30% 20% / 0.06), 0 2px 8px hsl(20 30% 20% / 0.05);
+  --shadow-md: 0 10px 24px -10px hsl(0 40% 25% / 0.18);
+  --shadow-lg: 0 22px 44px -18px hsl(0 45% 25% / 0.28);
   --radius: 0.5rem;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, "Roboto Mono",
     Menlo, Monaco, "Courier New", monospace;
+  /* Tipografía de bloques/píxel para el saludo del hero */
+  --font-display: "Silkscreen", "Courier New", var(--font-mono);
 }
 
 /* Tema oscuro (se activa añadiendo class="dark" al <html>) */
@@ -36,12 +45,20 @@ html.dark {
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
   --ring: 0 95% 61.5%;
+  /* En oscuro la profundidad la da el contraste, no la sombra */
+  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.3);
+  --shadow-md: 0 10px 24px -10px hsl(0 0% 0% / 0.5);
+  --shadow-lg: 0 22px 44px -18px hsl(0 0% 0% / 0.6);
 }
 
 /* =========================================================
    BASE
    ========================================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* El atributo hidden debe ganar a cualquier display de clase
+   (.btn usa inline-flex y si no, se seguiría viendo). */
+[hidden] { display: none !important; }
 
 html { scroll-behavior: smooth; }
 
@@ -62,9 +79,9 @@ img { max-width: 100%; display: block; }
 
 .container {
   width: 100%;
-  max-width: 1100px;
+  max-width: 1140px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 clamp(1.25rem, 4vw, 2rem);
 }
 
 section { scroll-margin-top: 5rem; }
@@ -83,19 +100,44 @@ section { scroll-margin-top: 5rem; }
   color: transparent;
 }
 
-/* Título de cada sección */
+/* Título de cada sección — misma tipografía de bloques que el hero */
 .section-title {
-  font-size: clamp(1.875rem, 4vw, 3rem);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3.4vw, 2.5rem);
   font-weight: 700;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
+  line-height: 1.3;
 }
 .section-subtitle {
   max-width: 700px;
-  margin: 0.75rem auto 0;
+  margin: 1.25rem auto 0;
   color: hsl(var(--muted-foreground));
   font-size: 1.125rem;
 }
-.section-head { margin-bottom: 3rem; }
+.section-head { margin-bottom: clamp(2.5rem, 5vw, 4.5rem); }
+
+/* Subrayado que crece cuando el título entra en pantalla */
+.section-title { position: relative; display: inline-block; padding-bottom: 0.6rem; }
+.section-title::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 3px;
+  width: 0;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    hsl(var(--primary)),
+    transparent
+  );
+  transform: translateX(-50%);
+  transition: width 0.7s cubic-bezier(0.2, 0.7, 0.3, 1) 0.15s;
+}
+html.js .section-head.visible .section-title::after { width: 78%; }
+/* Sin JS (o con movimiento reducido) el subrayado se ve igual */
+html:not(.js) .section-title::after { width: 78%; }
 
 /* =========================================================
    FONDO ANIMADO (blobs)
@@ -128,6 +170,14 @@ section { scroll-margin-top: 5rem; }
   width: 240px; height: 240px; bottom: 8%; left: 22%;
   animation-delay: -12s;
 }
+
+/* En claro los blobs se ven sobre fondo pálido: bajan de opacidad
+   y uno tira a ámbar para que no sea todo la misma mancha roja. */
+html:not(.dark) .animated-background { opacity: 0.55; }
+html:not(.dark) .blob { filter: blur(80px); }
+html:not(.dark) .blob-1 { background-color: hsl(0 80% 62% / 0.22); }
+html:not(.dark) .blob-2 { background-color: hsl(28 90% 60% / 0.18); }
+html:not(.dark) .blob-3 { background-color: hsl(350 75% 62% / 0.16); }
 @keyframes float {
   0%, 100% { transform: translate(0, 0) scale(1); }
   33%      { transform: translate(40px, -30px) scale(1.05); }
@@ -186,6 +236,16 @@ header, main, footer { position: relative; z-index: 1; }
 .btn-icon { padding: 0.5rem; width: 2.5rem; height: 2.5rem; }
 .btn-icon svg { width: 1.25rem; height: 1.25rem; }
 
+/* Botón de idioma: globo + código del idioma al que se cambia */
+.btn-lang { padding: 0.5rem 0.6rem; gap: 0.35rem; height: 2.5rem; }
+.btn-lang svg { width: 1.15rem; height: 1.15rem; }
+.lang-code {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
 /* =========================================================
    TARJETAS
    ========================================================= */
@@ -194,12 +254,23 @@ header, main, footer { position: relative; z-index: 1; }
   color: hsl(var(--card-foreground));
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
 }
-.card-body { padding: 1.5rem; }
+.card-body { padding: clamp(1.35rem, 2.4vw, 1.9rem); }
 .card-hover:hover {
   box-shadow: 0 10px 25px -5px hsl(var(--foreground) / 0.1);
   border-color: hsl(var(--primary) / 0.5);
+}
+
+/* El icono reacciona al pasar por encima de la tarjeta */
+.card .icon-circle {
+  transition: transform 0.35s cubic-bezier(0.2, 0.7, 0.3, 1),
+    background-color 0.35s ease;
+}
+.card:hover .icon-circle {
+  transform: scale(1.12) rotate(-6deg);
+  background-color: hsl(var(--primary) / 0.22);
 }
 
 /* =========================================================
@@ -252,7 +323,7 @@ header, main, footer { position: relative; z-index: 1; }
   justify-content: space-between;
   height: 4rem;
 }
-.logo { font-size: 1.5rem; font-weight: 700; }
+.logo { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; }
 
 .nav-desktop { display: none; align-items: center; gap: 0.5rem; }
 .nav-link {
@@ -319,6 +390,22 @@ header, main, footer { position: relative; z-index: 1; }
   letter-spacing: -0.04em;
   line-height: 1.1;
 }
+
+/* Saludo del hero con tipografía de bloques (estilo píxel).
+   Los glifos ya vienen espaciados, por eso se anula el
+   letter-spacing negativo y se abre un poco la interlínea. */
+.hero h1.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.375rem, 4.5vw, 3rem);
+  letter-spacing: 0;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+/* El nombre en rojo, con el borde desplazado del logo tipo bloque */
+.hero h1.hero-title .name-accent {
+  color: hsl(var(--primary));
+  text-shadow: 0.06em 0.06em 0 hsl(var(--primary) / 0.25);
+}
 .hero .role {
   font-size: clamp(1.25rem, 3vw, 1.5rem);
   color: hsl(var(--muted-foreground));
@@ -347,7 +434,7 @@ header, main, footer { position: relative; z-index: 1; }
 /* =========================================================
    GRID UTILIDADES
    ========================================================= */
-.grid { display: grid; gap: 1.5rem; }
+.grid { display: grid; gap: clamp(1.25rem, 2.6vw, 2rem); }
 .grid-2 { grid-template-columns: 1fr; }
 .grid-3 { grid-template-columns: 1fr; }
 
@@ -374,10 +461,11 @@ header, main, footer { position: relative; z-index: 1; }
   text-align: center;
   color: hsl(var(--muted-foreground));
   font-size: 1.0625rem;
+  line-height: 1.8;
 }
 
 .bg-muted { background-color: hsl(var(--muted) / 0.3); }
-.section-pad { padding: 5rem 0; }
+.section-pad { padding: clamp(4rem, 9vw, 8rem) 0; }
 
 /* =========================================================
    EXPERIENCIA (timeline)
@@ -430,6 +518,28 @@ header, main, footer { position: relative; z-index: 1; }
 /* =========================================================
    PROJECTS / OPEN SOURCE
    ========================================================= */
+.projects-status { text-align: center; margin-bottom: 1.5rem; font-size: 0.9rem; }
+.project-card h3 { font-size: 1.125rem; font-weight: 700; }
+/* Descripción recortada a 4 líneas: las descripciones de GitHub
+   vienen de largos muy distintos y descuadran la fila. */
+.project-desc {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.project-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  margin-top: 0.75rem;
+}
+.project-meta svg { width: 0.9rem; height: 0.9rem; }
 .project-card { height: 100%; display: flex; flex-direction: column; transition: all 0.3s ease; }
 .project-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px -5px hsl(var(--foreground) / 0.1); }
 .project-card .card-body { display: flex; flex-direction: column; flex: 1; }
@@ -449,6 +559,15 @@ header, main, footer { position: relative; z-index: 1; }
 }
 .edu-head .icon-circle { background-color: hsl(var(--primary) / 0.2); }
 .edu-head .icon-circle svg { width: 2rem; height: 2rem; }
+.edu-head .icon-circle { flex-shrink: 0; }
+.edu-title { font-size: 1.25rem; font-weight: 700; }
+.edu-body { padding: 1.5rem; }
+.edu-badge { margin-left: auto; flex-shrink: 0; align-self: flex-start; }
+
+/* Títulos de tarjeta (antes iban con style inline) */
+.feature-title { font-size: 1.25rem; font-weight: 700; }
+.skill-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+.contact-label { font-weight: 600; }
 
 /* =========================================================
    CONTACT
@@ -530,13 +649,17 @@ html.js .lead.visible {
   transform: translateY(0);
 }
 
-/* Las tarjetas solo animan la opacidad para no chocar con el
-   efecto "lift" del hover (que usa transform). */
+/* Las tarjetas suben al aparecer.
+   El desplazamiento va en la propiedad `translate`, no en
+   `transform`: así el "lift" del hover (que sí usa transform)
+   se suma en vez de pisarlo. */
 html.js .card {
   opacity: 0;
-  transition: all 0.3s ease, opacity 0.6s ease;
+  translate: 0 26px;
+  transition: opacity 0.6s ease, translate 0.6s cubic-bezier(0.2, 0.7, 0.3, 1),
+    transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
-html.js .card.visible { opacity: 1; }
+html.js .card.visible { opacity: 1; translate: 0 0; }
 
 /* =========================================================
    ENTRADA DEL HERO al cargar la página
@@ -593,6 +716,179 @@ html.js .scroll-indicator {
 }
 
 /* =========================================================
+   TRANSICIONES Y EFECTOS
+   ========================================================= */
+
+/* Barra de progreso de lectura, pegada bajo el header */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(
+    to right,
+    hsl(var(--primary)),
+    hsl(var(--primary) / 0.45)
+  );
+  z-index: 55;
+  pointer-events: none;
+}
+
+/* Enlaces de nav: subrayado que se despliega */
+.nav-desktop .nav-link { position: relative; }
+.nav-desktop .nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: 0.25rem;
+  height: 2px;
+  border-radius: 1px;
+  background-color: hsl(var(--primary));
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.nav-desktop .nav-link:hover::after,
+.nav-desktop .nav-link.active::after { transform: scaleX(1); }
+
+/* Botones: se levantan un poco y el primario se ilumina */
+.btn:hover { transform: translateY(-2px); }
+.btn:active { transform: translateY(0); }
+.btn-primary:hover { box-shadow: 0 8px 20px -6px hsl(var(--primary) / 0.7); }
+.btn-outline:hover { box-shadow: 0 6px 16px -8px hsl(var(--foreground) / 0.35); }
+.btn-lang:hover .lang-code { color: hsl(var(--primary)); }
+.lang-code { transition: color 0.2s ease; }
+
+/* Iconos sociales del hero */
+.hero-socials .btn:hover {
+  transform: translateY(-4px);
+  color: hsl(var(--primary));
+}
+
+/* Etiquetas de proyecto y de skills */
+.tag,
+.badge-secondary { transition: all 0.25s ease; }
+.tag:hover,
+.badge-secondary:hover {
+  background-color: hsl(var(--primary) / 0.22);
+  transform: translateY(-2px);
+}
+
+/* Tarjetas: el lift se suma al reveal porque van en propiedades
+   distintas (transform aquí, translate en el reveal) */
+.project-card:hover,
+.skill-card:hover,
+.card-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+  border-color: hsl(var(--primary) / 0.45);
+}
+
+/* Educación: aire entre las tarjetas */
+.edu-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.edu-card + .edu-card { margin-top: clamp(1.5rem, 3vw, 2.5rem); }
+.edu-card:hover { box-shadow: var(--shadow-lg); }
+
+/* El grid de proyectos respira antes del botón "Ver más" */
+.projects-more { margin-top: clamp(2rem, 4vw, 3rem); text-align: center; }
+.projects-more .btn { transition: all 0.25s ease; }
+
+/* El hero ocupa más alto para separar del resto */
+.hero { min-height: 94vh; }
+
+/* =========================================================
+   TEMA CLARO — que no se vea plano
+   El oscuro tiene profundidad por contraste; el claro la
+   consigue con tinte, sombra y bandas de color.
+   ========================================================= */
+
+/* Lavado cálido detrás de todo, más fuerte arriba */
+html:not(.dark) body {
+  background-image:
+    radial-gradient(1100px 620px at 12% -8%, hsl(0 80% 60% / 0.10), transparent 60%),
+    radial-gradient(900px 520px at 92% 4%, hsl(28 90% 58% / 0.09), transparent 62%);
+  background-attachment: fixed;
+}
+
+/* Las bandas .bg-muted dejan de ser gris plano */
+html:not(.dark) .bg-muted {
+  background-color: transparent;
+  background-image: linear-gradient(
+    180deg,
+    hsl(20 45% 96%) 0%,
+    hsl(14 50% 97.5%) 100%
+  );
+  border-top: 1px solid hsl(var(--border) / 0.7);
+  border-bottom: 1px solid hsl(var(--border) / 0.7);
+}
+
+/* Header: cristal cálido en vez de blanco lechoso */
+html:not(.dark) .site-header.scrolled {
+  background-color: hsl(20 50% 99% / 0.78);
+  box-shadow: 0 1px 3px hsl(0 40% 30% / 0.07);
+}
+
+/* Etiquetas con color de marca, no gris */
+html:not(.dark) .badge-secondary {
+  background-color: hsl(0 60% 96%);
+  color: hsl(0 60% 32%);
+  border: 1px solid hsl(0 50% 90%);
+}
+html:not(.dark) .tag {
+  background-color: hsl(0 70% 96%);
+  color: hsl(0 65% 35%);
+}
+html:not(.dark) .badge-outline { border-color: hsl(var(--primary) / 0.4); }
+
+/* Franja superior de acento en las tarjetas de skills */
+html:not(.dark) .skill-card { border-top-width: 3px; }
+
+/* Cabecera de Educación con degradado en vez de rosa liso */
+html:not(.dark) .edu-head {
+  background-image: linear-gradient(
+    135deg,
+    hsl(0 75% 95%) 0%,
+    hsl(28 85% 95%) 100%
+  );
+}
+
+/* Círculo del icono: degradado suave */
+html:not(.dark) .icon-circle {
+  background-image: linear-gradient(
+    135deg,
+    hsl(0 75% 94%) 0%,
+    hsl(28 85% 93%) 100%
+  );
+}
+
+/* Inputs blancos sobre el fondo tintado */
+html:not(.dark) .input,
+html:not(.dark) .textarea { background-color: #fff; }
+
+/* Botón principal con degradado y brillo */
+html:not(.dark) .btn-primary {
+  background-image: linear-gradient(
+    135deg,
+    hsl(0 74% 48%) 0%,
+    hsl(12 78% 44%) 100%
+  );
+  box-shadow: 0 6px 16px -8px hsl(0 70% 40% / 0.6);
+}
+html:not(.dark) .btn-primary:hover {
+  box-shadow: 0 10px 22px -8px hsl(0 70% 40% / 0.7);
+}
+
+/* Pie separado con una línea de marca */
+html:not(.dark) .site-footer {
+  border-top: 2px solid hsl(var(--primary) / 0.25);
+  background-color: hsl(20 45% 97%);
+}
+
+/* =========================================================
    ACCESIBILIDAD: respeta "reducir movimiento" del sistema
    ========================================================= */
 @media (prefers-reduced-motion: reduce) {
@@ -602,5 +898,265 @@ html.js .scroll-indicator {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* =========================================================
+   INTERACCIÓN — About / Skills / Projects / Education
+   Mismo diseño, más vivo al pasar el cursor.
+   ========================================================= */
+
+/* Línea de acento que se dibuja al hacer hover en una tarjeta */
+.card-accent { position: relative; overflow: hidden; }
+.card-accent::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: linear-gradient(
+    to right,
+    hsl(var(--primary)),
+    hsl(var(--primary) / 0.3)
+  );
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+}
+.card-accent:hover::after { transform: scaleX(1); }
+
+/* ----- About: tarjetas con ícono ----- */
+.feature .icon-circle {
+  transition: transform 0.35s ease, background-color 0.35s ease;
+}
+.card-hover:hover .icon-circle {
+  transform: translateY(-3px) scale(1.08);
+  background-color: hsl(var(--primary) / 0.2);
+}
+.card-hover:hover { transform: translateY(-4px); }
+
+/* ----- Skills: badges que responden ----- */
+.skill-badges .badge {
+  cursor: default;
+  transition: transform 0.2s ease, background-color 0.2s ease,
+    color 0.2s ease;
+}
+.skill-badges .badge:hover {
+  transform: translateY(-2px);
+  background-color: hsl(var(--primary) / 0.15);
+  color: hsl(var(--primary));
+}
+
+/* ----- Projects ----- */
+.project-card .tag { transition: background-color 0.2s ease; }
+.project-card:hover .tag { background-color: hsl(var(--primary) / 0.2); }
+
+.projects-more { display: flex; justify-content: center; margin-top: 2rem; }
+.projects-more[hidden] { display: none; }
+
+/* ----- Education ----- */
+.edu-card { margin-bottom: 1.5rem; transition: all 0.3s ease; }
+.edu-card:last-of-type { margin-bottom: 0; }
+.edu-card:hover {
+  transform: translateY(-4px);
+  border-color: hsl(var(--primary) / 0.5);
+  box-shadow: 0 10px 25px -5px hsl(var(--foreground) / 0.1);
+}
+.edu-head { transition: background-color 0.3s ease; }
+.edu-card:hover .edu-head { background-color: hsl(var(--primary) / 0.16); }
+.edu-card:hover .edu-head .icon-circle { transform: scale(1.08); }
+.edu-head .icon-circle { transition: transform 0.35s ease; }
+
+/* =========================================================
+   STAR WARS — caza TIE y Estrella de la Muerte
+   Decorativos: pointer-events none para no estorbar clics.
+   ========================================================= */
+.sw-fx { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+
+.tie-fighter,
+.death-star {
+  position: fixed;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  will-change: transform, opacity;
+  image-rendering: pixelated;
+}
+.tie-fighter svg,
+.death-star svg { width: 100%; height: 100%; display: block; }
+
+/* Un poco más grande que el coche de antes (26px) */
+.tie-fighter { width: 34px; height: 34px; }
+.tie-fighter.flying { opacity: 1; }
+
+.death-star {
+  width: 60px;
+  height: 60px;
+  filter: drop-shadow(0 0 6px hsl(0 0% 0% / 0.6));
+  transition: opacity 0.9s ease;
+}
+.death-star.visible { opacity: 0.95; }
+
+/* Rayos del TIE */
+.tie-laser {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: #35ff6a;
+  box-shadow: 0 0 8px 2px hsl(140 100% 60% / 0.8);
+  will-change: transform, opacity;
+}
+
+/* Explosión de la Estrella de la Muerte */
+.death-star.exploding svg { animation: dsBlast 900ms ease-in forwards; }
+@keyframes dsBlast {
+  0%   { filter: brightness(1);  transform: scale(1); }
+  25%  { filter: brightness(4);  transform: scale(1.04); }
+  45%  { filter: brightness(9);  transform: scale(0.96); }
+  100% { filter: brightness(22); transform: scale(1.5); opacity: 0; }
+}
+
+/* Destello del núcleo */
+.ds-flash {
+  position: fixed;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #ffffff 0%,
+    #ffe9a8 35%,
+    hsl(35 100% 55% / 0.5) 60%,
+    transparent 72%
+  );
+  animation: dsFlash 1100ms ease-out forwards;
+}
+@keyframes dsFlash {
+  0%   { width: 0; height: 0; margin: 0; opacity: 1; }
+  35%  { width: 150px; height: 150px; margin: -75px; opacity: 1; }
+  100% { width: 260px; height: 260px; margin: -130px; opacity: 0; }
+}
+
+/* Anillo de choque: uno esférico y otro achatado (el del ecuador) */
+.ds-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  border: 5px solid hsl(45 100% 75% / 0.9);
+  animation: dsRing 1100ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+.ds-ring.flat { animation-name: dsRingFlat; border-color: hsl(30 100% 70% / 0.85); }
+@keyframes dsRing {
+  0%   { width: 10px; height: 10px; margin: -5px; opacity: 1; border-width: 6px; }
+  100% { width: 320px; height: 320px; margin: -160px; opacity: 0; border-width: 1px; }
+}
+@keyframes dsRingFlat {
+  0%   { width: 10px; height: 10px; margin: -5px; opacity: 1; border-width: 6px; transform: scaleY(0.18); }
+  100% { width: 460px; height: 460px; margin: -230px; opacity: 0; border-width: 1px; transform: scaleY(0.18); }
+}
+
+/* =========================================================
+   PORTAL PRIVADO (selección de proyectos)
+   ========================================================= */
+.footer-admin {
+  margin-top: 0.75rem;
+  background: none;
+  border: 0;
+  padding: 0.25rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground) / 0.45);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.footer-admin:hover { color: hsl(var(--primary)); }
+
+.admin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background-color: hsl(var(--foreground) / 0.45);
+  backdrop-filter: blur(4px);
+}
+.admin-overlay[hidden] { display: none; }
+
+.admin-panel {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 620px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px hsl(0 0% 0% / 0.5);
+}
+.admin-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.admin-head h2 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+.admin-body { padding: 1.5rem; overflow-y: auto; }
+.admin-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid hsl(var(--border));
+}
+.admin-hint {
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+.admin-error { color: hsl(var(--primary)); font-size: 0.85rem; min-height: 1.2rem; }
+
+/* Lista de repos con casillas */
+.repo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+.repo-row:hover { background-color: hsl(var(--muted)); }
+.repo-row input { margin-top: 0.3rem; accent-color: hsl(var(--primary)); flex-shrink: 0; }
+.repo-row.checked { border-color: hsl(var(--primary) / 0.4); }
+.repo-row strong { font-size: 0.9rem; font-weight: 600; }
+.repo-row .repo-desc {
+  font-size: 0.78rem;
+  color: hsl(var(--muted-foreground));
+  margin-top: 0.15rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.admin-count {
+  font-size: 0.8rem;
+  color: hsl(var(--muted-foreground));
+  margin-right: auto;
+  align-self: center;
 }
   
