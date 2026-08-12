@@ -7,7 +7,7 @@ compilación, ni dependencias: se abre directo en el navegador y se edita a mano
 
 | Archivo | Qué contiene |
 |---|---|
-| [`portafolio.html`](portafolio.html) | La estructura y el contenido (textos, secciones) |
+| [`index.html`](index.html) | La estructura y el contenido (textos, secciones) |
 | [`styles.css`](styles.css) | Todos los estilos (colores, tipografía, animaciones) |
 | [`script.js`](script.js) | La lógica (tema claro/oscuro, menú, animaciones al hacer scroll) |
 
@@ -15,13 +15,13 @@ compilación, ni dependencias: se abre directo en el navegador y se edita a mano
 
 ## Cómo usarlo
 
-- **Ver:** doble clic en `portafolio.html` (se abre en tu navegador).
+- **Ver:** doble clic en `index.html` (se abre en tu navegador).
 - **Editar:** abre los archivos con cualquier editor de texto. El contenido está en
   HTML plano, con comentarios en español (`<!-- ... -->` / `/* ... */`) que marcan
   cada sección.
 - **Publicar:** sube los tres archivos a cualquier hosting estático (GitHub Pages,
-  Netlify, Vercel…). Para que sea la página principal, renombra `portafolio.html`
-  a `index.html`.
+  Netlify, Vercel…). El archivo se llama `index.html` a propósito: es el nombre
+  que esos servicios buscan en la raíz. Si lo renombras, la web da 404.
 
 ## Personalizar
 
@@ -29,12 +29,11 @@ compilación, ni dependencias: se abre directo en el navegador y se edita a mano
 |---|---|
 | Color principal | `--primary`: en `:root` (claro, `#C81E1E`) y en `html.dark` (oscuro, `#FA4040`) |
 | Aspecto del tema claro | bloque `TEMA CLARO` al final de `styles.css` |
-| Nombre / título | sección `HERO` y el `<title>` en `portafolio.html` |
-| Tus empleos | bloques `<!-- Empleo -->` en `portafolio.html` |
+| Nombre / título | sección `HERO` y el `<title>` en `index.html` |
 | Tus proyectos | nada: se cargan solos desde GitHub (ver abajo) |
-| Cuenta de GitHub | `data-github-user` en `#projects-grid` (`portafolio.html`) |
+| Cuenta de GitHub | `data-github-user` en `#projects-grid` (`index.html`) |
 | Tipografía del saludo | variable `--font-display` en `styles.css` |
-| Formulario de contacto | el `action="https://formspree.io/..."` en `portafolio.html` |
+| Formulario de contacto | el `action="https://formspree.io/..."` en `index.html` |
 
 ## Proyectos automáticos
 
@@ -65,7 +64,7 @@ Dos botones:
 | **Descargar projects.json** | Baja el archivo | Todos, **cuando lo subas al repo** |
 
 Para publicar la selección: pulsa *Descargar projects.json*, deja el archivo
-junto a `portafolio.html` y súbelo. El sitio lo lee al cargar.
+junto a `index.html` y súbelo. El sitio lo lee al cargar.
 
 **Aviso de seguridad:** la clave solo evita que un curioso abra el panel. No es
 seguridad real — `script.js` es público y cualquiera puede leer su contenido, o
@@ -83,7 +82,7 @@ pega el resultado en la constante `ADMIN_HASH` de `script.js`.
   inglés. La elección se guarda en `localStorage`.
 
   **El HTML manda en español.** Al cargar, `harvestBaseLang()` copia al
-  diccionario lo que está escrito en `portafolio.html`. Así editas el texto en
+  diccionario lo que está escrito en `index.html`. Así editas el texto en
   el HTML y se ve tal cual, sin tocar `script.js`. El **inglés** sí sale del
   diccionario `I18N.en` y hay que actualizarlo a mano cuando cambies un texto.
 
@@ -93,18 +92,18 @@ pega el resultado en la constante `ADMIN_HASH` de `script.js`.
 - **Star Wars:** cada 18-44 s cruza un caza TIE en horizontal disparando rayos,
   o aparece la Estrella de la Muerte, se queda quieta 6,5 s y explota. Se apaga
   solo si el sistema pide reducir movimiento. Está en `#sw-fx`
-  (`portafolio.html`) y `initSpaceFx()`. Tamaños en `TIE_SIZE` y `DS_SIZE`; el
+  (`index.html`) y `initSpaceFx()`. Tamaños en `TIE_SIZE` y `DS_SIZE`; el
   tiempo quieta, en `DS_STATIC_MS`.
 
 ## Si editas y no ves el cambio
 
 El navegador guarda `styles.css` y `script.js` en caché, y Live Server recarga
 la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un
-`?v=` en `portafolio.html`:
+`?v=` en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=5" />
-<script src="script.js?v=5"></script>
+<link rel="stylesheet" href="styles.css?v=7" />
+<script src="script.js?v=7"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa
@@ -120,12 +119,11 @@ rápida: `Ctrl+F5`, o abrir DevTools (`F12`) → pestaña Network → marcar
 ## Pendiente
 
 - **Currículum:** el botón "Descargar CV" está comentado en el HERO, dentro de
-  `portafolio.html`. Cuando tengas tu CV en PDF, súbelo a esta carpeta como
+  `index.html`. Cuando tengas tu CV en PDF, súbelo a esta carpeta como
   `cv-andres-madrid.pdf` y descomenta ese bloque. La clave `hero.resume` ya
   existe en `I18N` (español e inglés).
-- **Publicar en GitHub Pages:** Pages sirve `index.html` y tu archivo se llama
-  `portafolio.html`. Si lo renombras, quita la línea `index.html` del
-  `.gitignore` (está ahí de cuando era una copia temporal).
+- **Sobre mí en inglés:** al cambiar el texto español actualiza también
+  `about.subtitle` y `about.lead` en `I18N.en` (`script.js`).
 
 ## Ya no queda nada de la plantilla original
 
