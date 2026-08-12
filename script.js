@@ -52,7 +52,8 @@ const I18N = {
     "hero.role": "Desarrollador de Software y VibeCoder",
     "hero.tagline": "Construyo sitios web escalables, seguros y eficientes",
     "hero.cta": "Hablemos",
-    "hero.resume": "Descargar CV",
+    "hero.work": "Ver proyectos",
+    "hero.resume": "Descargar CV", // sin usar: el botón está comentado en el HTML
 
     "about.title": "Sobre mí",
     "about.subtitle":
@@ -159,7 +160,8 @@ const I18N = {
     "hero.role": "Software Developer and VibeCoder",
     "hero.tagline": "I build scalable, secure and efficient websites",
     "hero.cta": "Get In Touch",
-    "hero.resume": "Download Resume",
+    "hero.work": "See projects",
+    "hero.resume": "Download Resume", // sin usar: el botón está comentado en el HTML
 
     "about.title": "About Me",
     "about.subtitle":

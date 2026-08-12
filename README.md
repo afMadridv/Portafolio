@@ -117,20 +117,23 @@ rápida: `Ctrl+F5`, o abrir DevTools (`F12`) → pestaña Network → marcar
   abriendo el HTML con doble clic (`file://`) esa petición falla y salen todos
   los repos.
 
-## Pendiente de rellenar con tus datos reales
+## Pendiente
 
-Esto aún viene de la plantilla original y conviene reemplazarlo:
+- **Currículum:** el botón "Descargar CV" está comentado en el HERO, dentro de
+  `portafolio.html`. Cuando tengas tu CV en PDF, súbelo a esta carpeta como
+  `cv-andres-madrid.pdf` y descomenta ese bloque. La clave `hero.resume` ya
+  existe en `I18N` (español e inglés).
+- **Publicar en GitHub Pages:** Pages sirve `index.html` y tu archivo se llama
+  `portafolio.html`. Si lo renombras, quita la línea `index.html` del
+  `.gitignore` (está ahí de cuando era una copia temporal).
 
-- **Currículum (Descargar CV):** sigue apuntando a `https://resume.nihal.com.np/...`
-- **Sobre mí:** el texto viene de la plantilla. Habla de proyectos de salud con
-  HIPAA y SOC2 y de equipos multidisciplinares — reemplázalo por tu experiencia
-  real. Está en el HTML y en las claves `about.*` de `I18N` (hay que cambiar las
-  dos versiones, español e inglés).
-
-Resueltos:
+## Ya no queda nada de la plantilla original
 
 - ~~**Proyectos**~~ — se cargan desde tu cuenta de GitHub.
-- ~~**Contacto → GitHub / LinkedIn**~~ — ya apuntan a tus cuentas.
+- ~~**Contacto → GitHub / LinkedIn**~~ — apuntan a tus cuentas.
 - ~~**Educación**~~ — descripciones distintas, tildes corregidas y etiqueta de
   estado (En curso / Finalizado).
 - ~~**Experiencia**~~ — la sección de empleos de la plantilla ya no está.
+- ~~**Sobre mí**~~ — texto tuyo (construcción, mantenimiento eléctrico,
+  insolvencia y conciliación).
+- ~~**Currículum**~~ — fuera el PDF de la plantilla.
