@@ -593,6 +593,17 @@ header, main, footer { position: relative; z-index: 1; }
   box-shadow: 0 0 0 3px hsl(var(--ring) / 0.3);
 }
 .textarea { min-height: 150px; resize: vertical; }
+
+/* Aviso bajo el botón de enviar */
+.form-status {
+  margin-top: 0.85rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+}
+.form-status[hidden] { display: none; }
+.form-status.is-warn { color: hsl(var(--primary)); font-weight: 500; }
 .contact-info-item { display: flex; align-items: flex-start; gap: 1rem; }
 .contact-info-item .icon-circle { margin-top: 0.25rem; }
 .contact-info-item .icon-circle svg { width: 1.5rem; height: 1.5rem; }

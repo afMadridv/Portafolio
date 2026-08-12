@@ -33,7 +33,7 @@ compilación, ni dependencias: se abre directo en el navegador y se edita a mano
 | Tus proyectos | nada: se cargan solos desde GitHub (ver abajo) |
 | Cuenta de GitHub | `data-github-user` en `#projects-grid` (`index.html`) |
 | Tipografía del saludo | variable `--font-display` en `styles.css` |
-| Formulario de contacto | el `action="https://formspree.io/..."` en `index.html` |
+| Correo del formulario | `data-mailto` en `<form id="contact-form">` (`index.html`) |
 
 ## Proyectos automáticos
 
@@ -75,6 +75,25 @@ sensible en esa clave ni la reutilices de otra cuenta.
 
 Cambiar la clave: en la consola del navegador ejecuta `await hashText("nueva")` y
 pega el resultado en la constante `ADMIN_HASH` de `script.js`.
+
+## Formulario de contacto
+
+No hay servidor detrás ni servicio externo. Al pulsar **Enviar mensaje** se abre
+el cliente de correo del visitante con el destinatario, el asunto y el cuerpo ya
+escritos; solo tiene que pulsar enviar en su propia aplicación.
+
+Ventaja: cero dependencias, cero cuentas, y el mensaje te llega desde el correo
+real de la persona, así puedes responder directo.
+
+Contrapartida: si el visitante no tiene cliente de correo configurado (habitual
+en un PC prestado), no se abre nada. Por eso, bajo el botón sale siempre tu
+dirección como alternativa.
+
+Los `mailto:` largos los cortan algunos clientes, así que si el mensaje pasa de
+`MAILTO_MAX` (1800 caracteres de URL) el formulario avisa en vez de abrir un
+correo recortado a medias.
+
+Cambiar la dirección: atributo `data-mailto` del `<form id="contact-form">`.
 
 ## Detalles
 

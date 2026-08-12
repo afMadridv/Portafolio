@@ -22,8 +22,8 @@
 
   <!-- El ?v= evita que el navegador sirva la versión vieja en caché.
        Si tocas styles.css o script.js y no ves el cambio, sube el número. -->
-  <link rel="stylesheet" href="styles.css?v=7" />
-  <script src="script.js?v=7"></script>
+  <link rel="stylesheet" href="styles.css?v=8" />
+  <script src="script.js?v=8"></script>
 </head>
 
 <body>
@@ -325,10 +325,12 @@
           </div>
 
           <div class="contact-grid">
-            <!-- Formulario (usa Formspree; cambia la URL del action por la tuya) -->
+            <!-- Formulario: no envía a ningún servidor. Al pulsar el botón abre
+                 el correo del visitante con todo rellenado (ver initContactForm
+                 en script.js). data-mailto es la dirección de destino. -->
             <div class="card">
               <div class="card-body">
-                <form action="https://formspree.io/f/xanoenzo" method="POST">
+                <form id="contact-form" data-mailto="mvandres08@gmail.com">
                   <div class="form-row">
                     <div class="field">
                       <label for="name" data-i18n="contact.name">Nombre</label>
@@ -348,6 +350,7 @@
                     <textarea class="textarea" id="message" name="message" data-i18n-ph="contact.message.ph" placeholder="Tu mensaje" required></textarea>
                   </div>
                   <button type="submit" class="btn btn-primary" style="width:100%;" data-i18n="contact.send">Enviar mensaje</button>
+                  <p class="form-status" id="contact-status" role="status" aria-live="polite" hidden></p>
                 </form>
               </div>
             </div>

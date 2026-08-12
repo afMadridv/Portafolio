@@ -113,6 +113,12 @@ const I18N = {
     "contact.message": "Mensaje",
     "contact.message.ph": "Tu mensaje",
     "contact.send": "Enviar mensaje",
+    "contact.status.opening":
+      "Abriendo tu correo con el mensaje listo — solo pulsa enviar. ¿No se abrió? Escríbeme a {mail}",
+    "contact.status.toolong":
+      "El mensaje es muy largo para abrirse solo. Cópialo y mándalo a {mail}",
+    "contact.mail.from": "Enviado desde el portafolio por",
+    "contact.mail.reply": "Responder a",
     "contact.location": "Ubicación",
     "contact.phone": "Teléfono",
     "contact.phone.value": "Disponible bajo petición",
@@ -220,6 +226,12 @@ const I18N = {
     "contact.message": "Message",
     "contact.message.ph": "Your message",
     "contact.send": "Send message",
+    "contact.status.opening":
+      "Opening your mail app with the message ready — just hit send. Didn't open? Write to {mail}",
+    "contact.status.toolong":
+      "The message is too long to open automatically. Copy it and send it to {mail}",
+    "contact.mail.from": "Sent from the portfolio by",
+    "contact.mail.reply": "Reply to",
     "contact.location": "Location",
     "contact.phone": "Phone",
     "contact.phone.value": "Available on request",
@@ -757,6 +769,64 @@ function initAdminPortal() {
 }
 
 /* =========================================================
+   FORMULARIO DE CONTACTO
+   No hay servidor detrás: al enviar se abre el correo del
+   visitante con destinatario, asunto y cuerpo ya escritos.
+   Solo tiene que pulsar "enviar" en su propio cliente.
+   ========================================================= */
+const MAILTO_MAX = 1800; // los clientes de correo cortan las URL largas
+
+function initContactForm() {
+  const form = document.getElementById("contact-form");
+  const status = document.getElementById("contact-status");
+  if (!form) return;
+
+  const to = form.dataset.mailto;
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault(); // nada de POST: abrimos el cliente de correo
+
+    const data = new FormData(form);
+    const name = (data.get("name") || "").trim();
+    const email = (data.get("email") || "").trim();
+    const subject = (data.get("subject") || "").trim();
+    const message = (data.get("message") || "").trim();
+
+    const body =
+      message +
+      "\n\n—\n" +
+      t("contact.mail.from") +
+      ": " +
+      name +
+      "\n" +
+      t("contact.mail.reply") +
+      ": " +
+      email;
+
+    const href =
+      "mailto:" +
+      encodeURIComponent(to) +
+      "?subject=" +
+      encodeURIComponent(subject) +
+      "&body=" +
+      encodeURIComponent(body);
+
+    status.hidden = false;
+    status.classList.remove("is-warn");
+
+    if (href.length > MAILTO_MAX) {
+      // Mensaje demasiado largo: el cliente lo cortaría sin avisar
+      status.classList.add("is-warn");
+      status.textContent = t("contact.status.toolong", { mail: to });
+      return;
+    }
+
+    status.textContent = t("contact.status.opening", { mail: to });
+    window.location.href = href;
+  });
+}
+
+/* =========================================================
    STAR WARS
    Cada tanto pasa un caza TIE disparando, o aparece la
    Estrella de la Muerte, se queda quieta y explota.
@@ -1004,5 +1074,6 @@ document.addEventListener("DOMContentLoaded", function () {
     .addEventListener("click", toggleMore);
   loadGitHubProjects();
   initAdminPortal();
+  initContactForm();
   initSpaceFx();
 });
