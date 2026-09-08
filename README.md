@@ -28,14 +28,25 @@ sin compilación, sin dependencias.
 
 ## El escritorio
 
-Cada icono es un elemento con un **tipo**:
+Cada icono es un elemento con un **tipo**, y **cada ventana se ve distinta por
+dentro**:
 
-| Tipo | Qué hace al abrirlo |
+| Tipo | Aspecto de la ventana |
 |---|---|
-| `txt` | Ventana con texto plano. El contenido se edita desde el portal |
-| `folder` | Ventana con los iconos que tengan esa carpeta como padre |
-| `link` | Abre una dirección en otra pestaña, sin ventana |
-| `app` | Ventana con contenido generado: Proyectos, Habilidades, Educación, Contacto o Redes |
+| `txt` | Visor de texto: fondo negro, monoespaciado, titular en rojo |
+| `folder` | Explorador con pestañas: una por subcarpeta, más "Todo" |
+| `link` | No abre ventana: va a la dirección en otra pestaña |
+| `app: projects` | Explorador con una pestaña por lenguaje, más "Todo" y "Con web" |
+| `app: skills` | Panel de propiedades: grupos con lista de componentes |
+| `app: education` | Vista de lista con columnas y cabecera fija |
+| `app: contact` | Cuadro de diálogo con icono y campos hundidos |
+| `app: social` | Entorno de red: iconos grandes |
+
+Al abrir un proyecto desde la carpeta sale su **ficha**, con descripción,
+lenguaje, estrellas, fecha del último cambio y los botones de código y web.
+
+Todas las ventanas llevan **barra de estado** abajo, que dice cuántos elementos
+hay, la dirección del repo o el correo, según el caso.
 
 Las ventanas se arrastran por la barra de título, se redimensionan por la
 esquina de abajo a la derecha, se minimizan a la barra de tareas y se maximizan.
@@ -110,8 +121,29 @@ desplegado, la **Website** (aparece como botón *Ver web*).
 | Educación | `EDUCATION` |
 | Redes | `SOCIAL` |
 | Escritorio de fábrica | `DEFAULT_DESKTOP` |
-| Iconos disponibles | `ICONS` (SVG dibujados a mano) |
+| Iconos disponibles | `PIXELS` (dibujos de 16x16 en texto) |
+| Colores de los iconos | `PAL` |
 | Colores del chrome | `:root` en `styles.css` |
+
+### Dibujar un icono
+
+Los iconos son rejillas de 16x16 escritas como texto: una letra por píxel,
+según la paleta `PAL`. El punto es transparente. No hace falta ningún editor:
+
+```js
+folder: [
+  "................",
+  "..kkkkk.........",
+  ".kYYYYYk........",
+  ".kYyyyykkkkkkkk.",
+  ".kyyyyyyyyyyyyk.",
+  // …hasta 16 filas
+],
+```
+
+`pixelSvg()` los convierte en SVG uniendo los píxeles seguidos del mismo color,
+para no generar 256 nodos por icono. El CSS los pinta con
+`image-rendering: pixelated`, así no se difuminan al ampliarlos.
 
 ## Idiomas
 
@@ -155,8 +187,8 @@ la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
 en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=9" />
-<script src="script.js?v=9"></script>
+<link rel="stylesheet" href="styles.css?v=11" />
+<script src="script.js?v=11"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:

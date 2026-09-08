@@ -137,13 +137,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .d-icon:hover .d-icon-img { filter: brightness(1.15); }
 .d-icon:focus-visible { outline: none; border-color: #fff; }
+/* Azul de selección clásico para el icono abierto o enfocado */
 .d-icon.is-open .d-icon-label,
 .d-icon:focus-visible .d-icon-label {
-  background: var(--title-a);
+  background: #000080;
   color: #fff;
+  text-shadow: none;
 }
 .d-icon-img { width: 40px; height: 40px; flex-shrink: 0; }
-.d-icon-img svg { width: 100%; height: 100%; display: block; }
+.d-icon-img svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: pixelated;   /* los iconos son de píxeles: sin suavizado */
+}
 .d-icon-label {
   padding: 1px 3px;
   text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.85);
@@ -176,27 +183,28 @@ button, input, select, textarea { font: inherit; color: inherit; }
   height: auto !important;
 }
 
-/* ----- Barra de título ----- */
+/* ----- Barra de título: plateada, con icono a la izquierda ----- */
 .win-bar {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 3px 3px 3px 6px;
-  background: linear-gradient(90deg, var(--title-off-a), var(--title-off-b));
-  color: #e8e8e8;
+  gap: 0.4rem;
+  padding: 3px 3px 3px 4px;
+  background: linear-gradient(90deg, #9a9a9a, #d2d2d2);
+  color: #3a3a3a;
   cursor: default;
   user-select: none;
   touch-action: none;            /* para poder arrastrar en móvil */
 }
 .win.is-active .win-bar {
-  background: linear-gradient(90deg, var(--title-a), var(--title-b));
-  color: #fff;
+  background: linear-gradient(90deg, #5c5c5c, #cfcfcf);
+  color: #000;
 }
+.win-ico { width: 16px; height: 16px; flex-shrink: 0; }
+.win-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 .win-title {
   flex: 1;
-  font-family: var(--font-display);
-  font-size: 0.7rem;
-  letter-spacing: 0;
+  font-size: 0.74rem;
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -226,38 +234,235 @@ button, input, select, textarea { font: inherit; color: inherit; }
     inset 2px 2px 0 0 var(--dark);
 }
 
-/* ----- Cuerpo ----- */
+/* ----- Cuerpo (base; cada tipo lo cambia) ----- */
 .win-body {
   flex: 1;
   overflow: auto;
   margin-top: 3px;
   padding: 0.9rem 1rem;
   background: var(--paper);
-  font-size: 0.85rem;
-  line-height: 1.65;
+  font-size: 0.82rem;
+  line-height: 1.6;
   box-shadow:
     inset 1px 1px 0 0 var(--shadow),
     inset -1px -1px 0 0 var(--light),
     inset 2px 2px 0 0 var(--dark);
 }
-.win-body h3 {
-  margin: 0 0 0.5rem;
-  font-family: var(--font-display);
-  font-size: 0.9rem;
-}
-.win-body h4 {
-  margin: 1.2rem 0 0.35rem;
-  font-size: 0.85rem;
-  color: var(--title-a);
-}
 .win-body p { margin: 0 0 0.8rem; }
-.win-body ul { margin: 0 0 0.8rem; padding-left: 1.1rem; }
-.win-body li { margin-bottom: 0.3rem; }
 .win-body a { color: #a01414; }
 .muted { color: var(--ink-soft); }
 
-/* Texto de los .txt: monoespaciado y respetando saltos */
-.txt-body { white-space: pre-wrap; }
+/* ----- Barra de estado ----- */
+.win-status {
+  flex-shrink: 0;
+  margin-top: 3px;
+  padding: 2px 8px;
+  min-height: 20px;
+  font-size: 0.7rem;
+  line-height: 16px;
+  color: var(--ink);
+  background: var(--face);
+  box-shadow:
+    inset 1px 1px 0 0 var(--shadow),
+    inset -1px -1px 0 0 var(--light);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================================================
+   1) VISOR DE TEXTO  (.txt y ficha de proyecto)
+   Fondo negro, monoespaciado, titular en rojo.
+   ========================================================= */
+.body-txt {
+  background: #0b0b0b;
+  color: #d8d8d8;
+  padding: 1.1rem 1.2rem;
+}
+.body-txt .txt-head {
+  margin: 0 0 1.1rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: #ff3b3b;
+  letter-spacing: 0;
+}
+.body-txt .txt-body { white-space: pre-wrap; line-height: 1.9; }
+.body-txt a { color: #ff8a8a; }
+
+.body-repo .facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.9rem;
+  margin: 1.2rem 0;
+  font-size: 0.78rem;
+}
+.body-repo dt { color: #8a8a8a; }
+.body-repo dd { margin: 0; }
+.body-repo .repo-links { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+/* =========================================================
+   2) EXPLORADOR CON PESTAÑAS  (carpetas y Proyectos)
+   ========================================================= */
+.body-explorer {
+  background: var(--face);
+  padding: 4px 4px 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: none;
+}
+
+.tabs-row {
+  display: flex;
+  gap: 2px;
+  padding: 2px 2px 0;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.etab {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 3px 9px 4px;
+  margin-bottom: -1px;
+  background: var(--face-dark);
+  border: 0;
+  border-radius: 3px 3px 0 0;
+  font-size: 0.72rem;
+  cursor: pointer;
+  box-shadow:
+    inset 1px 1px 0 0 var(--light),
+    inset -1px 0 0 0 var(--dark);
+}
+.etab.is-active {
+  background: var(--face);
+  font-weight: 700;
+  padding-bottom: 6px;
+  z-index: 1;
+}
+.etab-ico { width: 13px; height: 13px; flex-shrink: 0; }
+.etab-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+.explorer-pane {
+  flex: 1;
+  overflow: auto;
+  padding: 0.7rem;
+  background: var(--paper);
+  box-shadow:
+    inset 1px 1px 0 0 var(--shadow),
+    inset -1px -1px 0 0 var(--light),
+    inset 2px 2px 0 0 var(--dark);
+}
+
+.folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 0.4rem;
+  align-content: start;
+}
+.folder-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.2rem;
+  background: none;
+  border: 1px dotted transparent;
+  cursor: pointer;
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--ink);
+  word-break: break-word;
+}
+.folder-item:hover { background: #e8e8f4; border-color: #9a9ab0; }
+.folder-item:focus-visible { outline: none; background: #000080; color: #fff; }
+.fi-ico { width: 32px; height: 32px; }
+.fi-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.folder-empty { color: var(--ink-soft); font-style: italic; padding: 0.5rem; }
+
+/* =========================================================
+   3) PANEL DE PROPIEDADES  (Habilidades)
+   ========================================================= */
+.body-props { background: var(--face); box-shadow: none; padding: 0.9rem; }
+.body-props .group {
+  margin: 0 0 0.9rem;
+  padding: 0.6rem 0.8rem 0.7rem;
+  border: 0;
+  box-shadow:
+    inset 1px 1px 0 0 var(--shadow),
+    inset -1px -1px 0 0 var(--light);
+}
+.body-props legend { padding: 0 0.35rem; font-size: 0.75rem; font-weight: 700; }
+/* Lista de componentes, estilo "programas instalados" */
+.comp-list {
+  padding: 3px;
+  background: var(--paper);
+  box-shadow:
+    inset 1px 1px 0 0 var(--shadow),
+    inset -1px -1px 0 0 var(--light),
+    inset 2px 2px 0 0 var(--dark);
+}
+.comp-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 2px 4px;
+  font-size: 0.75rem;
+}
+.comp-row:hover { background: #000080; color: #fff; }
+.comp-mark { width: 14px; height: 14px; flex-shrink: 0; }
+.comp-mark svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+/* =========================================================
+   4) VISTA DE LISTA  (Educación)
+   ========================================================= */
+.body-list { background: var(--paper); padding: 3px; }
+.listview { width: 100%; border-collapse: collapse; font-size: 0.74rem; }
+.listview th {
+  position: sticky;
+  top: 0;
+  padding: 3px 7px;
+  text-align: left;
+  font-weight: 700;
+  background: var(--face);
+  box-shadow:
+    inset 1px 1px 0 0 var(--light),
+    inset -1px -1px 0 0 var(--shadow);
+}
+.listview td {
+  padding: 5px 7px;
+  border-bottom: 1px solid #e4e4e4;
+  vertical-align: top;
+}
+.listview tr:hover td { background: #e8e8f4; }
+.cell-ico {
+  display: inline-block;
+  width: 16px; height: 16px;
+  margin-right: 0.4rem;
+  vertical-align: -3px;
+}
+.cell-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+/* =========================================================
+   5) ENTORNO DE RED  (Redes)
+   ========================================================= */
+.body-net { background: var(--face); box-shadow: none; padding: 4px; display: flex; }
+.body-net .explorer-pane { flex: 1; }
+.body-net .fi-ico { width: 40px; height: 40px; }
+
+/* =========================================================
+   6) CUADRO DE DIÁLOGO  (Contacto)
+   ========================================================= */
+.body-dialog { background: var(--face); box-shadow: none; padding: 1rem; }
+.dlg-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+.dlg-ico { width: 32px; height: 32px; flex-shrink: 0; }
+.dlg-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.dlg-head p { margin: 0; font-size: 0.76rem; }
+.dlg-actions { display: flex; justify-content: flex-end; margin-top: 0.4rem; }
 
 /* Tirador para redimensionar, abajo a la derecha */
 .win-grip {
@@ -277,46 +482,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .win.is-max .win-grip { display: none; }
 
-/* ----- Rejilla de elementos dentro de una carpeta ----- */
-.folder-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
-  gap: 0.5rem;
-}
-.folder-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.5rem 0.25rem;
-  background: none;
-  border: 1px dotted transparent;
-  cursor: pointer;
-  font-size: 0.72rem;
-  text-align: center;
-  color: var(--ink);
-}
-.folder-item:hover { background: #eee; border-color: #bbb; }
-.folder-item svg { width: 32px; height: 32px; }
-.folder-empty { color: var(--ink-soft); font-style: italic; }
-
-/* ----- Fichas de proyecto ----- */
-.repo { padding: 0.7rem 0; border-bottom: 1px solid #ddd; }
-.repo:last-child { border-bottom: 0; }
-.repo-name { font-weight: 700; }
-.repo-meta { font-size: 0.75rem; color: var(--ink-soft); }
-.repo-links { display: flex; gap: 0.4rem; margin-top: 0.45rem; flex-wrap: wrap; }
-
-/* ----- Etiquetas ----- */
-.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.9rem; }
-.chip {
-  padding: 2px 7px;
-  background: var(--face);
-  font-size: 0.72rem;
-  box-shadow:
-    inset 1px 1px 0 0 var(--light),
-    inset -1px -1px 0 0 var(--shadow);
-}
 
 /* =========================================================
    BOTONES Y CAMPOS
@@ -339,7 +504,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
     inset -1px -1px 0 0 var(--light),
     inset 2px 2px 0 0 var(--dark);
 }
-.btn svg { width: 14px; height: 14px; }
+.btn-ico { width: 14px; height: 14px; flex-shrink: 0; }
+.btn-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 .btn-primary { font-weight: 700; color: #6d0d0d; }
 
 .field { margin-bottom: 0.7rem; }

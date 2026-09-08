@@ -28,28 +28,358 @@ let allRepos = [];
 let reposError = false;
 
 /* =========================================================
-   ICONOS
-   Dibujados a mano para que no dependan de ninguna librería.
+   ICONOS DE PÍXELES
+   Cada icono es una rejilla de 16x16 escrita como texto: una
+   letra por píxel, según la paleta de abajo. Para cambiar un
+   icono se edita el dibujo, no hay que tocar código.
+   El punto "." es transparente.
    ========================================================= */
-const ICONS = {
-  txt: '<svg viewBox="0 0 24 24" stroke-width="1"><path d="M4.5 1.5h10l5 5v16h-15z" fill="#fff" stroke="#555"/><path d="M14.5 1.5v5h5" fill="#dcdcdc" stroke="#555"/><g fill="#8a8a8a"><rect x="7" y="10" width="10" height="1.5"/><rect x="7" y="13.5" width="10" height="1.5"/><rect x="7" y="17" width="6" height="1.5"/></g></svg>',
-  folder: '<svg viewBox="0 0 24 24" stroke-width="1"><path d="M1.5 4.5h7l2 3h12v13h-21z" fill="#c98f2a"/><path d="M1.5 8.5h21v12h-21z" fill="#f0c25c"/><rect x="1.5" y="8.5" width="21" height="2" fill="#fff" opacity=".35"/></svg>',
-  github: '<svg viewBox="0 0 24 24" stroke-width="1.3" stroke-linejoin="round"><circle cx="12" cy="12" r="11" fill="#1b1b1b"/><path d="M14.2 19.2v-2.7a2.8 2.8 0 0 0-.6-2c1.9 0 3.8-1.2 3.8-3.4a2.9 2.9 0 0 0-.6-2.1c.2-.7.2-1.4 0-2.1 0 0-.7 0-2 .9a8.5 8.5 0 0 0-4.4 0c-1.3-.9-2-.9-2-.9-.2.7-.2 1.4 0 2.1a2.9 2.9 0 0 0-.6 2.1c0 2.2 1.9 3.4 3.8 3.4a2.8 2.8 0 0 0-.6 2v2.7" fill="none" stroke="#fff"/><path d="M10.9 17.6c-2.7 1.2-3-1.2-4.2-1.2" fill="none" stroke="#fff"/></svg>',
-  mail: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="1.5" y="5" width="21" height="14" fill="#fff" stroke="#555"/><path d="M1.5 5 12 13 22.5 5" fill="none" stroke="#c33" stroke-width="1.6"/></svg>',
-  globe: '<svg viewBox="0 0 24 24" stroke-width="1"><circle cx="12" cy="12" r="10.5" fill="#2f6fb0" stroke="#1b3a5c"/><path d="M1.5 12h21M12 1.5c3.2 3 3.2 18 0 21M12 1.5c-3.2 3-3.2 18 0 21" fill="none" stroke="#cfe6ff" stroke-width="1.1"/></svg>',
-  edu: '<svg viewBox="0 0 24 24" stroke-width="1"><path d="M12 3 1.5 8 12 13l10.5-5z" fill="#8a1414"/><path d="M5.5 10.5V16c0 1.7 2.9 3 6.5 3s6.5-1.3 6.5-3v-5.5" fill="none" stroke="#8a1414" stroke-width="1.8"/><path d="M22.5 8v6" stroke="#8a1414" stroke-width="1.4"/></svg>',
-  tools: '<svg viewBox="0 0 24 24" stroke-width="1" stroke-linejoin="round"><path d="M12 1.5 14.2 4h3l.7 3 2.6 1.5-1.2 2.8 1.2 2.8L17.9 15l-.7 3h-3L12 20.5 9.8 18h-3l-.7-3-2.6-1.4 1.2-2.8L3.5 8 6.1 7l.7-3h3z" fill="#9a9a9a" stroke="#3a3a3a"/><circle cx="12" cy="11" r="3.4" fill="#fa4040"/></svg>',
-  link: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="1.5" y="5" width="15" height="17" fill="#fff" stroke="#555"/><path d="M14 2h8v8" fill="none" stroke="#c33" stroke-width="2"/><path d="M22 2 12 12" stroke="#c33" stroke-width="2"/></svg>',
-  user: '<svg viewBox="0 0 24 24" stroke-width="1"><circle cx="12" cy="8" r="4.5" fill="#f0c9a0" stroke="#7a5a3a"/><path d="M3 22.5c0-4.6 4-7.6 9-7.6s9 3 9 7.6z" fill="#2f6fb0" stroke="#1b3a5c"/></svg>',
-  pc: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="1.5" y="3" width="21" height="14.5" fill="#c6c6c6" stroke="#333"/><rect x="3.5" y="5" width="17" height="10.5" fill="#12263c"/><path d="M5 13.5 8 9l2.5 3 2-2.2 3 3.7z" fill="#2f6fb0"/><rect x="9.5" y="17.5" width="5" height="3" fill="#9a9a9a"/><rect x="6" y="20.5" width="12" height="2" fill="#c6c6c6" stroke="#333"/></svg>',
-  image: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="1.5" y="4" width="21" height="16" fill="#fff" stroke="#555"/><path d="M3 18l5.5-6.5L13 16.5l3-3 5 5z" fill="#4a9a5a"/><circle cx="7.5" cy="8.5" r="1.8" fill="#f0c25c"/></svg>',
-  disk: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="2" y="2" width="20" height="20" fill="#2b2b2b" stroke="#111"/><rect x="6.5" y="2" width="11" height="8" fill="#c6c6c6"/><rect x="12.5" y="3.5" width="3" height="5" fill="#2b2b2b"/><rect x="5" y="13" width="14" height="9" fill="#e0e0e0"/></svg>',
+const PAL = {
+  ".": null,
+  k: "#000000", // negro (contornos)
+  w: "#ffffff", // blanco
+  c: "#c6c6c6", // gris del chrome
+  g: "#808080", // gris medio
+  d: "#3f3f46", // gris oscuro
+  K: "#5a5a5a", // gris sombra
+  b: "#000080", // azul de barra de título
+  s: "#3a6ea5", // azul claro
+  y: "#ffcc4d", // amarillo carpeta
+  Y: "#ffe9a8", // amarillo claro
+  o: "#b8860b", // amarillo sombra
+  r: "#d02020", // rojo
+  R: "#ff7b7b", // rojo claro
+  e: "#12a012", // verde
+  p: "#c0c0d8", // plata azulada (CD)
+  t: "#008080", // verde azulado
 };
-const ICON_KEYS = Object.keys(ICONS);
+
+const PIXELS = {
+  txt: [
+    "................",
+    "....kkkkkkkk....",
+    "....kwwwwwwkk...",
+    "....kwwwwwwkck..",
+    "....kwwwwwwwwk..",
+    "....kwbbbbbwwk..",
+    "....kwwwwwwwwk..",
+    "....kwggggggwk..",
+    "....kwwwwwwwwk..",
+    "....kwggggggwk..",
+    "....kwwwwwwwwk..",
+    "....kwggggwwwk..",
+    "....kwwwwwwwwk..",
+    "....kkkkkkkkkk..",
+    "................",
+    "................",
+  ],
+  info: [
+    "................",
+    ".kkkkkkkkkkkkkk.",
+    ".kcccccccccccck.",
+    ".kbbbbbbbbbbbck.",
+    ".kbwwbbbbbbbbck.",
+    ".kcccccccccccck.",
+    ".kcwwwwwwwwwwck.",
+    ".kcwbbbbbbbwwck.",
+    ".kcwwwwwwwwwwck.",
+    ".kcwgggggggwwck.",
+    ".kcwwwwwwwwwwck.",
+    ".kcwgggggwwwwck.",
+    ".kcccccccccccck.",
+    ".kkkkkkkkkkkkkk.",
+    "................",
+    "................",
+  ],
+  folder: [
+    "................",
+    "................",
+    "..kkkkk.........",
+    ".kYYYYYk........",
+    ".kYyyyykkkkkkkk.",
+    ".kyyyyyyyyyyyyk.",
+    ".kyyyyyyyyyyyyk.",
+    ".kyyyyyyyyyyyyk.",
+    ".kyyyyyyyyyyyyk.",
+    ".kyyyyyyyyyyyyk.",
+    ".kyyyyyyyyyyyyk.",
+    ".kyyyyyyyyyyyyk.",
+    ".kyoooooooooook.",
+    ".kkkkkkkkkkkkkk.",
+    "................",
+    "................",
+  ],
+  folderOpen: [
+    "................",
+    "................",
+    "..kkkkk.........",
+    ".kYYYYYk........",
+    ".kYyyyykkkkkkkk.",
+    ".kyyyyyyyyyyyyk.",
+    ".kkkkkkkkkkkkkk.",
+    "kYYYYYYYYYYYYk..",
+    ".kyyyyyyyyyyyk..",
+    "..kyyyyyyyyyyk..",
+    "..kyyyyyyyyyyk..",
+    "...kyyyyyyyyyk..",
+    "...kooooooooook.",
+    "...kkkkkkkkkkk..",
+    "................",
+    "................",
+  ],
+  github: [
+    "................",
+    "....kkkkkkkk....",
+    "..kkddddddddkk..",
+    ".kdddwwwwwwdddk.",
+    ".kddwwwwwwwwddk.",
+    ".kdwwkwwwwkwwdk.",
+    ".kdwwwwwwwwwwdk.",
+    ".kdwwwwwwwwwwdk.",
+    ".kddwwwwwwwwddk.",
+    ".kdddwwwwwwdddk.",
+    "..kdddwwkwwddk..",
+    "..kkdddwkwdkk...",
+    "....kkddddkk....",
+    "......kkkk......",
+    "................",
+    "................",
+  ],
+  mail: [
+    "................",
+    "................",
+    "..kkkkkkkkkkkk..",
+    "..kwwwwwwwwwwk..",
+    "..krwwwwwwwwrk..",
+    "..kwrwwwwwwrwk..",
+    "..kwwrwwwwrwwk..",
+    "..kwwwrwwrwwwk..",
+    "..kwwwwrrwwwwk..",
+    "..kwwwrwwrwwwk..",
+    "..kwrwwwwwwrwk..",
+    "..kwwwwwwwwwwk..",
+    "..kkkkkkkkkkkk..",
+    "................",
+    "................",
+    "................",
+  ],
+  globe: [
+    "................",
+    ".....kkkkkk.....",
+    "...kksssssskk...",
+    "..kssswsssswsk..",
+    ".ksswsssssswssk.",
+    ".kswssswsssswsk.",
+    ".kwwwwwwwwwwwwk.",
+    ".kswssswsssswsk.",
+    ".kswssswsssswsk.",
+    ".kwwwwwwwwwwwwk.",
+    ".ksswsssssswssk.",
+    "..kssswsssswsk..",
+    "...kksssssskk...",
+    ".....kkkkkk.....",
+    "................",
+    "................",
+  ],
+  edu: [
+    "................",
+    "................",
+    ".......kk.......",
+    ".....kkrrkk.....",
+    "...kkrrrrrrkk...",
+    ".kkrrrrrrrrrrkk.",
+    "krrrrrrrrrrrrrk.",
+    ".kkrrrrrrrrrrkk.",
+    "...kkrrrrrrkk.k.",
+    "....kg....gk..k.",
+    "....kg....gk..k.",
+    "....kgg..ggk.kk.",
+    ".....kggggk.....",
+    "......kkkk......",
+    "................",
+    "................",
+  ],
+  tools: [
+    "................",
+    ".....k.kk.k.....",
+    ".....kcccck.....",
+    "..kkkkccccKkkk..",
+    "..kcccccccccck..",
+    "..kcckkkkkkcck..",
+    "..kckkwwwwkkck..",
+    "..kckwwrrwwkck..",
+    "..kckwwrrwwkck..",
+    "..kckkwwwwkkck..",
+    "..kcckkkkkkcck..",
+    "..kcccccccccck..",
+    "..kkkkccccKkkk..",
+    ".....kcccck.....",
+    ".....k.kk.k.....",
+    "................",
+  ],
+  link: [
+    "................",
+    "..kkkkkkkkkkkk..",
+    "..kwwwwwwwwwwk..",
+    "..kwwwwwwrrrrk..",
+    "..kwwwwwwwwrrk..",
+    "..kwwwwwwwrwrk..",
+    "..kwwwwwwrwwwk..",
+    "..kwwwwwrwwwwk..",
+    "..kwwwwrwwwwwk..",
+    "..kwwwrwwwwwwk..",
+    "..kwwwwwwwwwwk..",
+    "..kwwwwwwwwwwk..",
+    "..kkkkkkkkkkkk..",
+    "................",
+    "................",
+    "................",
+  ],
+  user: [
+    "................",
+    "................",
+    "......kkkk......",
+    ".....kYYYYk.....",
+    "....kYYYYYYk....",
+    "....kYYYYYYk....",
+    ".....kYYYYk.....",
+    "......kkkk......",
+    "....kksssskk....",
+    "...ksssssssssk..",
+    "..kssssssssssk..",
+    "..kssssssssssk..",
+    "..kssssssssssk..",
+    "..kkkkkkkkkkkk..",
+    "................",
+    "................",
+  ],
+  pc: [
+    "................",
+    ".kkkkkkkkkkkkkk.",
+    ".kcccccccccccck.",
+    ".kckkkkkkkkkkck.",
+    ".kcksssssssskck.",
+    ".kcksssswssskck.",
+    ".kckssswwwsskck.",
+    ".kcksswwwwwsskc.",
+    ".kckkkkkkkkkkck.",
+    ".kcccccccccccck.",
+    ".kkkkkkkkkkkkkk.",
+    ".....kccccck....",
+    "...kkkkkkkkkkk..",
+    "...kccccccccck..",
+    "...kkkkkkkkkkk..",
+    "................",
+  ],
+  image: [
+    "................",
+    "................",
+    ".kkkkkkkkkkkkkk.",
+    ".kwwwwwwwwwwwwk.",
+    ".kwYYwwwwwwwwwk.",
+    ".kYYYYwwwwwwwwk.",
+    ".kwYYwwwwwwwwwk.",
+    ".kwwwwwwwwkwwwk.",
+    ".kwwwwwwwkekwwk.",
+    ".kwwwwwwkeeekwk.",
+    ".kwwwkwkeeeeekk.",
+    ".kwwkekeeeeeeek.",
+    ".kwkeeeeeeeeeek.",
+    ".kkkkkkkkkkkkkk.",
+    "................",
+    "................",
+  ],
+  disk: [
+    "................",
+    ".kkkkkkkkkkkkkk.",
+    ".kddddddddddddk.",
+    ".kdkkkkkkkkkkdk.",
+    ".kdkcccccccccdk.",
+    ".kdkcckkkkcccdk.",
+    ".kdkcckkkkcccdk.",
+    ".kdkcccccccccdk.",
+    ".kdkkkkkkkkkkdk.",
+    ".kddddddddddddk.",
+    ".kdkkkkkkkkkkdk.",
+    ".kdkwwwwwwwwwdk.",
+    ".kdkwwwwwwwwwdk.",
+    ".kdkwwwwwwwwwdk.",
+    ".kkkkkkkkkkkkkk.",
+    "................",
+  ],
+  cd: [
+    "................",
+    ".....kkkkkk.....",
+    "...kkppppppkk...",
+    "..kpppppppppppk.",
+    ".kppprrppeepppk.",
+    ".kpprrppeeeeppk.",
+    ".kpppkkkkkkpppk.",
+    ".kppkkwwwwkkppk.",
+    ".kppkkwwwwkkppk.",
+    ".kpppkkkkkkpppk.",
+    ".kppssppyyyyppk.",
+    "..kpsspppyyyppk.",
+    "...kkppppppkk...",
+    ".....kkkkkk.....",
+    "................",
+    "................",
+  ],
+  video: [
+    "................",
+    "................",
+    ".kkkkkkkkkkkkkk.",
+    ".kdwdwdwdwdwdwk.",
+    ".kwdwdwdwdwdwdk.",
+    ".kkkkkkkkkkkkkk.",
+    ".kdddddddddddkk.",
+    ".kddwddddwddddk.",
+    ".kdwwwddwwwdddk.",
+    ".kddwddddwddddk.",
+    ".kdddddddddddkk.",
+    ".kddddddddddddk.",
+    ".kkkkkkkkkkkkkk.",
+    "................",
+    "................",
+    "................",
+  ],
+};
+
+/* Convierte la rejilla en SVG. Une los píxeles seguidos del
+   mismo color en un solo <rect> para no generar 256 nodos. */
+const ICON_CACHE = {};
+
+function pixelSvg(rows) {
+  let out =
+    '<svg viewBox="0 0 16 16" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg">';
+  rows.forEach((row, y) => {
+    let x = 0;
+    while (x < row.length) {
+      const ch = row[x];
+      if (!PAL[ch]) {
+        x++;
+        continue;
+      }
+      let len = 1;
+      while (x + len < row.length && row[x + len] === ch) len++;
+      out +=
+        '<rect x="' + x + '" y="' + y + '" width="' + len +
+        '" height="1" fill="' + PAL[ch] + '"/>';
+      x += len;
+    }
+  });
+  return out + "</svg>";
+}
 
 function iconSvg(key) {
-  return ICONS[key] || ICONS.txt;
+  const name = PIXELS[key] ? key : "txt";
+  if (!ICON_CACHE[name]) ICON_CACHE[name] = pixelSvg(PIXELS[name]);
+  return ICON_CACHE[name];
 }
+
+const ICON_KEYS = Object.keys(PIXELS);
+
+
 
 /* =========================================================
    CONTENIDO FIJO
@@ -105,7 +435,7 @@ const DEFAULT_DESKTOP = {
     {
       id: "about",
       type: "txt",
-      icon: "txt",
+      icon: "info",
       name: { es: "Sobre mí.txt", en: "About me.txt" },
       text: {
         es:
@@ -198,6 +528,19 @@ const I18N = {
     "app.skills.title": "Habilidades",
     "app.edu.title": "Educación",
     "app.social.title": "Encuéntrame aquí",
+
+    "tab.all": "Todo",
+    "tab.live": "Con web",
+    "st.files": "{n} elementos",
+    "st.items": "{n} elementos",
+    "st.chars": "caracteres",
+    "st.skills": "{n} tecnologías en {g} grupos",
+    "col.title": "Título",
+    "col.place": "Centro",
+    "col.when": "Años",
+    "col.state": "Estado",
+    "col.lang": "Lenguaje",
+    "col.stars": "Estrellas",
 
     "app.contact.title": "Escríbeme",
     "app.contact.hint":
@@ -295,6 +638,19 @@ const I18N = {
     "app.skills.title": "Skills",
     "app.edu.title": "Education",
     "app.social.title": "Find me here",
+
+    "tab.all": "All",
+    "tab.live": "Live",
+    "st.files": "{n} items",
+    "st.items": "{n} items",
+    "st.chars": "characters",
+    "st.skills": "{n} technologies in {g} groups",
+    "col.title": "Title",
+    "col.place": "School",
+    "col.when": "Years",
+    "col.state": "State",
+    "col.lang": "Language",
+    "col.stars": "Stars",
 
     "app.contact.title": "Write to me",
     "app.contact.hint":
@@ -606,6 +962,7 @@ function createWindow(item) {
 
   el.innerHTML =
     '<div class="win-bar">' +
+    '<span class="win-ico"></span>' +
     '<span class="win-title"></span>' +
     '<span class="win-controls">' +
     '<button type="button" class="win-btn" data-act="min">_</button>' +
@@ -613,8 +970,10 @@ function createWindow(item) {
     '<button type="button" class="win-btn" data-act="close">✕</button>' +
     "</span></div>" +
     '<div class="win-body"></div>' +
+    '<div class="win-status"></div>' +
     '<div class="win-grip"></div>';
 
+  el.querySelector(".win-ico").innerHTML = iconSvg(item.icon);
   el.querySelector(".win-title").textContent = L(item.name);
   el.querySelector('[data-act="min"]').title = t("win.min");
   el.querySelector('[data-act="max"]').title = t("win.max");
@@ -771,7 +1130,18 @@ function makeResizable(el) {
 
 /* =========================================================
    CONTENIDO DE LAS VENTANAS
+   Cada tipo se ve distinto por dentro:
+     txt        visor de texto, fondo negro
+     folder     explorador con pestañas y rejilla de iconos
+     projects   explorador con una pestaña por lenguaje
+     repo       ficha de proyecto
+     skills     panel de propiedades con barras
+     education  vista de lista con columnas
+     contact    cuadro de diálogo
+     social     entorno de red, iconos grandes
    ========================================================= */
+
+/* Atajo para crear un nodo con clase y texto */
 function el(tag, cls, text) {
   const node = document.createElement(tag);
   if (cls) node.className = cls;
@@ -779,6 +1149,7 @@ function el(tag, cls, text) {
   return node;
 }
 
+/* Botón-enlace con icono */
 function linkBtn(href, label, iconKey) {
   const a = document.createElement("a");
   a.className = "btn";
@@ -786,34 +1157,132 @@ function linkBtn(href, label, iconKey) {
   a.target = "_blank";
   a.rel = "noopener noreferrer";
   if (iconKey) {
-    const ico = el("span");
-    ico.style.cssText = "width:14px;height:14px;display:inline-block";
+    const ico = el("span", "btn-ico");
     ico.innerHTML = iconSvg(iconKey);
-    ico.firstChild.style.cssText = "width:100%;height:100%;display:block";
     a.appendChild(ico);
   }
   a.appendChild(document.createTextNode(label));
   return a;
 }
 
+/* Fila de pestañas reutilizable. tabs = [{ id, label, icon, fill }] */
+function tabbedView(body, tabs, statusFor) {
+  const row = el("div", "tabs-row");
+  const pane = el("div", "explorer-pane");
+
+  function show(tab) {
+    [...row.children].forEach((b) =>
+      b.classList.toggle("is-active", b.dataset.tab === tab.id)
+    );
+    pane.innerHTML = "";
+    tab.fill(pane);
+    setStatus(body, statusFor ? statusFor(tab) : "");
+  }
+
+  tabs.forEach((tab) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "etab";
+    b.dataset.tab = tab.id;
+    if (tab.icon) {
+      const ico = el("span", "etab-ico");
+      ico.innerHTML = iconSvg(tab.icon);
+      b.appendChild(ico);
+    }
+    b.appendChild(document.createTextNode(tab.label));
+    b.addEventListener("click", () => show(tab));
+    row.appendChild(b);
+  });
+
+  body.appendChild(row);
+  body.appendChild(pane);
+  if (tabs.length) show(tabs[0]);
+}
+
+/* Rejilla de iconos dentro de un explorador */
+function iconGridInto(pane, entries) {
+  if (!entries.length) {
+    pane.appendChild(el("p", "folder-empty", t("folder.empty")));
+    return;
+  }
+  const grid = el("div", "folder-grid");
+  entries.forEach((entry) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "folder-item";
+    const ico = el("span", "fi-ico");
+    ico.innerHTML = iconSvg(entry.icon);
+    b.appendChild(ico);
+    b.appendChild(el("span", "fi-label", entry.label));
+    let last = 0;
+    b.addEventListener("dblclick", entry.open);
+    b.addEventListener("click", (e) => {
+      if (e.detail === 0) return entry.open();
+      const now = Date.now();
+      if (isTouch() || now - last < 400) entry.open();
+      last = now;
+    });
+    grid.appendChild(b);
+  });
+  pane.appendChild(grid);
+}
+
+function setStatus(body, text) {
+  const win = body.closest(".win");
+  if (!win) return;
+  const bar = win.querySelector(".win-status");
+  if (bar) bar.textContent = text || "";
+}
+
 function renderWindowBody(item, body) {
   body.innerHTML = "";
+  body.className = "win-body";
+  setStatus(body, "");
 
   if (item.type === "txt") {
-    const pre = el("div", "txt-body", L(item.text));
-    body.appendChild(pre);
+    body.classList.add("body-txt");
+    const text = L(item.text);
+    // La primera línea hace de titular, como en un visor de texto
+    const lines = text.split("\n");
+    const head = el("h1", "txt-head", lines[0] || L(item.name));
+    body.appendChild(head);
+    body.appendChild(el("div", "txt-body", lines.slice(1).join("\n").trim()));
+    setStatus(body, L(item.name) + " · " + text.length + " " + t("st.chars"));
     return;
   }
 
   if (item.type === "folder") {
+    body.classList.add("body-explorer");
     const kids = childrenOf(item.id);
-    if (!kids.length) {
-      body.appendChild(el("p", "folder-empty", t("folder.empty")));
-      return;
-    }
-    const grid = el("div", "folder-grid");
-    kids.forEach((kid) => grid.appendChild(makeIconButton(kid, "folder-item")));
-    body.appendChild(grid);
+    const subfolders = kids.filter((k) => k.type === "folder");
+
+    const entryOf = (kid) => ({
+      icon: kid.icon,
+      label: L(kid.name),
+      open: () => openItem(kid),
+    });
+
+    const tabs = [
+      {
+        id: "all",
+        label: t("tab.all"),
+        icon: "folderOpen",
+        fill: (pane) => iconGridInto(pane, kids.map(entryOf)),
+        count: kids.length,
+      },
+    ];
+    subfolders.forEach((sub) => {
+      const inside = childrenOf(sub.id);
+      tabs.push({
+        id: sub.id,
+        label: L(sub.name),
+        icon: "folder",
+        fill: (pane) => iconGridInto(pane, inside.map(entryOf)),
+        count: inside.length,
+      });
+    });
+
+    tabbedView(body, tabs, (tab) => t("st.files", { n: tab.count }));
     return;
   }
 
@@ -828,97 +1297,163 @@ function renderWindowBody(item, body) {
 }
 
 const APPS = {
-  /* ----- Proyectos: los repos públicos de GitHub ----- */
+  /* ----- Proyectos: explorador con una pestaña por lenguaje ----- */
   projects(body) {
+    body.classList.add("body-explorer");
+
     if (reposError) {
-      body.appendChild(el("p", "muted", t("app.projects.error")));
+      body.appendChild(el("p", "folder-empty", t("app.projects.error")));
       return;
     }
     if (!allRepos.length) {
-      body.appendChild(el("p", "muted", t("app.projects.loading")));
+      body.appendChild(el("p", "folder-empty", t("app.projects.loading")));
       return;
     }
 
     const list = visibleRepos();
     if (!list.length) {
-      body.appendChild(el("p", "muted", t("app.projects.empty")));
+      body.appendChild(el("p", "folder-empty", t("app.projects.empty")));
       return;
     }
 
-    body.appendChild(
-      el("p", "muted", t("app.projects.count", { n: list.length }))
-    );
+    const entryOf = (repo) => ({
+      icon: repo.homepage ? "globe" : "github",
+      label: repo.name,
+      open: () => openRepo(repo),
+    });
 
-    list.forEach((repo) => {
-      const box = el("div", "repo");
-      box.appendChild(el("div", "repo-name", repo.name));
-      box.appendChild(
-        el("div", "", repo.description || t("app.projects.nodesc"))
-      );
+    const tabs = [
+      {
+        id: "all",
+        label: t("tab.all"),
+        icon: "folderOpen",
+        fill: (pane) => iconGridInto(pane, list.map(entryOf)),
+        count: list.length,
+      },
+    ];
 
-      const meta = [];
-      if (repo.language) meta.push(repo.language);
-      if (repo.stargazers_count) meta.push("★ " + repo.stargazers_count);
-      if (repo.pushed_at) {
-        meta.push(
-          t("app.projects.updated") +
-            ": " +
-            new Date(repo.pushed_at).toLocaleDateString(
-              lang === "es" ? "es-CO" : "en-GB"
-            )
-        );
-      }
-      if (meta.length) box.appendChild(el("div", "repo-meta", meta.join(" · ")));
+    // Una pestaña por lenguaje, de más usado a menos, máximo 4
+    const byLang = {};
+    list.forEach((r) => {
+      const k = r.language || "—";
+      (byLang[k] = byLang[k] || []).push(r);
+    });
+    Object.keys(byLang)
+      .filter((k) => k !== "—")
+      .sort((a, b) => byLang[b].length - byLang[a].length)
+      .slice(0, 4)
+      .forEach((k) => {
+        tabs.push({
+          id: "lang-" + k,
+          label: k,
+          icon: "github",
+          fill: (pane) => iconGridInto(pane, byLang[k].map(entryOf)),
+          count: byLang[k].length,
+        });
+      });
 
-      const links = el("div", "repo-links");
-      links.appendChild(
-        linkBtn(repo.html_url, t("app.projects.code"), "github")
-      );
-      if (repo.homepage) {
-        links.appendChild(linkBtn(repo.homepage, t("app.projects.live"), "link"));
-      }
-      box.appendChild(links);
+    // Y una con los que tienen web publicada
+    const live = list.filter((r) => r.homepage);
+    if (live.length) {
+      tabs.push({
+        id: "live",
+        label: t("tab.live"),
+        icon: "globe",
+        fill: (pane) => iconGridInto(pane, live.map(entryOf)),
+        count: live.length,
+      });
+    }
+
+    tabbedView(body, tabs, (tab) => t("st.files", { n: tab.count }));
+  },
+
+  /* ----- Habilidades: panel de propiedades con barras ----- */
+  skills(body) {
+    body.classList.add("body-props");
+
+    // Sin barras de nivel: no tengo un porcentaje real que enseñar,
+    // así que es una lista de componentes, no un medidor inventado.
+    SKILLS.forEach((group) => {
+      const box = el("fieldset", "group");
+      box.appendChild(el("legend", "", L(group)));
+      const list = el("div", "comp-list");
+      group.items.forEach((s) => {
+        const row = el("div", "comp-row");
+        const mark = el("span", "comp-mark");
+        mark.innerHTML = iconSvg("disk");
+        row.appendChild(mark);
+        row.appendChild(el("span", "", s));
+        list.appendChild(row);
+      });
+      box.appendChild(list);
       body.appendChild(box);
     });
+
+    const total = SKILLS.reduce((n, g) => n + g.items.length, 0);
+    setStatus(body, t("st.skills", { n: total, g: SKILLS.length }));
   },
 
-  /* ----- Habilidades ----- */
-  skills(body) {
-    body.appendChild(el("h3", "", t("app.skills.title")));
-    SKILLS.forEach((group) => {
-      body.appendChild(el("h4", "", L(group)));
-      const chips = el("div", "chips");
-      group.items.forEach((s) => chips.appendChild(el("span", "chip", s)));
-      body.appendChild(chips);
-    });
-  },
-
-  /* ----- Educación ----- */
+  /* ----- Educación: vista de lista con columnas ----- */
   education(body) {
-    body.appendChild(el("h3", "", t("app.edu.title")));
+    body.classList.add("body-list");
+
+    const table = document.createElement("table");
+    table.className = "listview";
+    table.innerHTML =
+      "<thead><tr>" +
+      "<th>" + t("col.title") + "</th>" +
+      "<th>" + t("col.place") + "</th>" +
+      "<th>" + t("col.when") + "</th>" +
+      "<th>" + t("col.state") + "</th>" +
+      "</tr></thead>";
+
+    const tb = document.createElement("tbody");
     EDUCATION.forEach((e) => {
-      body.appendChild(el("h4", "", L(e.title)));
-      body.appendChild(
-        el("p", "muted", L(e.place) + " · " + L(e.when) + " · " + L(e.state))
-      );
+      const tr = document.createElement("tr");
+      const first = document.createElement("td");
+      const ico = el("span", "cell-ico");
+      ico.innerHTML = iconSvg("edu");
+      first.appendChild(ico);
+      first.appendChild(document.createTextNode(L(e.title)));
+      tr.appendChild(first);
+      [L(e.place), L(e.when), L(e.state)].forEach((v) => {
+        tr.appendChild(el("td", "", v));
+      });
+      tb.appendChild(tr);
     });
+    table.appendChild(tb);
+    body.appendChild(table);
+    setStatus(body, t("st.items", { n: EDUCATION.length }));
   },
 
-  /* ----- Redes ----- */
+  /* ----- Redes: entorno de red, iconos grandes ----- */
   social(body) {
-    body.appendChild(el("h3", "", t("app.social.title")));
-    const grid = el("div", "repo-links");
-    SOCIAL.forEach((s) => grid.appendChild(linkBtn(s.url, s.label, s.icon)));
-    body.appendChild(grid);
+    body.classList.add("body-net");
+    const pane = el("div", "explorer-pane");
+    iconGridInto(
+      pane,
+      SOCIAL.map((s) => ({
+        icon: s.icon,
+        label: s.label,
+        open: () => window.open(s.url, "_blank", "noopener,noreferrer"),
+      }))
+    );
+    body.appendChild(pane);
+    setStatus(body, t("st.items", { n: SOCIAL.length }));
   },
 
-  /* ----- Contacto: abre el correo del visitante ----- */
+  /* ----- Contacto: cuadro de diálogo ----- */
   contact(body) {
-    body.appendChild(el("h3", "", t("app.contact.title")));
-    body.appendChild(el("p", "muted", t("app.contact.hint")));
+    body.classList.add("body-dialog");
+
+    const head = el("div", "dlg-head");
+    const ico = el("span", "dlg-ico");
+    ico.innerHTML = iconSvg("mail");
+    head.appendChild(ico);
+    head.appendChild(el("p", "", t("app.contact.hint")));
+    body.appendChild(head);
 
     const form = document.createElement("form");
-    form.noValidate = false;
 
     const mkField = (id, labelKey, phKey, tag) => {
       const wrap = el("div", "field");
@@ -931,7 +1466,7 @@ const APPS = {
       input.required = true;
       input.placeholder = t(phKey);
       if (id === "email") input.type = "email";
-      if (tag === "textarea") input.rows = 5;
+      if (tag === "textarea") input.rows = 4;
       wrap.appendChild(lab);
       wrap.appendChild(input);
       return wrap;
@@ -944,9 +1479,11 @@ const APPS = {
       mkField("message", "app.contact.message", "app.contact.message.ph", "textarea")
     );
 
+    const actions = el("div", "dlg-actions");
     const send = el("button", "btn btn-primary", t("app.contact.send"));
     send.type = "submit";
-    form.appendChild(send);
+    actions.appendChild(send);
+    form.appendChild(actions);
 
     const status = el("p", "form-status");
     status.hidden = true;
@@ -981,8 +1518,65 @@ const APPS = {
     });
 
     body.appendChild(form);
+    setStatus(body, EMAIL);
+  },
+
+  /* ----- Ficha de un proyecto ----- */
+  repo(body, item) {
+    body.classList.add("body-txt", "body-repo");
+    const repo = allRepos.find((r) => r.name === item.repoName);
+    if (!repo) {
+      body.appendChild(el("p", "muted", t("app.projects.empty")));
+      return;
+    }
+
+    body.appendChild(el("h1", "txt-head", repo.name));
+    body.appendChild(
+      el("div", "txt-body", repo.description || t("app.projects.nodesc"))
+    );
+
+    const facts = el("dl", "facts");
+    const add = (k, v) => {
+      facts.appendChild(el("dt", "", k));
+      facts.appendChild(el("dd", "", v));
+    };
+    if (repo.language) add(t("col.lang"), repo.language);
+    add(t("col.stars"), String(repo.stargazers_count || 0));
+    if (repo.pushed_at) {
+      add(
+        t("app.projects.updated"),
+        new Date(repo.pushed_at).toLocaleDateString(
+          lang === "es" ? "es-CO" : "en-GB"
+        )
+      );
+    }
+    if (repo.topics && repo.topics.length) add("topics", repo.topics.join(", "));
+    body.appendChild(facts);
+
+    const links = el("div", "repo-links");
+    links.appendChild(linkBtn(repo.html_url, t("app.projects.code"), "github"));
+    if (repo.homepage) {
+      links.appendChild(linkBtn(repo.homepage, t("app.projects.live"), "globe"));
+    }
+    body.appendChild(links);
+
+    setStatus(body, repo.html_url.replace("https://", ""));
   },
 };
+
+/* Abre la ficha de un repo como ventana propia */
+function openRepo(repo) {
+  openItem({
+    id: "repo:" + repo.name,
+    type: "app",
+    app: "repo",
+    repoName: repo.name,
+    icon: repo.homepage ? "globe" : "github",
+    name: { es: repo.name, en: repo.name },
+    text: {},
+  });
+}
+
 
 /* =========================================================
    PROYECTOS DESDE GITHUB
