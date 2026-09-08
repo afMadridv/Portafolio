@@ -1,156 +1,171 @@
 # Portafolio — Andres Madrid
 
-Portafolio personal en HTML, CSS y JavaScript puro. No necesita Node.js, ni
-compilación, ni dependencias: se abre directo en el navegador y se edita a mano.
+Portafolio con forma de escritorio de PC: cada icono abre una ventana que se
+arrastra, se minimiza y se cierra. HTML, CSS y JavaScript puro — sin Node.js,
+sin compilación, sin dependencias.
 
 ## Archivos
 
 | Archivo | Qué contiene |
 |---|---|
-| [`index.html`](index.html) | La estructura y el contenido (textos, secciones) |
-| [`styles.css`](styles.css) | Todos los estilos (colores, tipografía, animaciones) |
-| [`script.js`](script.js) | La lógica (tema claro/oscuro, menú, animaciones al hacer scroll) |
+| [`index.html`](index.html) | El escritorio, la barra de tareas y el panel de administración |
+| [`styles.css`](styles.css) | Los estilos (chrome biselado, ventanas, iconos) |
+| [`script.js`](script.js) | La lógica (ventanas, idiomas, reloj, GitHub, portal) |
+| `desktop.json` | *Opcional.* Tu escritorio publicado. Lo genera el portal |
 
-> Los tres archivos deben quedar **en la misma carpeta** para que funcionen juntos.
+> Deben quedar **en la misma carpeta**. El archivo se llama `index.html` a
+> propósito: es el nombre que buscan Vercel, GitHub Pages y Netlify en la raíz.
+> Si lo renombras, la web da 404.
 
 ## Cómo usarlo
 
-- **Ver:** doble clic en `index.html` (se abre en tu navegador).
-- **Editar:** abre los archivos con cualquier editor de texto. El contenido está en
-  HTML plano, con comentarios en español (`<!-- ... -->` / `/* ... */`) que marcan
-  cada sección.
-- **Publicar:** sube los tres archivos a cualquier hosting estático (GitHub Pages,
-  Netlify, Vercel…). El archivo se llama `index.html` a propósito: es el nombre
-  que esos servicios buscan en la raíz. Si lo renombras, la web da 404.
+- **Ver:** doble clic en `index.html`. Para que `desktop.json` se pueda leer
+  hace falta un servidor: abriendo con `file://` esa petición falla y sale el
+  escritorio de fábrica.
+- **Previsualizar con servidor:** `.claude/launch.json` levanta uno en
+  `http://localhost:4173`.
+- **Publicar:** sube los archivos a cualquier hosting estático.
 
-## Personalizar
+## El escritorio
 
-| Quieres cambiar… | Dónde |
+Cada icono es un elemento con un **tipo**:
+
+| Tipo | Qué hace al abrirlo |
 |---|---|
-| Color principal | `--primary`: en `:root` (claro, `#C81E1E`) y en `html.dark` (oscuro, `#FA4040`) |
-| Aspecto del tema claro | bloque `TEMA CLARO` al final de `styles.css` |
-| Nombre / título | sección `HERO` y el `<title>` en `index.html` |
-| Tus proyectos | nada: se cargan solos desde GitHub (ver abajo) |
-| Cuenta de GitHub | `data-github-user` en `#projects-grid` (`index.html`) |
-| Tipografía del saludo | variable `--font-display` en `styles.css` |
-| Correo del formulario | `data-mailto` en `<form id="contact-form">` (`index.html`) |
+| `txt` | Ventana con texto plano. El contenido se edita desde el portal |
+| `folder` | Ventana con los iconos que tengan esa carpeta como padre |
+| `link` | Abre una dirección en otra pestaña, sin ventana |
+| `app` | Ventana con contenido generado: Proyectos, Habilidades, Educación, Contacto o Redes |
+
+Las ventanas se arrastran por la barra de título, se redimensionan por la
+esquina de abajo a la derecha, se minimizan a la barra de tareas y se maximizan.
+En móvil ocupan casi toda la pantalla: arrastrar ventanitas con el dedo no
+funciona bien.
+
+**Reloj:** siempre `America/Bogota`, no la hora del visitante. Está en la
+constante `TZ` de `script.js`.
+
+**Botón de LinkedIn:** el de la barra de tareas, junto a Inicio. La dirección
+está en el `href` de `#linkedin-btn` y en la constante `LINKEDIN`.
+
+## Portal de administración
+
+Se abre desde **Inicio → Panel de administración**. Clave por defecto:
+`pixel-f1`.
+
+Tres pestañas:
+
+- **Iconos** — crear, editar, borrar y ordenar elementos. Para meter algo dentro
+  de una carpeta, elígela en *Dentro de*. Al borrar una carpeta, sus hijos suben
+  al escritorio en vez de desaparecer.
+- **Fondo** — color liso, degradado o imagen por URL. Se ve al instante. También
+  enciende o apaga el caza TIE y la Estrella de la Muerte.
+- **Proyectos** — marca qué repos de GitHub salen en la carpeta Proyectos. Sin
+  nada marcado, salen todos.
+
+Abajo, tres botones:
+
+| Botón | Qué hace | Quién lo ve |
+|---|---|---|
+| **Guardar** | Escribe la config en `localStorage` | Solo tú, en ese navegador |
+| **Descargar desktop.json** | Baja el archivo | Todos, **cuando lo subas al repo** |
+| **Restablecer** | Borra tus cambios locales y vuelve al escritorio de fábrica | — |
+
+Para publicar tus cambios: *Descargar desktop.json*, deja el archivo junto a
+`index.html` y súbelo al repositorio.
+
+**Aviso de seguridad:** la clave solo evita que un curioso abra el panel. No es
+seguridad real — `script.js` es público y cualquiera puede leerlo, o abrir el
+panel desde las herramientas de desarrollo. Es aceptable porque el panel no
+puede cambiar lo que ven las visitas: para eso hace falta subir `desktop.json`
+a tu repositorio, y eso solo lo puedes hacer tú. No uses ahí una clave que
+reutilices en otra cuenta.
+
+Cambiar la clave: en la consola del navegador ejecuta `await hashText("nueva")`
+y pega el resultado en la constante `ADMIN_HASH` de `script.js`.
 
 ## Proyectos automáticos
 
-La sección **Projects** ya no se escribe a mano: `script.js` pide tus repos a la
-API pública de GitHub y arma las tarjetas solo. Muestra hasta 9 repos, ordenados
-por el último push, ignorando forks y archivados. La respuesta se guarda 1 hora
-en `localStorage` para no gastar el límite (60 peticiones/hora sin token).
+La ventana **Proyectos** pide tus repos a la API pública de GitHub y arma la
+lista sola: ignora forks y archivados, y los ordena por el último push. La
+respuesta se guarda 1 hora en `localStorage` para no gastar el límite (60
+peticiones/hora sin token).
 
 Para que un repo se vea bien: ponle **descripción**, **topics** y, si está
-desplegado, la **Website** (aparece como botón "Live").
+desplegado, la **Website** (aparece como botón *Ver web*).
 
 > Solo lee repos **públicos**. Al ser un sitio estático, cualquier token que
 > pongas en `script.js` quedaría a la vista de todo el mundo — para ver repos
 > privados haría falta un backend.
 
-## Portal: elegir qué proyectos salen
+## Personalizar a mano
 
-El punto gris del pie de página abre el portal. Clave por defecto: `pixel-f1`.
+| Quieres cambiar… | Dónde, en `script.js` |
+|---|---|
+| Cuenta de GitHub | `GITHUB_USER` |
+| Correo de contacto | `EMAIL` |
+| Perfil de LinkedIn | `LINKEDIN` (y el `href` de `#linkedin-btn`) |
+| Zona horaria del reloj | `TZ` |
+| Habilidades | `SKILLS` |
+| Educación | `EDUCATION` |
+| Redes | `SOCIAL` |
+| Escritorio de fábrica | `DEFAULT_DESKTOP` |
+| Iconos disponibles | `ICONS` (SVG dibujados a mano) |
+| Colores del chrome | `:root` en `styles.css` |
 
-Dentro marcas los repos que quieres publicar. Se ven **6** y el resto queda tras
-el botón "Ver más". Sin nada marcado, salen todos.
+## Idiomas
 
-Dos botones:
+El botón `EN`/`ES` de la bandeja cambia entre español e inglés. La elección se
+guarda en `localStorage`.
 
-| Botón | Qué hace | Quién lo ve |
-|---|---|---|
-| **Guardar** | Escribe la selección en `localStorage` | Solo tú, en ese navegador |
-| **Descargar projects.json** | Baja el archivo | Todos, **cuando lo subas al repo** |
+**El HTML manda en español.** Al cargar, `harvestBaseLang()` copia al
+diccionario lo escrito en `index.html`, así editas el texto en el HTML y se ve
+tal cual. El **inglés** sale de `I18N.en` y hay que mantenerlo a mano.
 
-Para publicar la selección: pulsa *Descargar projects.json*, deja el archivo
-junto a `index.html` y súbelo. El sitio lo lee al cargar.
+Para traducir algo nuevo: `data-i18n="clave"` en el HTML y la clave en
+`I18N.en`. Variantes: `data-i18n-title` y `data-i18n-aria`.
 
-**Aviso de seguridad:** la clave solo evita que un curioso abra el panel. No es
-seguridad real — `script.js` es público y cualquiera puede leer su contenido, o
-abrir el panel desde las herramientas de desarrollo. Es aceptable porque el panel
-no puede cambiar lo que ven las visitas: para eso hace falta subir
-`projects.json` a tu repositorio, y eso solo lo puedes hacer tú. No metas nada
-sensible en esa clave ni la reutilices de otra cuenta.
+Los elementos que creas desde el portal llevan nombre y texto en los dos
+idiomas; si dejas el inglés vacío, se usa el español.
 
-Cambiar la clave: en la consola del navegador ejecuta `await hashText("nueva")` y
-pega el resultado en la constante `ADMIN_HASH` de `script.js`.
+## Star Wars
+
+Cada 18-44 s cruza un caza TIE en horizontal disparando rayos, o aparece la
+Estrella de la Muerte, se queda quieta 6,5 s y explota. Se apaga solo si el
+sistema pide reducir movimiento, y también desde el portal.
+
+Ajustes en `script.js`: `TIE_SIZE`, `DS_SIZE`, `TIE_SPEED`, `DS_STATIC_MS`.
 
 ## Formulario de contacto
 
-No hay servidor detrás ni servicio externo. Al pulsar **Enviar mensaje** se abre
-el cliente de correo del visitante con el destinatario, el asunto y el cuerpo ya
-escritos; solo tiene que pulsar enviar en su propia aplicación.
+No hay servidor detrás ni servicio externo. Al enviar se abre el cliente de
+correo del visitante con destinatario, asunto y cuerpo ya escritos; solo tiene
+que pulsar enviar en su propia aplicación. El mensaje te llega desde su correo
+real, así puedes responder directo.
 
-Ventaja: cero dependencias, cero cuentas, y el mensaje te llega desde el correo
-real de la persona, así puedes responder directo.
-
-Contrapartida: si el visitante no tiene cliente de correo configurado (habitual
-en un PC prestado), no se abre nada. Por eso, bajo el botón sale siempre tu
-dirección como alternativa.
-
-Los `mailto:` largos los cortan algunos clientes, así que si el mensaje pasa de
-`MAILTO_MAX` (1800 caracteres de URL) el formulario avisa en vez de abrir un
-correo recortado a medias.
-
-Cambiar la dirección: atributo `data-mailto` del `<form id="contact-form">`.
-
-## Detalles
-
-- **Idiomas:** el botón del globo (junto al de tema) cambia entre español e
-  inglés. La elección se guarda en `localStorage`.
-
-  **El HTML manda en español.** Al cargar, `harvestBaseLang()` copia al
-  diccionario lo que está escrito en `index.html`. Así editas el texto en
-  el HTML y se ve tal cual, sin tocar `script.js`. El **inglés** sí sale del
-  diccionario `I18N.en` y hay que actualizarlo a mano cuando cambies un texto.
-
-  Para traducir algo nuevo: ponle `data-i18n="clave"` en el HTML y añade esa
-  clave a `I18N.en`. Variantes: `data-i18n-ph` (placeholders) y
-  `data-i18n-aria` (`aria-label`).
-- **Star Wars:** cada 18-44 s cruza un caza TIE en horizontal disparando rayos,
-  o aparece la Estrella de la Muerte, se queda quieta 6,5 s y explota. Se apaga
-  solo si el sistema pide reducir movimiento. Está en `#sw-fx`
-  (`index.html`) y `initSpaceFx()`. Tamaños en `TIE_SIZE` y `DS_SIZE`; el
-  tiempo quieta, en `DS_STATIC_MS`.
+Si el visitante no tiene cliente de correo configurado no se abre nada, por eso
+bajo el botón sale siempre tu dirección. Y si el mensaje pasa de 1800
+caracteres de URL, avisa en vez de abrir un correo cortado a medias: varios
+clientes truncan los `mailto:` largos sin decir nada.
 
 ## Si editas y no ves el cambio
 
 El navegador guarda `styles.css` y `script.js` en caché, y Live Server recarga
-la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un
-`?v=` en `index.html`:
+la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
+en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=7" />
-<script src="script.js?v=7"></script>
+<link rel="stylesheet" href="styles.css?v=9" />
+<script src="script.js?v=9"></script>
 ```
 
-**Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa
-rápida: `Ctrl+F5`, o abrir DevTools (`F12`) → pestaña Network → marcar
-*Disable cache* y dejar DevTools abierto mientras trabajas.
-- **Tipografía:** `Silkscreen` en el saludo, los títulos de sección y el logo.
-  El resto del texto sigue en `Geist Mono`.
-- **Previsualizar con servidor:** `.claude/launch.json` levanta uno en
-  `http://localhost:4173`. Hace falta para que `projects.json` se pueda leer:
-  abriendo el HTML con doble clic (`file://`) esa petición falla y salen todos
-  los repos.
+**Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:
+`Ctrl+F5`, o DevTools (`Ctrl+Shift+J`) → Network → *Disable cache*.
 
 ## Pendiente
 
-- **Currículum:** el botón "Descargar CV" está comentado en el HERO, dentro de
-  `index.html`. Cuando tengas tu CV en PDF, súbelo a esta carpeta como
-  `cv-andres-madrid.pdf` y descomenta ese bloque. La clave `hero.resume` ya
-  existe en `I18N` (español e inglés).
-- **Sobre mí en inglés:** al cambiar el texto español actualiza también
-  `about.subtitle` y `about.lead` en `I18N.en` (`script.js`).
-
-## Ya no queda nada de la plantilla original
-
-- ~~**Proyectos**~~ — se cargan desde tu cuenta de GitHub.
-- ~~**Contacto → GitHub / LinkedIn**~~ — apuntan a tus cuentas.
-- ~~**Educación**~~ — descripciones distintas, tildes corregidas y etiqueta de
-  estado (En curso / Finalizado).
-- ~~**Experiencia**~~ — la sección de empleos de la plantilla ya no está.
-- ~~**Sobre mí**~~ — texto tuyo (construcción, mantenimiento eléctrico,
-  insolvencia y conciliación).
-- ~~**Currículum**~~ — fuera el PDF de la plantilla.
+- **Currículum:** no hay botón de CV. Cuando tengas el PDF, súbelo a la carpeta
+  y crea un elemento de tipo `link` desde el portal apuntando a él.
+- **Diseño anterior:** el portafolio de una sola página con secciones sigue en
+  el historial de git, en el commit `dac7e1a`. Para recuperarlo:
+  `git checkout dac7e1a -- index.html styles.css script.js`

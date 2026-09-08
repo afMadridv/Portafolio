@@ -1,293 +1,371 @@
 /* =========================================================
-   JavaScript del portafolio
-   Se carga desde el <head> SIN defer a propósito: la parte
-   de arriba debe ejecutarse ANTES de pintar para evitar el
-   parpadeo (FOUC) del tema y de las animaciones. El resto
-   espera a que el DOM esté listo (DOMContentLoaded).
+   PORTAFOLIO — ESCRITORIO
+   Cada icono abre una ventana. El contenido del escritorio
+   (iconos, carpetas, archivos y fondo) vive en una config que
+   se puede editar desde el portal de administración.
+
+   Orden de la config, de más a menos prioritario:
+     1. localStorage  -> borrador tuyo, solo en tu navegador
+     2. desktop.json  -> lo publicado, lo que ven las visitas
+     3. DEFAULT_DESKTOP -> lo que trae el código
    ========================================================= */
 
-/* Activa las animaciones de entrada SOLO si el navegador las soporta
-   y el usuario no pidió reducir el movimiento. Así se evita el
-   parpadeo (FOUC) y se respeta la accesibilidad. */
-(function () {
-  var reduce =
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if ("IntersectionObserver" in window && !reduce) {
-    document.documentElement.classList.add("js");
-  }
-  /* Aplica el tema guardado cuanto antes para evitar el parpadeo claro/oscuro */
-  try {
-    var saved = localStorage.getItem("theme");
-    var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    if (saved === "dark" || (!saved && prefersDark)) {
-      document.documentElement.classList.add("dark");
-    }
-  } catch (e) {}
-})();
+const TZ = "America/Bogota";
+const EMAIL = "mvandres08@gmail.com";
+const GITHUB_USER = "afMadridv";
+const LINKEDIN =
+  "https://www.linkedin.com/in/andr%C3%A9s-felipe-madrid-villar-9987693a8/";
+
+const CFG_KEY = "desktop-cfg";
+const GH_CACHE_KEY = "gh-repos";
+const GH_CACHE_TTL = 60 * 60 * 1000; // 1 hora
+const LANG_KEY = "lang";
+const DEFAULT_LANG = "es";
+
+let lang = DEFAULT_LANG;
+let config = null;
+let allRepos = [];
+let reposError = false;
+
+/* =========================================================
+   ICONOS
+   Dibujados a mano para que no dependan de ninguna librería.
+   ========================================================= */
+const ICONS = {
+  txt: '<svg viewBox="0 0 24 24" stroke-width="1"><path d="M4.5 1.5h10l5 5v16h-15z" fill="#fff" stroke="#555"/><path d="M14.5 1.5v5h5" fill="#dcdcdc" stroke="#555"/><g fill="#8a8a8a"><rect x="7" y="10" width="10" height="1.5"/><rect x="7" y="13.5" width="10" height="1.5"/><rect x="7" y="17" width="6" height="1.5"/></g></svg>',
+  folder: '<svg viewBox="0 0 24 24" stroke-width="1"><path d="M1.5 4.5h7l2 3h12v13h-21z" fill="#c98f2a"/><path d="M1.5 8.5h21v12h-21z" fill="#f0c25c"/><rect x="1.5" y="8.5" width="21" height="2" fill="#fff" opacity=".35"/></svg>',
+  github: '<svg viewBox="0 0 24 24" stroke-width="1.3" stroke-linejoin="round"><circle cx="12" cy="12" r="11" fill="#1b1b1b"/><path d="M14.2 19.2v-2.7a2.8 2.8 0 0 0-.6-2c1.9 0 3.8-1.2 3.8-3.4a2.9 2.9 0 0 0-.6-2.1c.2-.7.2-1.4 0-2.1 0 0-.7 0-2 .9a8.5 8.5 0 0 0-4.4 0c-1.3-.9-2-.9-2-.9-.2.7-.2 1.4 0 2.1a2.9 2.9 0 0 0-.6 2.1c0 2.2 1.9 3.4 3.8 3.4a2.8 2.8 0 0 0-.6 2v2.7" fill="none" stroke="#fff"/><path d="M10.9 17.6c-2.7 1.2-3-1.2-4.2-1.2" fill="none" stroke="#fff"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="1.5" y="5" width="21" height="14" fill="#fff" stroke="#555"/><path d="M1.5 5 12 13 22.5 5" fill="none" stroke="#c33" stroke-width="1.6"/></svg>',
+  globe: '<svg viewBox="0 0 24 24" stroke-width="1"><circle cx="12" cy="12" r="10.5" fill="#2f6fb0" stroke="#1b3a5c"/><path d="M1.5 12h21M12 1.5c3.2 3 3.2 18 0 21M12 1.5c-3.2 3-3.2 18 0 21" fill="none" stroke="#cfe6ff" stroke-width="1.1"/></svg>',
+  edu: '<svg viewBox="0 0 24 24" stroke-width="1"><path d="M12 3 1.5 8 12 13l10.5-5z" fill="#8a1414"/><path d="M5.5 10.5V16c0 1.7 2.9 3 6.5 3s6.5-1.3 6.5-3v-5.5" fill="none" stroke="#8a1414" stroke-width="1.8"/><path d="M22.5 8v6" stroke="#8a1414" stroke-width="1.4"/></svg>',
+  tools: '<svg viewBox="0 0 24 24" stroke-width="1" stroke-linejoin="round"><path d="M12 1.5 14.2 4h3l.7 3 2.6 1.5-1.2 2.8 1.2 2.8L17.9 15l-.7 3h-3L12 20.5 9.8 18h-3l-.7-3-2.6-1.4 1.2-2.8L3.5 8 6.1 7l.7-3h3z" fill="#9a9a9a" stroke="#3a3a3a"/><circle cx="12" cy="11" r="3.4" fill="#fa4040"/></svg>',
+  link: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="1.5" y="5" width="15" height="17" fill="#fff" stroke="#555"/><path d="M14 2h8v8" fill="none" stroke="#c33" stroke-width="2"/><path d="M22 2 12 12" stroke="#c33" stroke-width="2"/></svg>',
+  user: '<svg viewBox="0 0 24 24" stroke-width="1"><circle cx="12" cy="8" r="4.5" fill="#f0c9a0" stroke="#7a5a3a"/><path d="M3 22.5c0-4.6 4-7.6 9-7.6s9 3 9 7.6z" fill="#2f6fb0" stroke="#1b3a5c"/></svg>',
+  pc: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="1.5" y="3" width="21" height="14.5" fill="#c6c6c6" stroke="#333"/><rect x="3.5" y="5" width="17" height="10.5" fill="#12263c"/><path d="M5 13.5 8 9l2.5 3 2-2.2 3 3.7z" fill="#2f6fb0"/><rect x="9.5" y="17.5" width="5" height="3" fill="#9a9a9a"/><rect x="6" y="20.5" width="12" height="2" fill="#c6c6c6" stroke="#333"/></svg>',
+  image: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="1.5" y="4" width="21" height="16" fill="#fff" stroke="#555"/><path d="M3 18l5.5-6.5L13 16.5l3-3 5 5z" fill="#4a9a5a"/><circle cx="7.5" cy="8.5" r="1.8" fill="#f0c25c"/></svg>',
+  disk: '<svg viewBox="0 0 24 24" stroke-width="1"><rect x="2" y="2" width="20" height="20" fill="#2b2b2b" stroke="#111"/><rect x="6.5" y="2" width="11" height="8" fill="#c6c6c6"/><rect x="12.5" y="3.5" width="3" height="5" fill="#2b2b2b"/><rect x="5" y="13" width="14" height="9" fill="#e0e0e0"/></svg>',
+};
+const ICON_KEYS = Object.keys(ICONS);
+
+function iconSvg(key) {
+  return ICONS[key] || ICONS.txt;
+}
+
+/* =========================================================
+   CONTENIDO FIJO
+   Lo que no se edita desde el portal se cambia aquí.
+   Los archivos .txt sí son editables desde el portal.
+   ========================================================= */
+const SKILLS = [
+  { es: "Frontend", en: "Frontend", items: ["JavaScript", "HTML/CSS"] },
+  { es: "Backend", en: "Backend", items: ["Java", "Python"] },
+  { es: "Bases de datos", en: "Databases", items: ["MySQL", "PostgreSQL"] },
+  {
+    es: "Herramientas",
+    en: "Tools",
+    items: ["GitHub", "Git", "Figma", "Claude", "VS Code", "Vercel"],
+  },
+];
+
+const EDUCATION = [
+  {
+    title: { es: "Ingeniería de Sistemas", en: "Systems Engineering" },
+    place: { es: "Universidad de la Costa", en: "Universidad de la Costa" },
+    when: { es: "2025 - Presente", en: "2025 - Present" },
+    state: { es: "En curso", en: "In progress" },
+  },
+  {
+    title: {
+      es: "Técnico en Desarrollo de Software y Aplicaciones Móviles",
+      en: "Technician in Software and Mobile App Development",
+    },
+    place: {
+      es: "Corporación Bolivariana del Norte",
+      en: "Corporación Bolivariana del Norte",
+    },
+    when: { es: "2022 - 2024", en: "2022 - 2024" },
+    state: { es: "Finalizado", en: "Completed" },
+  },
+];
+
+const SOCIAL = [
+  { label: "GitHub", url: "https://github.com/" + GITHUB_USER, icon: "github" },
+  { label: "LinkedIn", url: LINKEDIN, icon: "globe" },
+  { label: EMAIL, url: "mailto:" + EMAIL, icon: "mail" },
+];
+
+/* =========================================================
+   ESCRITORIO POR DEFECTO
+   ========================================================= */
+const DEFAULT_DESKTOP = {
+  wallpaper: { type: "color", value: "#000000", value2: "#2a0d0d", url: "" },
+  showFx: true,
+  projects: { selected: [] },
+  items: [
+    {
+      id: "about",
+      type: "txt",
+      icon: "txt",
+      name: { es: "Sobre mí.txt", en: "About me.txt" },
+      text: {
+        es:
+          "ANDRES MADRID\nDesarrollador de Software\n\n" +
+          "Diseño sistemas escalables, seguros y eficientes, con experiencia\n" +
+          "entregando soluciones en entornos altamente regulados:\n" +
+          "construcción, mantenimiento eléctrico e insolvencia y conciliación.\n\n" +
+          "Optimizo el rendimiento de los sistemas y acompaño a los equipos\n" +
+          "para elevar su nivel técnico.\n\n" +
+          "Santa Marta, Colombia.",
+        en:
+          "ANDRES MADRID\nSoftware Developer\n\n" +
+          "I design scalable, secure and efficient systems, with experience\n" +
+          "delivering solutions in highly regulated environments:\n" +
+          "construction, electrical maintenance, and insolvency and conciliation.\n\n" +
+          "I optimize system performance and support teams in raising their\n" +
+          "technical level.\n\n" +
+          "Santa Marta, Colombia.",
+      },
+    },
+    {
+      id: "projects",
+      type: "app",
+      app: "projects",
+      icon: "folder",
+      name: { es: "Proyectos", en: "Projects" },
+    },
+    {
+      id: "skills",
+      type: "app",
+      app: "skills",
+      icon: "tools",
+      name: { es: "Habilidades", en: "Skills" },
+    },
+    {
+      id: "education",
+      type: "app",
+      app: "education",
+      icon: "edu",
+      name: { es: "Educación", en: "Education" },
+    },
+    {
+      id: "contact",
+      type: "app",
+      app: "contact",
+      icon: "mail",
+      name: { es: "Contacto", en: "Contact" },
+    },
+    {
+      id: "social",
+      type: "app",
+      app: "social",
+      icon: "globe",
+      name: { es: "Redes", en: "Links" },
+    },
+  ],
+};
 
 /* =========================================================
    IDIOMAS
-   El HTML viene en español (idioma por defecto). El inglés
-   se aplica desde este diccionario al pulsar el botón.
+   El HTML manda en español: harvestBaseLang() copia al
+   diccionario lo escrito en index.html antes de traducir.
+   El inglés sale de I18N.en y se mantiene a mano.
    ========================================================= */
-const LANG_KEY = "lang";
-const DEFAULT_LANG = "es";
-let lang = DEFAULT_LANG;
-
 const I18N = {
   es: {
     "meta.title": "Andres Madrid | Desarrollador de Software",
-    "meta.desc":
-      "Portafolio de Andres Madrid, desarrollador de software que construye sitios web escalables, seguros y eficientes.",
+    "ui.start": "Inicio",
+    "ui.linkedin": "Abrir mi perfil de LinkedIn",
+    "ui.clock": "Hora de Colombia (America/Bogota)",
+    "ui.admin": "Panel de administración",
+    "ui.openLinkedin": "Abrir LinkedIn",
+    "ui.closeAll": "Cerrar todas las ventanas",
+    "ui.hint": "Doble clic en un icono para abrirlo",
 
-    "nav.home": "Inicio",
-    "nav.about": "Sobre mí",
-    "nav.skills": "Habilidades",
-    "nav.projects": "Proyectos",
-    "nav.education": "Educación",
-    "nav.contact": "Contacto",
+    "win.min": "Minimizar",
+    "win.max": "Maximizar",
+    "win.close": "Cerrar",
 
-    "hero.greet": "Hola, soy",
-    "hero.role": "Desarrollador de Software y VibeCoder",
-    "hero.tagline": "Construyo sitios web escalables, seguros y eficientes",
-    "hero.cta": "Hablemos",
-    "hero.work": "Ver proyectos",
-    "hero.resume": "Descargar CV", // sin usar: el botón está comentado en el HTML
+    "app.projects.loading": "Cargando proyectos desde GitHub…",
+    "app.projects.error":
+      "No se pudieron cargar los proyectos. Míralos en github.com/" + GITHUB_USER,
+    "app.projects.empty": "Todavía no hay repos públicos.",
+    "app.projects.nodesc": "Sin descripción todavía.",
+    "app.projects.code": "Ver código",
+    "app.projects.live": "Ver web",
+    "app.projects.updated": "Último cambio",
+    "app.projects.count": "{n} proyectos",
 
-    "about.title": "Sobre mí",
-    "about.subtitle":
-      "Ingeniero de software con experiencia como desarrollador Full Stack, especializado en JavaScript, TypeScript, React.js, Node.js, Laravel y AWS.",
-    "about.lead":
-      "Diseño sistemas escalables, seguros y eficientes, con experiencia colaborando en equipos remotos y multidisciplinares. He entregado soluciones en entornos muy regulados, incluidos proyectos de salud con cumplimiento HIPAA y SOC2. Optimizo el rendimiento de los sistemas y acompaño a los equipos para sostener el nivel técnico.",
-    "about.f1.title": "Desarrollo Frontend",
-    "about.f1.text": "Manejo de JavaScript, HTML y CSS",
-    "about.f2.title": "Soluciones en la nube",
-    "about.f2.text":
-      "Servicios de AWS como SQS, EventBridge, Lambda y Step Functions",
-    "about.f3.title": "Liderazgo de equipo",
-    "about.f3.text":
-      "Coordinación de equipos de desarrollo, diseño, DevOps y QA",
-    "about.f4.title": "Colaboración remota",
-    "about.f4.text": "Trabajo coordinado con equipos distribuidos en Colombia",
+    "app.skills.title": "Habilidades",
+    "app.edu.title": "Educación",
+    "app.social.title": "Encuéntrame aquí",
 
-    "skills.title": "Habilidades",
-    "skills.subtitle": "Mis conocimientos y herramientas técnicas",
-    "skills.frontend": "Frontend",
-    "skills.backend": "Backend",
-    "skills.database": "Bases de datos",
-    "skills.tools": "Herramientas",
-
-    "projects.title": "Proyectos",
-    "projects.subtitle":
-      "Una selección de mis proyectos personales y profesionales",
-    "projects.loading": "Cargando proyectos desde GitHub…",
-    "projects.more": "Ver más ({n})",
-    "projects.less": "Ver menos",
-    "projects.none": "Todavía no hay repos públicos en {url}",
-    "projects.error": "No se pudieron cargar los proyectos. Míralos en ",
-    "project.nodesc": "Sin descripción todavía.",
-
-    "edu.title": "Educación",
-    "edu.subtitle": "Mi formación académica",
-    "edu.ongoing": "En curso",
-    "edu.done": "Finalizado",
-    "edu.e1.title": "Ingeniería de Sistemas",
-    "edu.e1.place": "Universidad de la Costa (2025 - Presente)",
-    "edu.e1.text":
-      "Formación en ingeniería de sistemas centrada en desarrollo de software, algoritmos, estructuras de datos y diseño de sistemas.",
-    "edu.e2.title": "Técnico en Desarrollo de Software y Aplicaciones Móviles",
-    "edu.e2.place": "Corporación Bolivariana del Norte (2022 - 2024)",
-    "edu.e2.text":
-      "Programa técnico enfocado en el desarrollo de software y aplicaciones móviles, con práctica en programación, bases de datos y despliegue.",
-
-    "contact.title": "Hablemos",
-    "contact.subtitle":
-      "¿Tienes un proyecto en mente o quieres hablar de una oportunidad? Escríbeme.",
-    "contact.name": "Nombre",
-    "contact.name.ph": "Tu nombre",
-    "contact.email": "Email",
-    "contact.email.ph": "Tu email",
-    "contact.subject": "Asunto",
-    "contact.subject.ph": "Asunto del mensaje",
-    "contact.message": "Mensaje",
-    "contact.message.ph": "Tu mensaje",
-    "contact.send": "Enviar mensaje",
-    "contact.status.opening":
+    "app.contact.title": "Escríbeme",
+    "app.contact.hint":
+      "Al enviar se abre tu correo con el mensaje ya escrito. Solo tienes que pulsar enviar.",
+    "app.contact.name": "Nombre",
+    "app.contact.name.ph": "Tu nombre",
+    "app.contact.email": "Tu email",
+    "app.contact.email.ph": "para poder responderte",
+    "app.contact.subject": "Asunto",
+    "app.contact.subject.ph": "Asunto del mensaje",
+    "app.contact.message": "Mensaje",
+    "app.contact.message.ph": "Cuéntame",
+    "app.contact.send": "Enviar mensaje",
+    "app.contact.opening":
       "Abriendo tu correo con el mensaje listo — solo pulsa enviar. ¿No se abrió? Escríbeme a {mail}",
-    "contact.status.toolong":
+    "app.contact.toolong":
       "El mensaje es muy largo para abrirse solo. Cópialo y mándalo a {mail}",
-    "contact.mail.from": "Enviado desde el portafolio por",
-    "contact.mail.reply": "Responder a",
-    "contact.location": "Ubicación",
-    "contact.phone": "Teléfono",
-    "contact.phone.value": "Disponible bajo petición",
-    "contact.connect": "Conecta conmigo",
-    "contact.connect.sub": "Búscame en estas plataformas",
+    "app.contact.from": "Enviado desde el portafolio por",
+    "app.contact.reply": "Responder a",
 
-    "footer.rights": "Todos los derechos reservados.",
+    "folder.empty": "Esta carpeta está vacía.",
 
-    "admin.title": "Portal",
-    "admin.gate": "Escribe la clave para elegir qué proyectos se publican.",
+    "admin.title": "Panel de administración",
+    "admin.gate": "Escribe la clave para administrar el escritorio.",
     "admin.pass": "Clave",
-    "admin.pick":
-      'Marca los repos que quieres publicar. Se muestran los 6 primeros y el resto queda tras el botón "Ver más". Sin nada marcado, salen todos.',
     "admin.enter": "Entrar",
-    "admin.export": "Descargar projects.json",
-    "admin.save": "Guardar",
     "admin.wrongpass": "Clave incorrecta.",
     "admin.nocrypto": "Este navegador no puede comprobar la clave.",
-    "admin.notloaded": "Los repos aún no han cargado. Espera un momento.",
-    "admin.count": "{n} marcados · se ven {v} y el resto en “Ver más”",
-    "admin.countnone": "Sin marcar: salen todos",
-    "admin.nodesc": "Sin descripción",
+    "admin.tab.items": "Iconos",
+    "admin.tab.look": "Fondo",
+    "admin.tab.repos": "Proyectos",
+    "admin.items.hint":
+      "Los elementos con carpeta padre salen dentro de esa carpeta, no en el escritorio.",
+    "admin.items.add": "+ Nuevo elemento",
+    "admin.items.none": "No hay elementos. Añade el primero.",
+    "admin.f.name.es": "Nombre (español)",
+    "admin.f.name.en": "Nombre (inglés)",
+    "admin.f.type": "Tipo",
+    "admin.f.icon": "Icono",
+    "admin.f.parent": "Dentro de",
+    "admin.f.app": "Contenido especial",
+    "admin.f.url": "Dirección (URL)",
+    "admin.f.text.es": "Texto (español)",
+    "admin.f.text.en": "Texto (inglés)",
+    "admin.f.save": "Guardar elemento",
+    "admin.f.cancel": "Cancelar",
+    "admin.f.desktop": "El escritorio",
+    "admin.wp.type": "Tipo de fondo",
+    "admin.wp.color": "Color",
+    "admin.wp.color2": "Segundo color",
+    "admin.wp.url": "Dirección de la imagen",
+    "admin.wp.fx": "Mostrar el caza TIE y la Estrella de la Muerte",
+    "admin.wp.hint": "El fondo se ve al instante. Recuerda pulsar Guardar abajo.",
+    "admin.repos.hint":
+      "Marca los repos que quieres mostrar en Proyectos. Sin nada marcado, salen todos.",
+    "admin.repos.wait": "Los repos aún no han cargado.",
+    "admin.reset": "Restablecer",
+    "admin.export": "Descargar desktop.json",
+    "admin.save": "Guardar",
+    "admin.saved": "Guardado en este navegador.",
+    "admin.resetAsk":
+      "¿Restablecer el escritorio como venía de fábrica? Se pierden tus cambios locales.",
+    "admin.count": "{n} elementos · {r} repos marcados",
+    "admin.exported":
+      "Descargado. Sube desktop.json junto a index.html para que lo vean las visitas.",
 
     "aria.lang": "Cambiar idioma",
-    "aria.theme": "Cambiar tema",
-    "aria.menu": "Abrir menú",
-    "aria.scroll": "Ir a la sección Sobre mí",
-    "aria.portal": "Portal privado",
     "aria.close": "Cerrar",
   },
 
   en: {
     "meta.title": "Andres Madrid | Software Developer",
-    "meta.desc":
-      "Portfolio of Andres Madrid, a software developer building scalable, secure and efficient websites.",
+    "ui.start": "Start",
+    "ui.linkedin": "Open my LinkedIn profile",
+    "ui.clock": "Colombia time (America/Bogota)",
+    "ui.admin": "Admin panel",
+    "ui.openLinkedin": "Open LinkedIn",
+    "ui.closeAll": "Close all windows",
+    "ui.hint": "Double-click an icon to open it",
 
-    "nav.home": "Home",
-    "nav.about": "About",
-    "nav.skills": "Skills",
-    "nav.projects": "Projects",
-    "nav.education": "Education",
-    "nav.contact": "Contact",
+    "win.min": "Minimize",
+    "win.max": "Maximize",
+    "win.close": "Close",
 
-    "hero.greet": "Hi, I'm",
-    "hero.role": "Software Developer and VibeCoder",
-    "hero.tagline": "I build scalable, secure and efficient websites",
-    "hero.cta": "Get In Touch",
-    "hero.work": "See projects",
-    "hero.resume": "Download Resume", // sin usar: el botón está comentado en el HTML
+    "app.projects.loading": "Loading projects from GitHub…",
+    "app.projects.error":
+      "Projects could not be loaded. See them at github.com/" + GITHUB_USER,
+    "app.projects.empty": "No public repos yet.",
+    "app.projects.nodesc": "No description yet.",
+    "app.projects.code": "View code",
+    "app.projects.live": "View site",
+    "app.projects.updated": "Last change",
+    "app.projects.count": "{n} projects",
 
-    "about.title": "About Me",
-    "about.subtitle":
-      "Software engineer with experience as a Full Stack developer, specializing in JavaScript, TypeScript and Node.js.",
-    "about.lead":
-      "I design scalable, secure and efficient systems, with experience delivering solutions in highly regulated environments: construction, electrical maintenance, and insolvency and conciliation. I optimize system performance and support teams in raising their technical level.",
-    "about.f1.title": "Frontend Development",
-    "about.f1.text": "Working knowledge of JavaScript, HTML and CSS",
-    "about.f2.title": "Cloud Solutions",
-    "about.f2.text":
-      "AWS services such as SQS, EventBridge, Lambda and Step Functions",
-    "about.f3.title": "Team Leadership",
-    "about.f3.text":
-      "Coordinating development, design, DevOps and QA teams",
-    "about.f4.title": "Remote Collaboration",
-    "about.f4.text": "Coordinated work with distributed teams across Colombia",
+    "app.skills.title": "Skills",
+    "app.edu.title": "Education",
+    "app.social.title": "Find me here",
 
-    "skills.title": "Skills",
-    "skills.subtitle": "My technical knowledge and tooling",
-    "skills.frontend": "Frontend",
-    "skills.backend": "Backend",
-    "skills.database": "Databases",
-    "skills.tools": "Tools",
-
-    "projects.title": "Projects",
-    "projects.subtitle": "A selection of my personal and professional projects",
-    "projects.loading": "Loading projects from GitHub…",
-    "projects.more": "Show more ({n})",
-    "projects.less": "Show less",
-    "projects.none": "No public repos yet at {url}",
-    "projects.error": "Projects could not be loaded. See them at ",
-    "project.nodesc": "No description yet.",
-
-    "edu.title": "Education",
-    "edu.subtitle": "My academic background",
-    "edu.ongoing": "In progress",
-    "edu.done": "Completed",
-    "edu.e1.title": "Systems Engineering",
-    "edu.e1.place": "Universidad de la Costa (2025 - Present)",
-    "edu.e1.text":
-      "Systems engineering degree focused on software development, algorithms, data structures and system design.",
-    "edu.e2.title": "Technician in Software and Mobile App Development",
-    "edu.e2.place": "Corporación Bolivariana del Norte (2022 - 2024)",
-    "edu.e2.text":
-      "Technical program focused on software and mobile app development, with hands-on work in programming, databases and deployment.",
-
-    "contact.title": "Get In Touch",
-    "contact.subtitle":
-      "Have a project in mind or want to discuss an opportunity? Write to me.",
-    "contact.name": "Name",
-    "contact.name.ph": "Your name",
-    "contact.email": "Email",
-    "contact.email.ph": "Your email",
-    "contact.subject": "Subject",
-    "contact.subject.ph": "Subject of your message",
-    "contact.message": "Message",
-    "contact.message.ph": "Your message",
-    "contact.send": "Send message",
-    "contact.status.opening":
+    "app.contact.title": "Write to me",
+    "app.contact.hint":
+      "Sending opens your mail app with the message ready. You only have to hit send.",
+    "app.contact.name": "Name",
+    "app.contact.name.ph": "Your name",
+    "app.contact.email": "Your email",
+    "app.contact.email.ph": "so I can reply",
+    "app.contact.subject": "Subject",
+    "app.contact.subject.ph": "Subject of your message",
+    "app.contact.message": "Message",
+    "app.contact.message.ph": "Tell me about it",
+    "app.contact.send": "Send message",
+    "app.contact.opening":
       "Opening your mail app with the message ready — just hit send. Didn't open? Write to {mail}",
-    "contact.status.toolong":
+    "app.contact.toolong":
       "The message is too long to open automatically. Copy it and send it to {mail}",
-    "contact.mail.from": "Sent from the portfolio by",
-    "contact.mail.reply": "Reply to",
-    "contact.location": "Location",
-    "contact.phone": "Phone",
-    "contact.phone.value": "Available on request",
-    "contact.connect": "Connect with me",
-    "contact.connect.sub": "Find me on these platforms",
+    "app.contact.from": "Sent from the portfolio by",
+    "app.contact.reply": "Reply to",
 
-    "footer.rights": "All rights reserved.",
+    "folder.empty": "This folder is empty.",
 
-    "admin.title": "Portal",
-    "admin.gate": "Enter the passphrase to choose which projects are published.",
+    "admin.title": "Admin panel",
+    "admin.gate": "Enter the passphrase to manage the desktop.",
     "admin.pass": "Passphrase",
-    "admin.pick":
-      'Tick the repos you want to publish. The first 6 are shown and the rest sit behind the "Show more" button. With none ticked, all of them show.',
     "admin.enter": "Enter",
-    "admin.export": "Download projects.json",
-    "admin.save": "Save",
     "admin.wrongpass": "Wrong passphrase.",
     "admin.nocrypto": "This browser cannot verify the passphrase.",
-    "admin.notloaded": "Repos have not loaded yet. Give it a moment.",
-    "admin.count": "{n} ticked · {v} shown, the rest under “Show more”",
-    "admin.countnone": "None ticked: all of them show",
-    "admin.nodesc": "No description",
+    "admin.tab.items": "Icons",
+    "admin.tab.look": "Wallpaper",
+    "admin.tab.repos": "Projects",
+    "admin.items.hint":
+      "Items with a parent folder show inside that folder, not on the desktop.",
+    "admin.items.add": "+ New item",
+    "admin.items.none": "No items yet. Add the first one.",
+    "admin.f.name.es": "Name (Spanish)",
+    "admin.f.name.en": "Name (English)",
+    "admin.f.type": "Type",
+    "admin.f.icon": "Icon",
+    "admin.f.parent": "Inside",
+    "admin.f.app": "Built-in content",
+    "admin.f.url": "Address (URL)",
+    "admin.f.text.es": "Text (Spanish)",
+    "admin.f.text.en": "Text (English)",
+    "admin.f.save": "Save item",
+    "admin.f.cancel": "Cancel",
+    "admin.f.desktop": "The desktop",
+    "admin.wp.type": "Wallpaper type",
+    "admin.wp.color": "Color",
+    "admin.wp.color2": "Second color",
+    "admin.wp.url": "Image address",
+    "admin.wp.fx": "Show the TIE fighter and the Death Star",
+    "admin.wp.hint": "The wallpaper updates live. Remember to press Save below.",
+    "admin.repos.hint":
+      "Tick the repos you want inside Projects. With none ticked, all of them show.",
+    "admin.repos.wait": "Repos have not loaded yet.",
+    "admin.reset": "Reset",
+    "admin.export": "Download desktop.json",
+    "admin.save": "Save",
+    "admin.saved": "Saved in this browser.",
+    "admin.resetAsk":
+      "Reset the desktop to how it shipped? Your local changes will be lost.",
+    "admin.count": "{n} items · {r} repos ticked",
+    "admin.exported":
+      "Downloaded. Upload desktop.json next to index.html so visitors see it.",
 
     "aria.lang": "Change language",
-    "aria.theme": "Toggle theme",
-    "aria.menu": "Open menu",
-    "aria.scroll": "Go to the About section",
-    "aria.portal": "Private portal",
     "aria.close": "Close",
   },
 };
 
-/* El HTML manda en español.
-   Antes de traducir nada, copia al diccionario lo que está escrito
-   en el HTML. Así editas el texto en portafolio.html y se ve tal
-   cual: el diccionario ya no lo pisa. El inglés sigue saliendo de
-   I18N.en, que sí hay que actualizar a mano. */
-function harvestBaseLang() {
-  const base = I18N[DEFAULT_LANG];
-
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    base[el.dataset.i18n] = el.textContent.trim().replace(/\s+/g, " ");
-  });
-  document.querySelectorAll("[data-i18n-ph]").forEach((el) => {
-    base[el.dataset.i18nPh] = el.placeholder;
-  });
-  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
-    base[el.dataset.i18nAria] = el.getAttribute("aria-label");
-  });
-
-  base["meta.title"] = document.title;
-  const desc = document.querySelector('meta[name="description"]');
-  if (desc) base["meta.desc"] = desc.getAttribute("content");
-}
-
-/* Traduce una clave. {n} y {v} se sustituyen con vars. */
 function t(key, vars) {
   let str = (I18N[lang] && I18N[lang][key]) || I18N[DEFAULT_LANG][key] || key;
   if (vars) {
@@ -298,6 +376,27 @@ function t(key, vars) {
   return str;
 }
 
+/* Devuelve el texto en el idioma activo de un {es, en} */
+function L(value) {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  return value[lang] || value[DEFAULT_LANG] || "";
+}
+
+function harvestBaseLang() {
+  const base = I18N[DEFAULT_LANG];
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    base[el.dataset.i18n] = el.textContent.trim().replace(/\s+/g, " ");
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    base[el.dataset.i18nTitle] = el.title;
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+    base[el.dataset.i18nAria] = el.getAttribute("aria-label");
+  });
+  base["meta.title"] = document.title;
+}
+
 function applyLang(next) {
   lang = I18N[next] ? next : DEFAULT_LANG;
   try {
@@ -306,302 +405,703 @@ function applyLang(next) {
 
   document.documentElement.lang = lang;
   document.title = t("meta.title");
-  const desc = document.querySelector('meta[name="description"]');
-  if (desc) desc.setAttribute("content", t("meta.desc"));
 
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     el.textContent = t(el.dataset.i18n);
   });
-  document.querySelectorAll("[data-i18n-ph]").forEach((el) => {
-    el.placeholder = t(el.dataset.i18nPh);
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
   });
   document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
     el.setAttribute("aria-label", t(el.dataset.i18nAria));
   });
 
-  // El botón muestra el idioma al que se cambia, no el actual
   const other = lang === "es" ? "EN" : "ES";
-  ["lang-code", "lang-code-mobile"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = other;
-  });
+  const code = document.getElementById("lang-code");
+  if (code) code.textContent = other;
 
-  // Las tarjetas de proyecto se generan por JS: hay que repintarlas
-  if (shownRepos.length) renderProjects(shownRepos);
+  renderDesktop();
+  renderStartMenu();
+  repaintOpenWindows();
+  tickClock();
 }
 
 /* =========================================================
-   ANIMACIONES DE ENTRADA
-   Función reutilizable: las tarjetas de GitHub se crean
-   después de cargar, así que también hay que observarlas.
+   CONFIG
    ========================================================= */
-let revealObserver = null;
+function cloneDefaults() {
+  return JSON.parse(JSON.stringify(DEFAULT_DESKTOP));
+}
 
-function reveal(els) {
-  if (!document.documentElement.classList.contains("js")) return;
+/* Rellena lo que falte para que una config vieja o a medias
+   no rompa el escritorio */
+function normalizeConfig(raw) {
+  const base = cloneDefaults();
+  if (!raw || typeof raw !== "object") return base;
 
-  if (!revealObserver) {
-    revealObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const el = entry.target;
-          setTimeout(
-            () => el.classList.add("visible"),
-            Number(el.dataset.delay) || 0
-          );
-          revealObserver.unobserve(el);
-        });
-      },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
-    );
+  const out = {
+    wallpaper: Object.assign(base.wallpaper, raw.wallpaper || {}),
+    showFx: raw.showFx !== false,
+    projects: { selected: [] },
+    items: Array.isArray(raw.items) && raw.items.length ? raw.items : base.items,
+  };
+  if (raw.projects && Array.isArray(raw.projects.selected)) {
+    out.projects.selected = raw.projects.selected;
+  }
+  out.items = out.items
+    .filter((it) => it && it.id && it.type)
+    .map((it) => ({
+      id: String(it.id),
+      type: it.type,
+      app: it.app || null,
+      icon: ICONS[it.icon] ? it.icon : "txt",
+      url: it.url || "",
+      parent: it.parent || null,
+      name: typeof it.name === "object" ? it.name : { es: String(it.name || "") },
+      text: typeof it.text === "object" ? it.text : { es: String(it.text || "") },
+    }));
+  return out;
+}
+
+function localConfig() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CFG_KEY) || "null");
+    return raw ? normalizeConfig(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function publishedConfig() {
+  try {
+    const res = await fetch("desktop.json", { cache: "no-cache" });
+    if (!res.ok) return null;
+    return normalizeConfig(await res.json());
+  } catch (e) {
+    return null; // aún no existe el archivo: normal
+  }
+}
+
+function saveConfig() {
+  try {
+    localStorage.setItem(CFG_KEY, JSON.stringify(config));
+  } catch (e) {}
+}
+
+/* =========================================================
+   FONDO
+   ========================================================= */
+function applyWallpaper() {
+  const d = document.getElementById("desktop");
+  const wp = config.wallpaper;
+  d.style.backgroundImage = "none";
+  d.style.backgroundColor = "#000";
+
+  if (wp.type === "gradient") {
+    d.style.backgroundImage =
+      "linear-gradient(160deg, " + wp.value + " 0%, " + wp.value2 + " 100%)";
+  } else if (wp.type === "image" && wp.url) {
+    // Las comillas se escapan para que una URL rara no rompa el CSS
+    d.style.backgroundImage = 'url("' + wp.url.replace(/["\\]/g, encodeURIComponent) + '")';
+  } else {
+    d.style.backgroundColor = wp.value || "#000";
   }
 
-  els.forEach((el) => {
-    // Retraso escalonado para las tarjetas que están una al lado de otra
-    const sibCards = [...el.parentElement.children].filter((c) =>
-      c.classList.contains("card")
-    );
-    const idx = sibCards.indexOf(el);
-    el.dataset.delay = idx > 0 ? Math.min(idx, 6) * 90 : 0;
-    revealObserver.observe(el);
+  document.getElementById("sw-fx").hidden = !config.showFx;
+}
+
+/* =========================================================
+   ESCRITORIO E ICONOS
+   ========================================================= */
+function childrenOf(parentId) {
+  return config.items.filter((it) => (it.parent || null) === (parentId || null));
+}
+
+function itemById(id) {
+  return config.items.find((it) => it.id === id) || null;
+}
+
+function makeIconButton(item, cls) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = cls;
+  btn.dataset.id = item.id;
+
+  const img = document.createElement("span");
+  img.className = cls === "d-icon" ? "d-icon-img" : "";
+  img.innerHTML = iconSvg(item.icon);
+  btn.appendChild(img);
+
+  const label = document.createElement("span");
+  label.className = cls === "d-icon" ? "d-icon-label" : "";
+  label.textContent = L(item.name);
+  btn.appendChild(label);
+
+  // Doble clic como en un escritorio; un toque basta en móvil
+  let lastTap = 0;
+  btn.addEventListener("dblclick", () => openItem(item));
+  btn.addEventListener("click", (e) => {
+    if (e.detail === 0) return openItem(item); // teclado (Enter/Espacio)
+    const now = Date.now();
+    if (isTouch() || now - lastTap < 400) openItem(item);
+    lastTap = now;
+  });
+  return btn;
+}
+
+function isTouch() {
+  return window.matchMedia("(hover: none)").matches;
+}
+
+function renderDesktop() {
+  const grid = document.getElementById("icon-grid");
+  grid.innerHTML = "";
+  childrenOf(null).forEach((item) => {
+    grid.appendChild(makeIconButton(item, "d-icon"));
+  });
+  markOpenIcons();
+}
+
+function markOpenIcons() {
+  document.querySelectorAll(".d-icon").forEach((el) => {
+    el.classList.toggle("is-open", openWins.has(el.dataset.id));
   });
 }
 
 /* =========================================================
-   PROYECTOS DESDE GITHUB
-   Usa la API pública (sin token: 60 peticiones/hora por IP).
-   Solo lee repos públicos — nunca metas un token aquí, este
-   archivo es visible para cualquiera que abra el sitio.
+   GESTOR DE VENTANAS
    ========================================================= */
-const GH_CACHE_KEY = "gh-repos";
-const GH_CACHE_TTL = 60 * 60 * 1000; // 1 hora
-const GH_VISIBLE = 6; // tarjetas antes del botón "Ver más"
-const SELECTION_KEY = "pf-selection";
+const openWins = new Map(); // id -> { el, item, btn }
+let zTop = 10;
+let cascade = 0;
 
-let allRepos = []; // todos los repos traídos de la API
-let shownRepos = []; // los que corresponden a la selección actual
-let hiddenRepos = []; // los que esperan detrás de "Ver más"
+function openItem(item) {
+  if (item.type === "link") {
+    if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
+    return;
+  }
+  if (openWins.has(item.id)) {
+    const w = openWins.get(item.id);
+    w.el.classList.remove("is-min");
+    focusWin(item.id);
+    return;
+  }
+  createWindow(item);
+}
 
-const ICON_GITHUB =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>';
-const ICON_LIVE =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>';
-const ICON_STAR =
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 3.2a.6.6 0 0 1 1 0l2.3 4.6 5.1.7a.6.6 0 0 1 .3 1l-3.7 3.6.9 5a.6.6 0 0 1-.9.7L12 16.5l-4.5 2.4a.6.6 0 0 1-.9-.7l.9-5-3.7-3.6a.6.6 0 0 1 .3-1l5.1-.7z"/></svg>';
+function createWindow(item) {
+  const el = document.createElement("section");
+  el.className = "win";
+  el.dataset.id = item.id;
 
-/* Enlace "Code" / "Live" de una tarjeta */
-function projectLink(href, label, icon) {
+  // Posición en cascada, sin salirse de la pantalla
+  const w = Math.min(560, window.innerWidth - 40);
+  const h = Math.min(420, window.innerHeight - 120);
+  const off = (cascade % 6) * 26;
+  cascade++;
+  el.style.width = w + "px";
+  el.style.height = h + "px";
+  el.style.left = Math.max(8, 48 + off) + "px";
+  el.style.top = Math.max(8, 32 + off) + "px";
+
+  el.innerHTML =
+    '<div class="win-bar">' +
+    '<span class="win-title"></span>' +
+    '<span class="win-controls">' +
+    '<button type="button" class="win-btn" data-act="min">_</button>' +
+    '<button type="button" class="win-btn" data-act="max">□</button>' +
+    '<button type="button" class="win-btn" data-act="close">✕</button>' +
+    "</span></div>" +
+    '<div class="win-body"></div>' +
+    '<div class="win-grip"></div>';
+
+  el.querySelector(".win-title").textContent = L(item.name);
+  el.querySelector('[data-act="min"]').title = t("win.min");
+  el.querySelector('[data-act="max"]').title = t("win.max");
+  el.querySelector('[data-act="close"]').title = t("win.close");
+
+  document.getElementById("windows").appendChild(el);
+
+  // Botón en la barra de tareas
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "tb-btn is-down";
+  btn.innerHTML = '<span class="tb-ico"></span><span></span>';
+  btn.querySelector(".tb-ico").innerHTML = iconSvg(item.icon);
+  btn.querySelector(".tb-ico").style.cssText = "width:14px;height:14px;flex-shrink:0";
+  btn.querySelector(".tb-ico svg").style.cssText = "width:100%;height:100%;display:block";
+  btn.lastElementChild.textContent = L(item.name);
+  btn.addEventListener("click", () => toggleWin(item.id));
+  document.getElementById("task-buttons").appendChild(btn);
+
+  openWins.set(item.id, { el, item, btn });
+
+  // Controles
+  el.querySelector('[data-act="close"]').addEventListener("click", () => closeWin(item.id));
+  el.querySelector('[data-act="min"]').addEventListener("click", () => minimizeWin(item.id));
+  el.querySelector('[data-act="max"]').addEventListener("click", () => {
+    el.classList.toggle("is-max");
+  });
+  el.addEventListener("pointerdown", () => focusWin(item.id), true);
+
+  makeDraggable(el);
+  makeResizable(el);
+  renderWindowBody(item, el.querySelector(".win-body"));
+
+  focusWin(item.id);
+  markOpenIcons();
+}
+
+function focusWin(id) {
+  const w = openWins.get(id);
+  if (!w) return;
+  zTop++;
+  w.el.style.zIndex = zTop;
+  openWins.forEach((other, otherId) => {
+    other.el.classList.toggle("is-active", otherId === id);
+    other.btn.classList.toggle("is-down", otherId === id && !other.el.classList.contains("is-min"));
+  });
+}
+
+function toggleWin(id) {
+  const w = openWins.get(id);
+  if (!w) return;
+  const hidden = w.el.classList.contains("is-min");
+  if (hidden) {
+    w.el.classList.remove("is-min");
+    focusWin(id);
+  } else if (w.el.classList.contains("is-active")) {
+    minimizeWin(id);
+  } else {
+    focusWin(id);
+  }
+}
+
+function minimizeWin(id) {
+  const w = openWins.get(id);
+  if (!w) return;
+  w.el.classList.add("is-min");
+  w.el.classList.remove("is-active");
+  w.btn.classList.remove("is-down");
+}
+
+function closeWin(id) {
+  const w = openWins.get(id);
+  if (!w) return;
+  w.el.remove();
+  w.btn.remove();
+  openWins.delete(id);
+  markOpenIcons();
+}
+
+function closeAllWins() {
+  [...openWins.keys()].forEach(closeWin);
+}
+
+/* Vuelve a pintar títulos y contenido (al cambiar de idioma) */
+function repaintOpenWindows() {
+  openWins.forEach((w) => {
+    const fresh = itemById(w.item.id) || w.item;
+    w.item = fresh;
+    w.el.querySelector(".win-title").textContent = L(fresh.name);
+    w.btn.lastElementChild.textContent = L(fresh.name);
+    renderWindowBody(fresh, w.el.querySelector(".win-body"));
+  });
+}
+
+/* ----- Arrastrar por la barra de título ----- */
+function makeDraggable(el) {
+  const bar = el.querySelector(".win-bar");
+  let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
+
+  bar.addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".win-btn")) return;     // los botones no arrastran
+    if (el.classList.contains("is-max")) return;
+    if (window.matchMedia("(max-width: 640px)").matches) return;
+    dragging = true;
+    sx = e.clientX; sy = e.clientY;
+    ox = el.offsetLeft; oy = el.offsetTop;
+    bar.setPointerCapture(e.pointerId);
+  });
+
+  bar.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const maxX = window.innerWidth - 60;
+    const maxY = window.innerHeight - 60;
+    el.style.left = Math.min(maxX, Math.max(-el.offsetWidth + 60, ox + e.clientX - sx)) + "px";
+    el.style.top = Math.min(maxY, Math.max(0, oy + e.clientY - sy)) + "px";
+  });
+
+  const stop = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    try { bar.releasePointerCapture(e.pointerId); } catch (err) {}
+  };
+  bar.addEventListener("pointerup", stop);
+  bar.addEventListener("pointercancel", stop);
+}
+
+/* ----- Redimensionar con el tirador ----- */
+function makeResizable(el) {
+  const grip = el.querySelector(".win-grip");
+  let sx = 0, sy = 0, ow = 0, oh = 0, sizing = false;
+
+  grip.addEventListener("pointerdown", (e) => {
+    sizing = true;
+    sx = e.clientX; sy = e.clientY;
+    ow = el.offsetWidth; oh = el.offsetHeight;
+    grip.setPointerCapture(e.pointerId);
+    e.stopPropagation();
+  });
+
+  grip.addEventListener("pointermove", (e) => {
+    if (!sizing) return;
+    el.style.width = Math.max(260, ow + e.clientX - sx) + "px";
+    el.style.height = Math.max(140, oh + e.clientY - sy) + "px";
+  });
+
+  const stop = (e) => {
+    if (!sizing) return;
+    sizing = false;
+    try { grip.releasePointerCapture(e.pointerId); } catch (err) {}
+  };
+  grip.addEventListener("pointerup", stop);
+  grip.addEventListener("pointercancel", stop);
+}
+
+/* =========================================================
+   CONTENIDO DE LAS VENTANAS
+   ========================================================= */
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text != null) node.textContent = text;
+  return node;
+}
+
+function linkBtn(href, label, iconKey) {
   const a = document.createElement("a");
+  a.className = "btn";
   a.href = href;
   a.target = "_blank";
   a.rel = "noopener noreferrer";
-  a.className = "btn btn-outline btn-sm";
-  a.innerHTML = icon; // SVG fijo, no viene de la API
+  if (iconKey) {
+    const ico = el("span");
+    ico.style.cssText = "width:14px;height:14px;display:inline-block";
+    ico.innerHTML = iconSvg(iconKey);
+    ico.firstChild.style.cssText = "width:100%;height:100%;display:block";
+    a.appendChild(ico);
+  }
   a.appendChild(document.createTextNode(label));
   return a;
 }
 
-/* Construye una tarjeta. Todo lo que viene de la API se inserta
-   con textContent, nunca con innerHTML. */
-function buildProjectCard(repo) {
-  const card = document.createElement("div");
-  card.className = "card project-card card-accent";
+function renderWindowBody(item, body) {
+  body.innerHTML = "";
 
-  const body = document.createElement("div");
-  body.className = "card-body";
-
-  const title = document.createElement("h3");
-  title.textContent = repo.name;
-  body.appendChild(title);
-
-  const desc = document.createElement("p");
-  desc.className = "text-muted project-desc";
-  desc.textContent = repo.description || t("project.nodesc");
-  body.appendChild(desc);
-
-  const topics = (repo.topics || []).slice(0, 3);
-  const tags = topics.length ? topics : repo.language ? [repo.language] : [];
-  if (tags.length) {
-    const tagWrap = document.createElement("div");
-    tagWrap.className = "project-tags";
-    tags.forEach((tag) => {
-      const el = document.createElement("span");
-      el.className = "tag";
-      el.textContent = tag;
-      tagWrap.appendChild(el);
-    });
-    body.appendChild(tagWrap);
-  }
-
-  if (repo.stargazers_count > 0) {
-    const meta = document.createElement("p");
-    meta.className = "project-meta text-muted";
-    meta.innerHTML = ICON_STAR;
-    meta.appendChild(document.createTextNode(String(repo.stargazers_count)));
-    body.appendChild(meta);
-  }
-
-  const links = document.createElement("div");
-  links.className = "project-links";
-  links.appendChild(projectLink(repo.html_url, "Code", ICON_GITHUB));
-  if (repo.homepage) {
-    links.appendChild(projectLink(repo.homepage, "Live", ICON_LIVE));
-  }
-  body.appendChild(links);
-
-  card.appendChild(body);
-  return card;
-}
-
-/* Trae los repos, con caché de 1 h para no gastar el límite */
-async function fetchRepos(user) {
-  try {
-    const cached = JSON.parse(localStorage.getItem(GH_CACHE_KEY) || "null");
-    if (cached && cached.user === user && Date.now() - cached.at < GH_CACHE_TTL) {
-      return cached.data;
-    }
-  } catch (e) {}
-
-  const res = await fetch(
-    "https://api.github.com/users/" +
-      encodeURIComponent(user) +
-      "/repos?per_page=100&sort=updated"
-  );
-  if (!res.ok) throw new Error("GitHub respondió " + res.status);
-  const data = await res.json();
-
-  try {
-    localStorage.setItem(
-      GH_CACHE_KEY,
-      JSON.stringify({ user: user, at: Date.now(), data: data })
-    );
-  } catch (e) {}
-  return data;
-}
-
-/* Qué repos se publican.
-   1. Borrador local (solo en TU navegador, lo escribe el portal)
-   2. projects.json publicado (lo que ven las visitas)
-   3. null = salen todos */
-function localSelection() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(SELECTION_KEY) || "null");
-    if (raw && Array.isArray(raw.selected)) return raw.selected;
-  } catch (e) {}
-  return null;
-}
-
-async function publishedSelection() {
-  try {
-    const res = await fetch("projects.json", { cache: "no-cache" });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return Array.isArray(data.selected) ? data.selected : null;
-  } catch (e) {
-    return null; // no existe el archivo todavía: normal
-  }
-}
-
-/* Aplica la selección conservando su orden */
-function applySelection(repos, selected) {
-  if (!selected || !selected.length) return repos;
-  return selected
-    .map((name) => repos.find((r) => r.name === name))
-    .filter(Boolean);
-}
-
-/* Pinta el grid: 6 tarjetas y el resto tras "Ver más" */
-function renderProjects(repos) {
-  const grid = document.getElementById("projects-grid");
-  const more = document.getElementById("projects-more");
-  const btn = document.getElementById("projects-more-btn");
-  if (!grid) return;
-
-  shownRepos = repos;
-  grid.innerHTML = "";
-  const visible = repos.slice(0, GH_VISIBLE);
-  hiddenRepos = repos.slice(GH_VISIBLE);
-
-  visible.forEach((repo) => grid.appendChild(buildProjectCard(repo)));
-  reveal([...grid.children]);
-
-  if (hiddenRepos.length) {
-    more.hidden = false;
-    btn.textContent = t("projects.more", { n: hiddenRepos.length });
-    btn.dataset.expanded = "false";
-  } else {
-    more.hidden = true;
-  }
-}
-
-function toggleMore() {
-  const grid = document.getElementById("projects-grid");
-  const btn = document.getElementById("projects-more-btn");
-
-  if (btn.dataset.expanded === "true") {
-    // Volver a 6
-    [...grid.children].slice(GH_VISIBLE).forEach((c) => c.remove());
-    btn.textContent = t("projects.more", { n: hiddenRepos.length });
-    btn.dataset.expanded = "false";
-    document.getElementById("projects").scrollIntoView({ block: "start" });
+  if (item.type === "txt") {
+    const pre = el("div", "txt-body", L(item.text));
+    body.appendChild(pre);
     return;
   }
 
-  const nuevas = hiddenRepos.map((repo) => {
-    const card = buildProjectCard(repo);
-    grid.appendChild(card);
-    return card;
-  });
-  reveal(nuevas);
-  btn.textContent = t("projects.less");
-  btn.dataset.expanded = "true";
+  if (item.type === "folder") {
+    const kids = childrenOf(item.id);
+    if (!kids.length) {
+      body.appendChild(el("p", "folder-empty", t("folder.empty")));
+      return;
+    }
+    const grid = el("div", "folder-grid");
+    kids.forEach((kid) => grid.appendChild(makeIconButton(kid, "folder-item")));
+    body.appendChild(grid);
+    return;
+  }
+
+  if (item.type === "app") {
+    const render = APPS[item.app];
+    if (render) render(body, item);
+    else body.appendChild(el("p", "muted", item.app || "?"));
+    return;
+  }
+
+  body.appendChild(el("p", "muted", L(item.name)));
 }
 
-async function loadGitHubProjects() {
-  const grid = document.getElementById("projects-grid");
-  const status = document.getElementById("projects-status");
-  if (!grid) return;
-
-  const user = grid.dataset.githubUser;
-  const profile = "https://github.com/" + user;
-
-  try {
-    const repos = await fetchRepos(user);
-    allRepos = repos
-      .filter((r) => !r.fork && !r.archived)
-      .sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at));
-
+const APPS = {
+  /* ----- Proyectos: los repos públicos de GitHub ----- */
+  projects(body) {
+    if (reposError) {
+      body.appendChild(el("p", "muted", t("app.projects.error")));
+      return;
+    }
     if (!allRepos.length) {
-      status.textContent = t("projects.none", { url: profile });
+      body.appendChild(el("p", "muted", t("app.projects.loading")));
       return;
     }
 
-    const selected = localSelection() || (await publishedSelection());
+    const list = visibleRepos();
+    if (!list.length) {
+      body.appendChild(el("p", "muted", t("app.projects.empty")));
+      return;
+    }
+
+    body.appendChild(
+      el("p", "muted", t("app.projects.count", { n: list.length }))
+    );
+
+    list.forEach((repo) => {
+      const box = el("div", "repo");
+      box.appendChild(el("div", "repo-name", repo.name));
+      box.appendChild(
+        el("div", "", repo.description || t("app.projects.nodesc"))
+      );
+
+      const meta = [];
+      if (repo.language) meta.push(repo.language);
+      if (repo.stargazers_count) meta.push("★ " + repo.stargazers_count);
+      if (repo.pushed_at) {
+        meta.push(
+          t("app.projects.updated") +
+            ": " +
+            new Date(repo.pushed_at).toLocaleDateString(
+              lang === "es" ? "es-CO" : "en-GB"
+            )
+        );
+      }
+      if (meta.length) box.appendChild(el("div", "repo-meta", meta.join(" · ")));
+
+      const links = el("div", "repo-links");
+      links.appendChild(
+        linkBtn(repo.html_url, t("app.projects.code"), "github")
+      );
+      if (repo.homepage) {
+        links.appendChild(linkBtn(repo.homepage, t("app.projects.live"), "link"));
+      }
+      box.appendChild(links);
+      body.appendChild(box);
+    });
+  },
+
+  /* ----- Habilidades ----- */
+  skills(body) {
+    body.appendChild(el("h3", "", t("app.skills.title")));
+    SKILLS.forEach((group) => {
+      body.appendChild(el("h4", "", L(group)));
+      const chips = el("div", "chips");
+      group.items.forEach((s) => chips.appendChild(el("span", "chip", s)));
+      body.appendChild(chips);
+    });
+  },
+
+  /* ----- Educación ----- */
+  education(body) {
+    body.appendChild(el("h3", "", t("app.edu.title")));
+    EDUCATION.forEach((e) => {
+      body.appendChild(el("h4", "", L(e.title)));
+      body.appendChild(
+        el("p", "muted", L(e.place) + " · " + L(e.when) + " · " + L(e.state))
+      );
+    });
+  },
+
+  /* ----- Redes ----- */
+  social(body) {
+    body.appendChild(el("h3", "", t("app.social.title")));
+    const grid = el("div", "repo-links");
+    SOCIAL.forEach((s) => grid.appendChild(linkBtn(s.url, s.label, s.icon)));
+    body.appendChild(grid);
+  },
+
+  /* ----- Contacto: abre el correo del visitante ----- */
+  contact(body) {
+    body.appendChild(el("h3", "", t("app.contact.title")));
+    body.appendChild(el("p", "muted", t("app.contact.hint")));
+
+    const form = document.createElement("form");
+    form.noValidate = false;
+
+    const mkField = (id, labelKey, phKey, tag) => {
+      const wrap = el("div", "field");
+      const lab = el("label", "", t(labelKey));
+      lab.htmlFor = "cf-" + id;
+      const input = document.createElement(tag || "input");
+      input.className = "input";
+      input.id = "cf-" + id;
+      input.name = id;
+      input.required = true;
+      input.placeholder = t(phKey);
+      if (id === "email") input.type = "email";
+      if (tag === "textarea") input.rows = 5;
+      wrap.appendChild(lab);
+      wrap.appendChild(input);
+      return wrap;
+    };
+
+    form.appendChild(mkField("name", "app.contact.name", "app.contact.name.ph"));
+    form.appendChild(mkField("email", "app.contact.email", "app.contact.email.ph"));
+    form.appendChild(mkField("subject", "app.contact.subject", "app.contact.subject.ph"));
+    form.appendChild(
+      mkField("message", "app.contact.message", "app.contact.message.ph", "textarea")
+    );
+
+    const send = el("button", "btn btn-primary", t("app.contact.send"));
+    send.type = "submit";
+    form.appendChild(send);
+
+    const status = el("p", "form-status");
     status.hidden = true;
-    renderProjects(applySelection(allRepos, selected));
+    form.appendChild(status);
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault(); // no hay servidor: abrimos el cliente de correo
+      const d = new FormData(form);
+      const bodyText =
+        String(d.get("message") || "").trim() +
+        "\n\n—\n" +
+        t("app.contact.from") + ": " + String(d.get("name") || "").trim() +
+        "\n" +
+        t("app.contact.reply") + ": " + String(d.get("email") || "").trim();
+
+      const href =
+        "mailto:" + encodeURIComponent(EMAIL) +
+        "?subject=" + encodeURIComponent(String(d.get("subject") || "").trim()) +
+        "&body=" + encodeURIComponent(bodyText);
+
+      status.hidden = false;
+      status.classList.remove("is-warn");
+
+      // Los clientes de correo cortan las URL largas sin avisar
+      if (href.length > 1800) {
+        status.classList.add("is-warn");
+        status.textContent = t("app.contact.toolong", { mail: EMAIL });
+        return;
+      }
+      status.textContent = t("app.contact.opening", { mail: EMAIL });
+      window.location.href = href;
+    });
+
+    body.appendChild(form);
+  },
+};
+
+/* =========================================================
+   PROYECTOS DESDE GITHUB
+   API pública, sin token: 60 peticiones/hora por IP. Nunca
+   metas un token aquí, este archivo lo puede leer cualquiera.
+   ========================================================= */
+function visibleRepos() {
+  const sel = config.projects.selected;
+  if (!sel || !sel.length) return allRepos;
+  return sel.map((n) => allRepos.find((r) => r.name === n)).filter(Boolean);
+}
+
+async function loadRepos() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(GH_CACHE_KEY) || "null");
+    if (cached && cached.user === GITHUB_USER && Date.now() - cached.at < GH_CACHE_TTL) {
+      allRepos = cached.data;
+      return;
+    }
+  } catch (e) {}
+
+  try {
+    const res = await fetch(
+      "https://api.github.com/users/" + GITHUB_USER + "/repos?per_page=100&sort=updated"
+    );
+    if (!res.ok) throw new Error("GitHub " + res.status);
+    const data = await res.json();
+    allRepos = data
+      .filter((r) => !r.fork && !r.archived)
+      .sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at));
+    try {
+      localStorage.setItem(
+        GH_CACHE_KEY,
+        JSON.stringify({ user: GITHUB_USER, at: Date.now(), data: allRepos })
+      );
+    } catch (e) {}
   } catch (e) {
-    status.textContent = "";
-    status.appendChild(document.createTextNode(t("projects.error")));
-    const a = document.createElement("a");
-    a.href = profile;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    a.textContent = profile.replace("https://", "");
-    a.style.textDecoration = "underline";
-    status.appendChild(a);
+    reposError = true;
   }
 }
 
 /* =========================================================
-   PORTAL PRIVADO
+   RELOJ DE COLOMBIA
+   Siempre America/Bogota, no la hora del visitante.
+   ========================================================= */
+function tickClock() {
+  const now = new Date();
+  const locale = lang === "es" ? "es-CO" : "en-GB";
+
+  document.getElementById("clock-time").textContent = new Intl.DateTimeFormat(
+    locale,
+    { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: true }
+  ).format(now);
+
+  document.getElementById("clock-date").textContent = new Intl.DateTimeFormat(
+    locale,
+    { timeZone: TZ, day: "2-digit", month: "short" }
+  ).format(now);
+}
+
+/* =========================================================
+   MENÚ INICIO
+   ========================================================= */
+function renderStartMenu() {
+  const list = document.getElementById("start-list");
+  list.innerHTML = "";
+
+  const row = (label, iconKey, onClick) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.type = "button";
+    const ico = el("span");
+    ico.innerHTML = iconSvg(iconKey);
+    b.appendChild(ico.firstChild);
+    b.appendChild(document.createTextNode(label));
+    b.addEventListener("click", () => {
+      hideStart();
+      onClick();
+    });
+    li.appendChild(b);
+    list.appendChild(li);
+  };
+
+  childrenOf(null).forEach((item) => {
+    row(L(item.name), item.icon, () => openItem(item));
+  });
+
+  const sep = document.createElement("li");
+  sep.className = "start-sep";
+  list.appendChild(sep);
+
+  row(t("ui.openLinkedin"), "globe", () =>
+    window.open(LINKEDIN, "_blank", "noopener,noreferrer")
+  );
+  row(t("ui.closeAll"), "pc", closeAllWins);
+  row(t("ui.admin"), "disk", openAdmin);
+}
+
+function showStart() {
+  document.getElementById("start-menu").hidden = false;
+  document.getElementById("start-btn").classList.add("is-down");
+  document.getElementById("start-btn").setAttribute("aria-expanded", "true");
+}
+
+function hideStart() {
+  document.getElementById("start-menu").hidden = true;
+  document.getElementById("start-btn").classList.remove("is-down");
+  document.getElementById("start-btn").setAttribute("aria-expanded", "false");
+}
+
+/* =========================================================
+   PORTAL DE ADMINISTRACIÓN
    La clave solo evita que un curioso abra el panel. NO es
    seguridad real: este archivo es público y cualquiera puede
-   leerlo. Lo que de verdad protege el sitio es que publicar
-   un cambio exige subir projects.json a tu repositorio —
-   el panel por sí solo no puede tocar lo que ven las visitas.
-   Cambiar la clave: en la consola del navegador ejecuta
-   await hashText("tu-clave-nueva") y pega el resultado aquí.
+   leerlo. Lo que protege el sitio es que publicar un cambio
+   exige subir desktop.json al repositorio, y eso solo lo
+   puedes hacer tú.
+   Cambiar la clave: en la consola ejecuta
+   await hashText("tu-clave") y pega el resultado aquí.
    Clave por defecto: pixel-f1
    ========================================================= */
 const ADMIN_HASH =
@@ -615,226 +1115,350 @@ async function hashText(text) {
     .join("");
 }
 
-function initAdminPortal() {
-  const overlay = document.getElementById("admin-overlay");
-  const gate = document.getElementById("admin-gate");
-  const picker = document.getElementById("admin-picker");
-  const list = document.getElementById("admin-repos");
-  const pass = document.getElementById("admin-pass");
-  const error = document.getElementById("admin-error");
-  const count = document.getElementById("admin-count");
-  const btnSubmit = document.getElementById("admin-submit");
-  const btnSave = document.getElementById("admin-save");
-  const btnExport = document.getElementById("admin-export");
-  if (!overlay) return;
+let editingId = null;
 
-  function open() {
-    overlay.hidden = false;
-    gate.hidden = false;
-    picker.hidden = true;
-    btnSubmit.hidden = false;
-    btnSave.hidden = true;
-    btnExport.hidden = true;
-    count.textContent = "";
-    error.textContent = "";
-    pass.value = "";
-    pass.focus();
+function openAdmin() {
+  const ov = document.getElementById("admin-overlay");
+  ov.hidden = false;
+  document.getElementById("admin-gate").hidden = false;
+  document.getElementById("admin-panel-body").hidden = true;
+  document.getElementById("admin-error").textContent = "";
+  document.getElementById("admin-pass").value = "";
+  document.getElementById("admin-pass").focus();
+}
+
+function closeAdmin() {
+  document.getElementById("admin-overlay").hidden = true;
+}
+
+function adminUnlocked() {
+  document.getElementById("admin-gate").hidden = true;
+  document.getElementById("admin-panel-body").hidden = false;
+  fillIconSelect();
+  renderAdminItems();
+  renderAdminRepos();
+  fillWallpaperForm();
+  updateAdminCount();
+}
+
+function updateAdminCount() {
+  document.getElementById("admin-count").textContent = t("admin.count", {
+    n: config.items.length,
+    r: config.projects.selected.length,
+  });
+}
+
+function fillIconSelect() {
+  const sel = document.getElementById("f-icon");
+  sel.innerHTML = "";
+  ICON_KEYS.forEach((k) => {
+    const o = document.createElement("option");
+    o.value = k;
+    o.textContent = k;
+    sel.appendChild(o);
+  });
+}
+
+function fillParentSelect(exceptId) {
+  const sel = document.getElementById("f-parent");
+  sel.innerHTML = "";
+  const none = document.createElement("option");
+  none.value = "";
+  none.textContent = t("admin.f.desktop");
+  sel.appendChild(none);
+  config.items
+    .filter((it) => it.type === "folder" && it.id !== exceptId)
+    .forEach((it) => {
+      const o = document.createElement("option");
+      o.value = it.id;
+      o.textContent = L(it.name);
+      sel.appendChild(o);
+    });
+}
+
+function renderAdminItems() {
+  const box = document.getElementById("admin-items");
+  box.innerHTML = "";
+
+  if (!config.items.length) {
+    box.appendChild(el("p", "admin-hint", t("admin.items.none")));
+    return;
   }
 
-  function close() {
-    overlay.hidden = true;
-    document.getElementById("admin-open").focus();
+  config.items.forEach((item, i) => {
+    const row = el("div", "admin-row" + (item.parent ? " is-child" : ""));
+
+    const ico = el("span");
+    ico.innerHTML = iconSvg(item.icon);
+    row.appendChild(ico.firstChild);
+
+    row.appendChild(el("span", "grow", L(item.name)));
+    row.appendChild(el("span", "tagpill", item.app || item.type));
+
+    const mk = (txt, title, fn) => {
+      const b = el("button", "mini", txt);
+      b.type = "button";
+      b.title = title;
+      b.addEventListener("click", fn);
+      return b;
+    };
+
+    row.appendChild(mk("▲", "Subir", () => moveItem(i, -1)));
+    row.appendChild(mk("▼", "Bajar", () => moveItem(i, 1)));
+    row.appendChild(mk("✎", "Editar", () => editItem(item.id)));
+    row.appendChild(
+      mk("✕", "Borrar", () => {
+        // Los hijos suben al escritorio en vez de quedar huérfanos
+        config.items.forEach((c) => {
+          if (c.parent === item.id) c.parent = null;
+        });
+        config.items.splice(i, 1);
+        renderAdminItems();
+        updateAdminCount();
+      })
+    );
+
+    box.appendChild(row);
+  });
+}
+
+function moveItem(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= config.items.length) return;
+  const [it] = config.items.splice(i, 1);
+  config.items.splice(j, 0, it);
+  renderAdminItems();
+}
+
+function showItemFields() {
+  const type = document.getElementById("f-type").value;
+  document.getElementById("field-app").hidden = type !== "app";
+  document.getElementById("field-url").hidden = type !== "link";
+  document.getElementById("field-text-es").hidden = type !== "txt";
+  document.getElementById("field-text-en").hidden = type !== "txt";
+}
+
+function editItem(id) {
+  const item = id ? itemById(id) : null;
+  editingId = id || null;
+
+  fillParentSelect(id);
+  document.getElementById("item-form").hidden = false;
+  document.getElementById("f-name-es").value = item ? item.name.es || "" : "";
+  document.getElementById("f-name-en").value = item ? item.name.en || "" : "";
+  document.getElementById("f-type").value = item ? item.type : "txt";
+  document.getElementById("f-icon").value = item ? item.icon : "txt";
+  document.getElementById("f-parent").value = item ? item.parent || "" : "";
+  document.getElementById("f-app").value = item && item.app ? item.app : "projects";
+  document.getElementById("f-url").value = item ? item.url || "" : "";
+  document.getElementById("f-text-es").value = item ? item.text.es || "" : "";
+  document.getElementById("f-text-en").value = item ? item.text.en || "" : "";
+  showItemFields();
+  document.getElementById("f-name-es").focus();
+}
+
+function submitItem(e) {
+  e.preventDefault();
+  const type = document.getElementById("f-type").value;
+  const data = {
+    id: editingId || "it" + Date.now().toString(36),
+    type: type,
+    app: type === "app" ? document.getElementById("f-app").value : null,
+    icon: document.getElementById("f-icon").value,
+    url: type === "link" ? document.getElementById("f-url").value : "",
+    parent: document.getElementById("f-parent").value || null,
+    name: {
+      es: document.getElementById("f-name-es").value.trim(),
+      en: document.getElementById("f-name-en").value.trim(),
+    },
+    text: {
+      es: document.getElementById("f-text-es").value,
+      en: document.getElementById("f-text-en").value,
+    },
+  };
+  if (!data.name.en) data.name.en = data.name.es;
+
+  if (editingId) {
+    const i = config.items.findIndex((it) => it.id === editingId);
+    config.items[i] = data;
+  } else {
+    config.items.push(data);
   }
 
-  function chosen() {
-    return [...list.querySelectorAll("input:checked")].map((i) => i.value);
+  editingId = null;
+  document.getElementById("item-form").hidden = true;
+  renderAdminItems();
+  updateAdminCount();
+}
+
+function renderAdminRepos() {
+  const box = document.getElementById("admin-repos");
+  box.innerHTML = "";
+
+  if (!allRepos.length) {
+    box.appendChild(el("p", "admin-hint", t("admin.repos.wait")));
+    return;
   }
 
-  function updateCount() {
-    const n = chosen().length;
-    count.textContent = n
-      ? t("admin.count", { n: n, v: Math.min(n, GH_VISIBLE) })
-      : t("admin.countnone");
-  }
-
-  function buildList() {
-    const selected = localSelection() || [];
-    list.innerHTML = "";
-
-    allRepos.forEach((repo) => {
-      const row = document.createElement("label");
-      row.className = "repo-row";
-
-      const box = document.createElement("input");
-      box.type = "checkbox";
-      box.value = repo.name;
-      box.checked = selected.includes(repo.name);
-      row.classList.toggle("checked", box.checked);
-      box.addEventListener("change", () => {
-        row.classList.toggle("checked", box.checked);
-        updateCount();
-      });
-
-      const text = document.createElement("span");
-      const name = document.createElement("strong");
-      name.textContent = repo.name;
-      text.appendChild(name);
-
-      const desc = document.createElement("span");
-      desc.className = "repo-desc";
-      desc.textContent = repo.description || t("admin.nodesc");
-      text.appendChild(desc);
-
-      row.appendChild(box);
-      row.appendChild(text);
-      list.appendChild(row);
+  allRepos.forEach((repo) => {
+    const row = el("label", "repo-row");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = repo.name;
+    cb.checked = config.projects.selected.includes(repo.name);
+    cb.addEventListener("change", () => {
+      const sel = config.projects.selected;
+      const i = sel.indexOf(repo.name);
+      if (cb.checked && i < 0) sel.push(repo.name);
+      if (!cb.checked && i >= 0) sel.splice(i, 1);
+      updateAdminCount();
     });
 
-    updateCount();
-  }
+    const text = el("span");
+    text.appendChild(el("strong", "", repo.name));
+    text.appendChild(el("span", "repo-desc", repo.description || "—"));
 
-  async function submit() {
-    error.textContent = "";
+    row.appendChild(cb);
+    row.appendChild(text);
+    box.appendChild(row);
+  });
+}
+
+function fillWallpaperForm() {
+  const wp = config.wallpaper;
+  document.getElementById("wp-type").value = wp.type;
+  document.getElementById("wp-color").value = wp.value || "#000000";
+  document.getElementById("wp-color2").value = wp.value2 || "#2a0d0d";
+  document.getElementById("wp-url").value = wp.url || "";
+  document.getElementById("wp-fx").checked = config.showFx !== false;
+  syncWallpaperFields();
+}
+
+function syncWallpaperFields() {
+  const type = document.getElementById("wp-type").value;
+  document.getElementById("wp-field-color").hidden = type === "image";
+  document.getElementById("wp-field-color2").hidden = type !== "gradient";
+  document.getElementById("wp-field-url").hidden = type !== "image";
+}
+
+function readWallpaperForm() {
+  config.wallpaper = {
+    type: document.getElementById("wp-type").value,
+    value: document.getElementById("wp-color").value,
+    value2: document.getElementById("wp-color2").value,
+    url: document.getElementById("wp-url").value.trim(),
+  };
+  config.showFx = document.getElementById("wp-fx").checked;
+  applyWallpaper();
+}
+
+function exportConfig() {
+  const blob = new Blob([JSON.stringify(config, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "desktop.json";
+  a.click();
+  URL.revokeObjectURL(url);
+  document.getElementById("admin-count").textContent = t("admin.exported");
+}
+
+function initAdmin() {
+  document.getElementById("admin-close").addEventListener("click", closeAdmin);
+  document.getElementById("admin-overlay").addEventListener("click", (e) => {
+    if (e.target.id === "admin-overlay") closeAdmin();
+  });
+
+  const pass = document.getElementById("admin-pass");
+  const submit = async () => {
+    const err = document.getElementById("admin-error");
+    err.textContent = "";
     try {
-      const ok = (await hashText(pass.value)) === ADMIN_HASH;
-      if (!ok) {
-        error.textContent = t("admin.wrongpass");
+      if ((await hashText(pass.value)) !== ADMIN_HASH) {
+        err.textContent = t("admin.wrongpass");
         pass.select();
         return;
       }
     } catch (e) {
-      error.textContent = t("admin.nocrypto");
+      err.textContent = t("admin.nocrypto");
       return;
     }
-
-    if (!allRepos.length) {
-      error.textContent = t("admin.notloaded");
-      return;
-    }
-
-    gate.hidden = true;
-    picker.hidden = false;
-    btnSubmit.hidden = true;
-    btnSave.hidden = false;
-    btnExport.hidden = false;
-    buildList();
-  }
-
-  function save() {
-    const selected = chosen();
-    try {
-      localStorage.setItem(
-        SELECTION_KEY,
-        JSON.stringify({ selected: selected })
-      );
-    } catch (e) {}
-    renderProjects(applySelection(allRepos, selected));
-    close();
-    document.getElementById("projects").scrollIntoView({ behavior: "smooth" });
-  }
-
-  /* Descarga projects.json para subirlo al repo: es lo único
-     que hace que la selección la vean también las visitas. */
-  function exportJson() {
-    const data = {
-      user: document.getElementById("projects-grid").dataset.githubUser,
-      selected: chosen(),
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "projects.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  document.getElementById("admin-open").addEventListener("click", open);
-  document.getElementById("admin-close").addEventListener("click", close);
-  btnSubmit.addEventListener("click", submit);
-  btnSave.addEventListener("click", save);
-  btnExport.addEventListener("click", exportJson);
-
+    adminUnlocked();
+  };
+  document.getElementById("admin-submit").addEventListener("click", submit);
   pass.addEventListener("keydown", (e) => {
     if (e.key === "Enter") submit();
   });
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) close();
+
+  document.getElementById("admin-tabs").addEventListener("click", (e) => {
+    const tab = e.target.closest(".tab");
+    if (!tab) return;
+    document.querySelectorAll("#admin-tabs .tab").forEach((b) => {
+      b.classList.toggle("is-active", b === tab);
+    });
+    ["items", "look", "repos"].forEach((name) => {
+      document.getElementById("tab-" + name).hidden = name !== tab.dataset.tab;
+    });
   });
+
+  document.getElementById("item-add").addEventListener("click", () => editItem(null));
+  document.getElementById("item-cancel").addEventListener("click", () => {
+    editingId = null;
+    document.getElementById("item-form").hidden = true;
+  });
+  document.getElementById("f-type").addEventListener("change", showItemFields);
+  document.getElementById("item-form").addEventListener("submit", submitItem);
+
+  ["wp-type", "wp-color", "wp-color2", "wp-url", "wp-fx"].forEach((id) => {
+    document.getElementById(id).addEventListener("input", () => {
+      syncWallpaperFields();
+      readWallpaperForm();
+    });
+  });
+
+  document.getElementById("admin-save").addEventListener("click", () => {
+    readWallpaperForm();
+    saveConfig();
+    renderDesktop();
+    renderStartMenu();
+    repaintOpenWindows();
+    document.getElementById("admin-count").textContent = t("admin.saved");
+  });
+
+  document.getElementById("admin-export").addEventListener("click", () => {
+    readWallpaperForm();
+    exportConfig();
+  });
+
+  document.getElementById("admin-reset").addEventListener("click", () => {
+    if (!window.confirm(t("admin.resetAsk"))) return;
+    try { localStorage.removeItem(CFG_KEY); } catch (e) {}
+    config = cloneDefaults();
+    applyWallpaper();
+    renderDesktop();
+    renderStartMenu();
+    closeAllWins();
+    adminUnlocked();
+  });
+
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !overlay.hidden) close();
-  });
-}
-
-/* =========================================================
-   FORMULARIO DE CONTACTO
-   No hay servidor detrás: al enviar se abre el correo del
-   visitante con destinatario, asunto y cuerpo ya escritos.
-   Solo tiene que pulsar "enviar" en su propio cliente.
-   ========================================================= */
-const MAILTO_MAX = 1800; // los clientes de correo cortan las URL largas
-
-function initContactForm() {
-  const form = document.getElementById("contact-form");
-  const status = document.getElementById("contact-status");
-  if (!form) return;
-
-  const to = form.dataset.mailto;
-
-  form.addEventListener("submit", (e) => {
-    e.preventDefault(); // nada de POST: abrimos el cliente de correo
-
-    const data = new FormData(form);
-    const name = (data.get("name") || "").trim();
-    const email = (data.get("email") || "").trim();
-    const subject = (data.get("subject") || "").trim();
-    const message = (data.get("message") || "").trim();
-
-    const body =
-      message +
-      "\n\n—\n" +
-      t("contact.mail.from") +
-      ": " +
-      name +
-      "\n" +
-      t("contact.mail.reply") +
-      ": " +
-      email;
-
-    const href =
-      "mailto:" +
-      encodeURIComponent(to) +
-      "?subject=" +
-      encodeURIComponent(subject) +
-      "&body=" +
-      encodeURIComponent(body);
-
-    status.hidden = false;
-    status.classList.remove("is-warn");
-
-    if (href.length > MAILTO_MAX) {
-      // Mensaje demasiado largo: el cliente lo cortaría sin avisar
-      status.classList.add("is-warn");
-      status.textContent = t("contact.status.toolong", { mail: to });
-      return;
+    if (e.key === "Escape" && !document.getElementById("admin-overlay").hidden) {
+      closeAdmin();
     }
-
-    status.textContent = t("contact.status.opening", { mail: to });
-    window.location.href = href;
   });
 }
 
 /* =========================================================
    STAR WARS
-   Cada tanto pasa un caza TIE disparando, o aparece la
+   Cada tanto cruza un caza TIE disparando, o aparece la
    Estrella de la Muerte, se queda quieta y explota.
    ========================================================= */
 const TIE_SIZE = 34;
 const DS_SIZE = 60;
-const TIE_SPEED = 0.4; // px por milisegundo
-const DS_STATIC_MS = 6500; // cuánto se queda quieta antes de explotar
+const TIE_SPEED = 0.4;       // px por milisegundo
+const DS_STATIC_MS = 6500;   // cuánto se queda quieta antes de explotar
 
 function initSpaceFx() {
   const stage = document.getElementById("sw-fx");
@@ -843,13 +1467,17 @@ function initSpaceFx() {
   if (!stage || !tie || !star) return;
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-  /* Un rayo verde que sale del TIE hacia donde vuela */
+  const area = () => ({
+    w: stage.clientWidth,
+    h: stage.clientHeight,
+  });
+
   function laser(x, y, dx, dy) {
     const bolt = document.createElement("div");
     bolt.className = "tie-laser";
     const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-    const base = "translate(" + x + "px," + y + "px) rotate(" + angle + "deg)";
-    bolt.style.transform = base;
+    bolt.style.transform =
+      "translate(" + x + "px," + y + "px) rotate(" + angle + "deg)";
     stage.appendChild(bolt);
 
     requestAnimationFrame(() => {
@@ -861,45 +1489,30 @@ function initSpaceFx() {
     setTimeout(() => bolt.remove(), 700);
   }
 
-  /* Vuelo del caza. Devuelve cuánto dura. */
+  /* Vuelo del caza, siempre horizontal */
   function flyTie() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const { w, h } = area();
     const off = 80;
-
-    // Solo vuelos horizontales, a una altura al azar
-    const y = 90 + Math.random() * Math.max(1, h - 260);
-    const routes = [
-      // de izquierda a derecha
-      { from: { x: -off, y: y }, dir: { x: 1, y: 0 }, rot: 0 },
-      // de derecha a izquierda
-      { from: { x: w + off, y: y }, dir: { x: -1, y: 0 }, rot: 0 },
-    ];
-
-    const r = routes[Math.floor(Math.random() * routes.length)];
+    const y = 60 + Math.random() * Math.max(1, h - 200);
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const from = dir === 1 ? -off : w + off;
     const dist = w + off * 2;
     const ms = dist / TIE_SPEED;
-    const to = {
-      x: r.from.x + r.dir.x * dist,
-      y: r.from.y + r.dir.y * dist,
-    };
 
     tie.style.transition = "none";
-    tie.style.transform =
-      "translate(" + r.from.x + "px," + r.from.y + "px) rotate(" + r.rot + "deg)";
+    tie.style.transform = "translate(" + from + "px," + y + "px)";
     void tie.offsetWidth; // reflow para que arranque desde "from"
 
     tie.classList.add("flying");
     tie.style.transition = "transform " + ms + "ms linear";
-    tie.style.transform =
-      "translate(" + to.x + "px," + to.y + "px) rotate(" + r.rot + "deg)";
+    tie.style.transform = "translate(" + (from + dir * dist) + "px," + y + "px)";
 
-    // Dispara mientras cruza
     const shots = setInterval(() => {
       const box = tie.getBoundingClientRect();
-      const cx = box.left + box.width / 2 + r.dir.x * (TIE_SIZE / 2 + 6);
-      const cy = box.top + box.height / 2 + r.dir.y * (TIE_SIZE / 2 + 6);
-      laser(cx, cy, r.dir.x, r.dir.y);
+      const stageBox = stage.getBoundingClientRect();
+      const cx = box.left - stageBox.left + box.width / 2 + dir * (TIE_SIZE / 2 + 6);
+      const cy = box.top - stageBox.top + box.height / 2;
+      laser(cx, cy, dir, 0);
     }, 480);
 
     setTimeout(() => {
@@ -910,12 +1523,11 @@ function initSpaceFx() {
     return ms;
   }
 
-  /* Aparece la Estrella, espera y explota. Devuelve cuánto dura. */
+  /* La Estrella aparece, espera y explota */
   function deathStarRun() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
+    const { w, h } = area();
     const x = 40 + Math.random() * Math.max(1, w - DS_SIZE - 80);
-    const y = 90 + Math.random() * Math.max(1, h - DS_SIZE - 220);
+    const y = 60 + Math.random() * Math.max(1, h - DS_SIZE - 140);
 
     star.style.transform = "translate(" + x + "px," + y + "px)";
     star.classList.add("visible");
@@ -925,7 +1537,6 @@ function initSpaceFx() {
 
     setTimeout(() => {
       star.classList.add("exploding");
-
       const at = "translate(" + cx + "px," + cy + "px)";
       ["ds-flash", "ds-ring", "ds-ring flat"].forEach((cls) => {
         const fx = document.createElement("div");
@@ -934,17 +1545,17 @@ function initSpaceFx() {
         stage.appendChild(fx);
         setTimeout(() => fx.remove(), 1300);
       });
-
-      setTimeout(() => {
-        star.classList.remove("visible", "exploding");
-      }, 950);
+      setTimeout(() => star.classList.remove("visible", "exploding"), 950);
     }, DS_STATIC_MS);
 
     return DS_STATIC_MS + 1400;
   }
 
   function next() {
-    // 60% caza, 40% Estrella de la Muerte
+    if (config.showFx === false) {
+      setTimeout(next, 20000);
+      return;
+    }
     const ms = Math.random() < 0.6 ? flyTie() : deathStarRun();
     setTimeout(next, ms + 18000 + Math.random() * 26000);
   }
@@ -955,125 +1566,47 @@ function initSpaceFx() {
 /* =========================================================
    ARRANQUE
    ========================================================= */
-document.addEventListener("DOMContentLoaded", function () {
-  // ----- Idioma guardado -----
-  harvestBaseLang(); // el HTML manda: debe ir ANTES de applyLang
+document.addEventListener("DOMContentLoaded", async function () {
+  harvestBaseLang(); // el HTML manda: antes de traducir nada
+
+  // Config: borrador local > desktop.json > valores de fábrica
+  config = localConfig() || (await publishedConfig()) || cloneDefaults();
+  applyWallpaper();
+
   let startLang = DEFAULT_LANG;
   try {
     startLang = localStorage.getItem(LANG_KEY) || DEFAULT_LANG;
   } catch (e) {}
   applyLang(startLang);
 
-  function toggleLang() {
+  // Idioma
+  document.getElementById("lang-toggle").addEventListener("click", () => {
     applyLang(lang === "es" ? "en" : "es");
-  }
-  document.getElementById("lang-toggle").addEventListener("click", toggleLang);
-  document
-    .getElementById("lang-toggle-mobile")
-    .addEventListener("click", toggleLang);
-
-  // ----- Año actual en el footer -----
-  document.getElementById("year").textContent = new Date().getFullYear();
-
-  // ----- Tema claro / oscuro -----
-  const root = document.documentElement;
-  const sunIcons = document.querySelectorAll(".icon-sun");
-  const moonIcons = document.querySelectorAll(".icon-moon");
-
-  function applyTheme(theme) {
-    const dark = theme === "dark";
-    root.classList.toggle("dark", dark);
-    sunIcons.forEach((el) => (el.style.display = dark ? "none" : "block"));
-    moonIcons.forEach((el) => (el.style.display = dark ? "block" : "none"));
-  }
-
-  // Tema guardado, o preferencia del sistema
-  const saved = localStorage.getItem("theme");
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  applyTheme(saved || (prefersDark ? "dark" : "light"));
-
-  function toggleTheme() {
-    const next = root.classList.contains("dark") ? "light" : "dark";
-    localStorage.setItem("theme", next);
-    applyTheme(next);
-  }
-  document.getElementById("theme-toggle").addEventListener("click", toggleTheme);
-  document
-    .getElementById("theme-toggle-mobile")
-    .addEventListener("click", toggleTheme);
-
-  // ----- Menú móvil -----
-  const navMobile = document.getElementById("nav-mobile");
-  const iconMenu = document.getElementById("icon-menu");
-  const iconClose = document.getElementById("icon-close");
-  document.getElementById("menu-toggle").addEventListener("click", () => {
-    const open = navMobile.classList.toggle("open");
-    iconMenu.style.display = open ? "none" : "block";
-    iconClose.style.display = open ? "block" : "none";
   });
-  // Cerrar el menú al pulsar un enlace
-  navMobile.querySelectorAll(".nav-link").forEach((link) =>
-    link.addEventListener("click", () => {
-      navMobile.classList.remove("open");
-      iconMenu.style.display = "block";
-      iconClose.style.display = "none";
-    })
-  );
 
-  // ----- Fondo glass del header + barra de progreso al hacer scroll -----
-  const header = document.getElementById("site-header");
-  const progress = document.getElementById("scroll-progress");
+  // Menú Inicio
+  const startBtn = document.getElementById("start-btn");
+  startBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (document.getElementById("start-menu").hidden) showStart();
+    else hideStart();
+  });
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#start-menu") && !e.target.closest("#start-btn")) hideStart();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") hideStart();
+  });
 
-  function onScroll() {
-    header.classList.toggle("scrolled", window.scrollY > 10);
-    highlightActiveSection();
+  // Reloj de Colombia
+  tickClock();
+  setInterval(tickClock, 15000);
 
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    const pct = max > 0 ? window.scrollY / max : 0;
-    progress.style.transform = "scaleX(" + Math.min(1, pct) + ")";
-  }
-
-  // requestAnimationFrame para no recalcular en cada píxel de scroll
-  let ticking = false;
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        onScroll();
-        ticking = false;
-      });
-    },
-    { passive: true }
-  );
-
-  // ----- Resaltar el enlace de la sección visible -----
-  const sections = ["home", "about", "experience", "projects", "education", "contact"];
-  const desktopLinks = document.querySelectorAll(".nav-desktop .nav-link");
-  function highlightActiveSection() {
-    let current = "home";
-    for (const id of sections) {
-      const el = document.getElementById(id);
-      if (!el) continue;
-      const rect = el.getBoundingClientRect();
-      if (rect.top <= 150 && rect.bottom >= 150) current = id;
-    }
-    desktopLinks.forEach((link) =>
-      link.classList.toggle("active", link.getAttribute("href") === "#" + current)
-    );
-  }
-  onScroll(); // primera pasada: ya existen sections y el DOM
-
-  // ----- Animaciones de entrada -----
-  reveal([...document.querySelectorAll(".section-head, .lead, .card")]);
-
-  // ----- Proyectos, portal y Star Wars -----
-  document
-    .getElementById("projects-more-btn")
-    .addEventListener("click", toggleMore);
-  loadGitHubProjects();
-  initAdminPortal();
-  initContactForm();
+  initAdmin();
   initSpaceFx();
+
+  // Los repos llegan después: al terminar se repintan las ventanas abiertas
+  await loadRepos();
+  repaintOpenWindows();
+  if (!document.getElementById("admin-panel-body").hidden) renderAdminRepos();
 });
