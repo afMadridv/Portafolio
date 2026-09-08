@@ -121,29 +121,36 @@ desplegado, la **Website** (aparece como botón *Ver web*).
 | Educación | `EDUCATION` |
 | Redes | `SOCIAL` |
 | Escritorio de fábrica | `DEFAULT_DESKTOP` |
-| Iconos disponibles | `PIXELS` (dibujos de 16x16 en texto) |
+| Iconos disponibles | `PIXELS` (dibujos de 32x32 en texto) |
 | Colores de los iconos | `PAL` |
 | Colores del chrome | `:root` en `styles.css` |
 
 ### Dibujar un icono
 
-Los iconos son rejillas de 16x16 escritas como texto: una letra por píxel,
-según la paleta `PAL`. El punto es transparente. No hace falta ningún editor:
+Los iconos son rejillas de **32x32**, la medida de los iconos de escritorio de
+los 90. Se escriben como texto: una letra por píxel, según la paleta `PAL`. El
+punto es transparente y las filas pueden quedarse cortas — lo que falta se
+rellena como transparente. No hace falta ningún editor de imágenes:
 
 ```js
 folder: [
-  "................",
-  "..kkkkk.........",
-  ".kYYYYYk........",
-  ".kYyyyykkkkkkkk.",
-  ".kyyyyyyyyyyyyk.",
-  // …hasta 16 filas
+  "................................",
+  "....kkkkkkkkkk..................",
+  "...kWWWWWWWWWWk.................",
+  "...kWYYYYYYYYYk.................",
+  "...kWYYYYYYYYYkkkkkkkkkkkkkkk...",
+  "...kWYYYYYYYYYYYYYYYYYYYYYYYYk..",
+  // …hasta 32 filas
 ],
 ```
 
-`pixelSvg()` los convierte en SVG uniendo los píxeles seguidos del mismo color,
-para no generar 256 nodos por icono. El CSS los pinta con
-`image-rendering: pixelated`, así no se difuminan al ampliarlos.
+A 32x32 los píxeles quedan finos al pintarlos a 40px, como los iconos
+originales. A 16x16 salían el doble de gruesos.
+
+`pixelSvg()` los convierte en SVG uniendo los píxeles seguidos del mismo color:
+si no, serían 1024 nodos por icono. El tamaño sale del propio dibujo, así
+conviven rejillas de distinto tamaño. El CSS los pinta con
+`image-rendering: pixelated`, para que no se difuminen al ampliarlos.
 
 ## Idiomas
 
@@ -187,8 +194,8 @@ la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
 en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=11" />
-<script src="script.js?v=11"></script>
+<link rel="stylesheet" href="styles.css?v=12" />
+<script src="script.js?v=12"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:
