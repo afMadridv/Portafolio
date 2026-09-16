@@ -152,6 +152,30 @@ si no, serían 1024 nodos por icono. El tamaño sale del propio dibujo, así
 conviven rejillas de distinto tamaño. El CSS los pinta con
 `image-rendering: pixelated`, para que no se difuminen al ampliarlos.
 
+## Cursores
+
+El puntero también es de píxeles, dibujado con el mismo sistema que los iconos
+pero en rejilla de **16x16** (`CURSORS` en `script.js`). Cada píxel se pinta a
+2x, así el cursor mide 32x32: por encima de ese tamaño hay plataformas que lo
+ignoran.
+
+Van a PNG, no a SVG, porque Safari no admite cursores SVG. Los genera
+`cursorPng()` con un canvas, y `initCursors()` inyecta las reglas. Cada PNG pesa
+menos de 500 caracteres en `data:` URI.
+
+| Cursor | Dónde sale |
+|---|---|
+| Flecha | Todo, por herencia desde `<html>` |
+| Mano | Enlaces, botones, iconos, pestañas, casillas |
+| Cursor de texto | Campos de texto y áreas de texto |
+| Diagonal | El tirador de redimensionar de las ventanas |
+| Reloj de arena | Mientras cargan los repos de GitHub (`body.is-busy`) |
+
+El cursor se hereda en CSS, así que basta con ponerlo en `<html>` y corregir lo
+que pide otro. Por eso las reglas `cursor: default` del CSS pasaron a
+`cursor: inherit`: un `default` explícito cortaba la herencia y devolvía el
+puntero del sistema.
+
 ## Idiomas
 
 El botón `EN`/`ES` de la bandeja cambia entre español e inglés. La elección se
@@ -194,8 +218,8 @@ la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
 en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=12" />
-<script src="script.js?v=12"></script>
+<link rel="stylesheet" href="styles.css?v=13" />
+<script src="script.js?v=13"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:

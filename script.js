@@ -645,6 +645,167 @@ const PIXELS = {
   ],
 };
 
+/* =========================================================
+   CURSORES
+   Mismo sistema de dibujo que los iconos, pero en 16x16: el
+   navegador ignora los cursores de más de 32px en algunas
+   plataformas, y cada píxel se pinta a 2x -> 32x32 justos.
+
+   Van a PNG y no a SVG porque Safari no admite cursores SVG.
+   ========================================================= */
+const CURSOR_ZOOM = 2;
+
+const CURSORS = {
+  /* Flecha: la punta es el píxel (0,0) */
+  arrow: [
+    "k...............",
+    "kk..............",
+    "kwk.............",
+    "kwwk............",
+    "kwwwk...........",
+    "kwwwwk..........",
+    "kwwwwwk.........",
+    "kwwwwwwk........",
+    "kwwwwwwwk.......",
+    "kwwwwwwwwk......",
+    "kwwwwwkkkkk.....",
+    "kwwkwwk.........",
+    "kwk.kwwk........",
+    "kk..kwwk........",
+    "k....kwwk.......",
+    ".....kkkk.......",
+  ],
+
+  /* Mano: la punta del índice es el píxel (6,0) */
+  hand: [
+    "......kk........",
+    ".....kwwk.......",
+    ".....kwwk.......",
+    ".....kwwk.......",
+    ".....kwwk.......",
+    ".....kwwkkk.....",
+    ".....kwwkwwkk...",
+    ".....kwwkwwkwwk.",
+    "..kk.kwwkwwkwwk.",
+    ".kwwkkwwwwwwwwk.",
+    ".kwwwwwwwwwwwwk.",
+    "..kwwwwwwwwwwwk.",
+    "...kwwwwwwwwwwk.",
+    "....kwwwwwwwwk..",
+    "....kwwwwwwwwk..",
+    ".....kkkkkkkkk..",
+  ],
+
+  /* Cursor de texto: el centro es el píxel (6,7) */
+  text: [
+    "................",
+    "...kkkkkkk......",
+    "...kwwwwwk......",
+    "...kkkwkkk......",
+    ".....kwk........",
+    ".....kwk........",
+    ".....kwk........",
+    ".....kwk........",
+    ".....kwk........",
+    ".....kwk........",
+    ".....kwk........",
+    ".....kwk........",
+    "...kkkwkkk......",
+    "...kwwwwwk......",
+    "...kkkkkkk......",
+    "................",
+  ],
+
+  /* Redimensionar en diagonal: el centro es el píxel (8,8) */
+  resize: [
+    "................",
+    ".kkkkkkkk.......",
+    ".kwwwwwwk.......",
+    ".kwwwwwk........",
+    ".kwwwwk.........",
+    ".kwwkwk.........",
+    ".kwk.kwk........",
+    ".kk...kwk.......",
+    ".......kwk...kk.",
+    "........kwk.kwwk",
+    ".........kwkkwwk",
+    "..........kwwwwk",
+    ".........kwwwwwk",
+    "........kwwwwwwk",
+    ".......kkkkkkkkk",
+    "................",
+  ],
+
+  /* Reloj de arena, mientras cargan los repos */
+  busy: [
+    "................",
+    "..kkkkkkkkkk....",
+    "..kwwwwwwwwk....",
+    "..kwrrrrrrwk....",
+    "...kwrrrrwk.....",
+    "....kwrrwk......",
+    ".....kwwk.......",
+    ".....kwwk.......",
+    ".....kwwk.......",
+    ".....kwwk.......",
+    "....kwwwwk......",
+    "...kwrrrrwk.....",
+    "..kwrrrrrrwk....",
+    "..kwwwwwwwwk....",
+    "..kkkkkkkkkk....",
+    "................",
+  ],
+};
+
+/* Pasa un dibujo a PNG en data: URI, sin suavizado */
+function cursorPng(rows) {
+  const n = Math.max(rows.length, ...rows.map((r) => r.length));
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = n * CURSOR_ZOOM;
+  const g = canvas.getContext("2d");
+  rows.forEach((row, y) => {
+    for (let x = 0; x < row.length; x++) {
+      const color = PAL[row[x]];
+      if (!color) continue;
+      g.fillStyle = color;
+      g.fillRect(x * CURSOR_ZOOM, y * CURSOR_ZOOM, CURSOR_ZOOM, CURSOR_ZOOM);
+    }
+  });
+  return canvas.toDataURL("image/png");
+}
+
+/* Inyecta las reglas. El cursor se hereda, así que basta con
+   ponerlo en <html> y corregir los elementos que piden otro. */
+function initCursors() {
+  const mk = (rows, hx, hy) =>
+    'url("' + cursorPng(rows) + '") ' + hx * CURSOR_ZOOM + " " + hy * CURSOR_ZOOM;
+
+  let arrow, hand, text, resize, busy;
+  try {
+    arrow = mk(CURSORS.arrow, 0, 0);
+    hand = mk(CURSORS.hand, 6, 0);
+    text = mk(CURSORS.text, 6, 7);
+    resize = mk(CURSORS.resize, 8, 8);
+    busy = mk(CURSORS.busy, 7, 7);
+  } catch (e) {
+    return; // sin canvas se queda el cursor del sistema
+  }
+
+  const css = document.createElement("style");
+  css.textContent =
+    "html { cursor: " + arrow + ", default; }\n" +
+    "a, button, summary, select, option, label.check, .repo-row," +
+    ".d-icon, .folder-item, .etab, .tab, .mini, .tb-btn, .tray-btn," +
+    ".win-btn, .btn, .start-list button, input[type=checkbox]," +
+    "input[type=color], .input.color, select.input" +
+    " { cursor: " + hand + ", pointer; }\n" +
+    "input:not([type=checkbox]):not([type=color]), textarea" +
+    " { cursor: " + text + ", text; }\n" +
+    ".win-grip { cursor: " + resize + ", nwse-resize; }\n" +
+    "body.is-busy, body.is-busy * { cursor: " + busy + ", wait; }\n";
+  document.head.appendChild(css);
+}
+
 /* Convierte la rejilla en SVG. Une los píxeles seguidos del
    mismo color en un solo <rect>: si no, serían 1024 nodos por
    icono. El tamaño sale del propio dibujo, así conviven
@@ -2501,11 +2662,14 @@ document.addEventListener("DOMContentLoaded", async function () {
   tickClock();
   setInterval(tickClock, 15000);
 
+  initCursors();
   initAdmin();
   initSpaceFx();
 
   // Los repos llegan después: al terminar se repintan las ventanas abiertas
+  document.body.classList.add("is-busy"); // reloj de arena mientras cargan
   await loadRepos();
+  document.body.classList.remove("is-busy");
   repaintOpenWindows();
   if (!document.getElementById("admin-panel-body").hidden) renderAdminRepos();
 });
