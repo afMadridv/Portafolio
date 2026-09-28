@@ -464,6 +464,44 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .dlg-head p { margin: 0; font-size: 0.76rem; }
 .dlg-actions { display: flex; justify-content: flex-end; margin-top: 0.4rem; }
 
+/* "Enviar con…": lista hundida como el "Abrir con" de Windows */
+.send-chooser[hidden] { display: none; }
+.send-q { margin: 0 0 0.6rem; font-size: 0.8rem; font-weight: 700; }
+.send-list {
+  display: flex;
+  flex-direction: column;
+  padding: 3px;
+  margin-bottom: 0.4rem;
+  background: var(--paper);
+  box-shadow:
+    inset 1px 1px 0 0 var(--shadow),
+    inset -1px -1px 0 0 var(--light),
+    inset 2px 2px 0 0 var(--dark);
+}
+.send-opt {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.45rem 0.55rem;
+  background: none;
+  border: 1px dotted transparent;
+  text-align: left;
+  color: var(--ink);
+}
+.send-opt:hover,
+.send-opt:focus-visible {
+  outline: none;
+  background: #000080;
+  color: #fff;
+}
+.send-ico { width: 28px; height: 28px; flex-shrink: 0; }
+.send-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.send-txt { display: flex; flex-direction: column; line-height: 1.3; }
+.send-txt strong { font-size: 0.8rem; }
+.send-txt span { font-size: 0.68rem; opacity: 0.75; }
+.copy-box { margin-top: 0.5rem; font-size: 0.72rem; }
+.copy-box[hidden] { display: none; }
+
 /* Tirador para redimensionar, abajo a la derecha */
 .win-grip {
   position: absolute;

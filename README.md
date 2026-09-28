@@ -201,15 +201,29 @@ Ajustes en `script.js`: `TIE_SIZE`, `DS_SIZE`, `TIE_SPEED`, `DS_STATIC_MS`.
 
 ## Formulario de contacto
 
-No hay servidor detrás ni servicio externo. Al enviar se abre el cliente de
-correo del visitante con destinatario, asunto y cuerpo ya escritos; solo tiene
-que pulsar enviar en su propia aplicación. El mensaje te llega desde su correo
-real, así puedes responder directo.
+No hay servidor detrás ni servicio externo. El visitante escribe el mensaje,
+pulsa **Enviar mensaje** y elige con qué correo mandarlo — un diálogo como el
+"Abrir con" de Windows:
 
-Si el visitante no tiene cliente de correo configurado no se abre nada, por eso
-bajo el botón sale siempre tu dirección. Y si el mensaje pasa de 1800
-caracteres de URL, avisa en vez de abrir un correo cortado a medias: varios
-clientes truncan los `mailto:` largos sin decir nada.
+| Opción | Qué hace |
+|---|---|
+| **Gmail** | Abre el redactor de Gmail en otra pestaña, con todo escrito |
+| **Outlook / Hotmail** | Lo mismo en Outlook web |
+| **App de correo del equipo** | `mailto:` para Outlook de escritorio, Correo, Thunderbird… |
+| **Copiar el mensaje** | Lo copia con destinatario y asunto, para pegarlo donde quiera |
+
+El mensaje te llega desde el correo real de la persona, así respondes directo.
+
+**Por qué no un solo botón con `mailto:`:** así estaba antes, y solo funciona si
+el visitante tiene una app de correo instalada. Casi todo el mundo usa Gmail u
+Outlook en el navegador: no pasaba nada, salía el selector de apps de Windows,
+o — si Gmail estaba registrado como manejador — la web se iba de la pestaña del
+portafolio. Gmail y Outlook se abren en **otra pestaña** para que el visitante
+no pierda la página.
+
+`mailto:` solo tiene el límite de 1800 caracteres (Windows los corta sin avisar);
+si se pasa, el aviso manda a Gmail, Outlook o copiar. Si el navegador no deja
+copiar solo, el texto aparece seleccionado para `Ctrl+C`.
 
 ## Si editas y no ves el cambio
 
@@ -218,8 +232,8 @@ la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
 en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=13" />
-<script src="script.js?v=13"></script>
+<link rel="stylesheet" href="styles.css?v=14" />
+<script src="script.js?v=14"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:

@@ -1010,7 +1010,7 @@ const I18N = {
 
     "app.contact.title": "Escríbeme",
     "app.contact.hint":
-      "Al enviar se abre tu correo con el mensaje ya escrito. Solo tienes que pulsar enviar.",
+      "Escribe tu mensaje y elige con qué correo mandarlo. Llega todo escrito: solo tienes que pulsar enviar.",
     "app.contact.name": "Nombre",
     "app.contact.name.ph": "Tu nombre",
     "app.contact.email": "Tu email",
@@ -1020,10 +1020,23 @@ const I18N = {
     "app.contact.message": "Mensaje",
     "app.contact.message.ph": "Cuéntame",
     "app.contact.send": "Enviar mensaje",
-    "app.contact.opening":
-      "Abriendo tu correo con el mensaje listo — solo pulsa enviar. ¿No se abrió? Escríbeme a {mail}",
+    "app.contact.choose": "¿Con qué correo lo envías?",
+    "app.contact.via.web": "Se abre en otra pestaña con todo escrito",
+    "app.contact.via.app": "App de correo del equipo",
+    "app.contact.via.app.sub": "Outlook de escritorio, Correo, Thunderbird…",
+    "app.contact.via.copy": "Copiar el mensaje",
+    "app.contact.via.copy.sub": "Y pegarlo en cualquier correo",
+    "app.contact.back": "← Volver a editar",
+    "app.contact.to": "Para",
+    "app.contact.opened":
+      "Se abrió {app} en otra pestaña con todo escrito. Solo pulsa Enviar. ¿No se abrió? Revisa si el navegador bloqueó la ventana.",
+    "app.contact.appHint":
+      "Si no se abrió nada, este equipo no tiene app de correo: usa Gmail u Outlook.",
+    "app.contact.copied": "Copiado. Pégalo en un correo nuevo a {mail}.",
+    "app.contact.copyFail":
+      "No se pudo copiar automáticamente: el texto está seleccionado abajo, cópialo con Ctrl+C.",
     "app.contact.toolong":
-      "El mensaje es muy largo para abrirse solo. Cópialo y mándalo a {mail}",
+      "El mensaje es muy largo para la app de correo. Usa Gmail, Outlook o cópialo y mándalo a {mail}.",
     "app.contact.from": "Enviado desde el portafolio por",
     "app.contact.reply": "Responder a",
 
@@ -1120,7 +1133,7 @@ const I18N = {
 
     "app.contact.title": "Write to me",
     "app.contact.hint":
-      "Sending opens your mail app with the message ready. You only have to hit send.",
+      "Write your message and pick which mail to send it with. It arrives fully written: you only have to hit send.",
     "app.contact.name": "Name",
     "app.contact.name.ph": "Your name",
     "app.contact.email": "Your email",
@@ -1130,10 +1143,23 @@ const I18N = {
     "app.contact.message": "Message",
     "app.contact.message.ph": "Tell me about it",
     "app.contact.send": "Send message",
-    "app.contact.opening":
-      "Opening your mail app with the message ready — just hit send. Didn't open? Write to {mail}",
+    "app.contact.choose": "Which mail do you want to send it with?",
+    "app.contact.via.web": "Opens in a new tab, fully written",
+    "app.contact.via.app": "Mail app on this computer",
+    "app.contact.via.app.sub": "Outlook desktop, Mail, Thunderbird…",
+    "app.contact.via.copy": "Copy the message",
+    "app.contact.via.copy.sub": "And paste it into any mail",
+    "app.contact.back": "← Back to editing",
+    "app.contact.to": "To",
+    "app.contact.opened":
+      "{app} opened in a new tab, fully written. Just hit Send. Didn't open? Check whether the browser blocked the window.",
+    "app.contact.appHint":
+      "If nothing opened, this computer has no mail app: use Gmail or Outlook.",
+    "app.contact.copied": "Copied. Paste it into a new mail to {mail}.",
+    "app.contact.copyFail":
+      "Could not copy automatically: the text is selected below, copy it with Ctrl+C.",
     "app.contact.toolong":
-      "The message is too long to open automatically. Copy it and send it to {mail}",
+      "The message is too long for the mail app. Use Gmail, Outlook or copy it and send it to {mail}.",
     "app.contact.from": "Sent from the portfolio by",
     "app.contact.reply": "Reply to",
 
@@ -1951,39 +1977,154 @@ const APPS = {
     actions.appendChild(send);
     form.appendChild(actions);
 
+    /* Segundo paso: "Enviar con…", como el "Abrir con" de Windows.
+       Antes el botón hacía window.location = mailto:, que solo
+       funciona si el visitante tiene una app de correo instalada.
+       Casi todos usan Gmail u Outlook en el navegador: no pasaba
+       nada, o salía el selector de apps de Windows. */
+    const chooser = el("div", "send-chooser");
+    chooser.hidden = true;
+    chooser.appendChild(el("p", "send-q", t("app.contact.choose")));
+    const list = el("div", "send-list");
+    chooser.appendChild(list);
+
     const status = el("p", "form-status");
     status.hidden = true;
-    form.appendChild(status);
+    chooser.appendChild(status);
+
+    const copyBox = document.createElement("textarea");
+    copyBox.className = "input copy-box";
+    copyBox.readOnly = true;
+    copyBox.rows = 5;
+    copyBox.hidden = true;
+    chooser.appendChild(copyBox);
+
+    const back = el("button", "btn", t("app.contact.back"));
+    back.type = "button";
+    chooser.appendChild(el("div", "dlg-actions")).appendChild(back);
+
+    let msg = null; // { subject, body }
+
+    const say = (text, warn) => {
+      status.hidden = false;
+      status.classList.toggle("is-warn", !!warn);
+      status.textContent = text;
+    };
+
+    // Compose web con todo relleno, en otra pestaña: el visitante
+    // no pierde el portafolio y solo tiene que pulsar Enviar.
+    const openWeb = (url, name) => {
+      window.open(url, "_blank", "noopener,noreferrer");
+      say(t("app.contact.opened", { app: name }));
+    };
+
+    const q = encodeURIComponent;
+    const OPTIONS = [
+      {
+        icon: "mail",
+        label: "Gmail",
+        sub: t("app.contact.via.web"),
+        run: () =>
+          openWeb(
+            "https://mail.google.com/mail/?view=cm&fs=1&to=" + q(EMAIL) +
+              "&su=" + q(msg.subject) + "&body=" + q(msg.body),
+            "Gmail"
+          ),
+      },
+      {
+        icon: "globe",
+        label: "Outlook / Hotmail",
+        sub: t("app.contact.via.web"),
+        run: () =>
+          openWeb(
+            "https://outlook.live.com/mail/0/deeplink/compose?to=" + q(EMAIL) +
+              "&subject=" + q(msg.subject) + "&body=" + q(msg.body),
+            "Outlook"
+          ),
+      },
+      {
+        icon: "pc",
+        label: t("app.contact.via.app"),
+        sub: t("app.contact.via.app.sub"),
+        run: () => {
+          const href =
+            "mailto:" + q(EMAIL) + "?subject=" + q(msg.subject) + "&body=" + q(msg.body);
+          // Windows corta los mailto: largos sin avisar
+          if (href.length > 1800) {
+            say(t("app.contact.toolong", { mail: EMAIL }), true);
+            return;
+          }
+          window.location.href = href;
+          say(t("app.contact.appHint"));
+        },
+      },
+      {
+        icon: "disk",
+        label: t("app.contact.via.copy"),
+        sub: t("app.contact.via.copy.sub"),
+        run: async () => {
+          const text =
+            t("app.contact.to") + ": " + EMAIL + "\n" +
+            t("app.contact.subject") + ": " + msg.subject + "\n\n" + msg.body;
+          try {
+            await navigator.clipboard.writeText(text);
+            copyBox.hidden = true;
+            say(t("app.contact.copied", { mail: EMAIL }));
+          } catch (e) {
+            // Sin permiso de portapapeles: se deja el texto a mano
+            copyBox.value = text;
+            copyBox.hidden = false;
+            copyBox.select();
+            say(t("app.contact.copyFail"), true);
+          }
+        },
+      },
+    ];
+
+    OPTIONS.forEach((opt) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "send-opt";
+      const ico = el("span", "send-ico");
+      ico.innerHTML = iconSvg(opt.icon);
+      b.appendChild(ico);
+      const txt = el("span", "send-txt");
+      txt.appendChild(el("strong", "", opt.label));
+      txt.appendChild(el("span", "", opt.sub));
+      b.appendChild(txt);
+      b.addEventListener("click", () => opt.run());
+      list.appendChild(b);
+    });
 
     form.addEventListener("submit", (e) => {
-      e.preventDefault(); // no hay servidor: abrimos el cliente de correo
+      e.preventDefault(); // la validación nativa ya pasó
       const d = new FormData(form);
-      const bodyText =
-        String(d.get("message") || "").trim() +
-        "\n\n—\n" +
-        t("app.contact.from") + ": " + String(d.get("name") || "").trim() +
-        "\n" +
-        t("app.contact.reply") + ": " + String(d.get("email") || "").trim();
+      msg = {
+        subject: String(d.get("subject") || "").trim(),
+        body:
+          String(d.get("message") || "").trim() +
+          "\n\n—\n" +
+          t("app.contact.from") + ": " + String(d.get("name") || "").trim() +
+          "\n" +
+          t("app.contact.reply") + ": " + String(d.get("email") || "").trim(),
+      };
+      form.hidden = true;
+      head.hidden = true;
+      status.hidden = true;
+      copyBox.hidden = true;
+      chooser.hidden = false;
+      list.querySelector("button").focus();
+    });
 
-      const href =
-        "mailto:" + encodeURIComponent(EMAIL) +
-        "?subject=" + encodeURIComponent(String(d.get("subject") || "").trim()) +
-        "&body=" + encodeURIComponent(bodyText);
-
-      status.hidden = false;
-      status.classList.remove("is-warn");
-
-      // Los clientes de correo cortan las URL largas sin avisar
-      if (href.length > 1800) {
-        status.classList.add("is-warn");
-        status.textContent = t("app.contact.toolong", { mail: EMAIL });
-        return;
-      }
-      status.textContent = t("app.contact.opening", { mail: EMAIL });
-      window.location.href = href;
+    back.addEventListener("click", () => {
+      chooser.hidden = true;
+      form.hidden = false;
+      head.hidden = false;
+      form.querySelector("input").focus();
     });
 
     body.appendChild(form);
+    body.appendChild(chooser);
     setStatus(body, EMAIL);
   },
 
