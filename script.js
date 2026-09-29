@@ -1302,7 +1302,7 @@ function normalizeConfig(raw) {
       id: String(it.id),
       type: it.type,
       app: it.app || null,
-      icon: ICONS[it.icon] ? it.icon : "txt",
+      icon: PIXELS[it.icon] ? it.icon : "txt",
       url: it.url || "",
       parent: it.parent || null,
       name: typeof it.name === "object" ? it.name : { es: String(it.name || "") },
