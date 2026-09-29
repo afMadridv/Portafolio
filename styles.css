@@ -901,23 +901,281 @@ select.input { cursor: pointer; }
 }
 
 /* =========================================================
+   BOTONES DENTRO DE VISORES
+   Un <a class="btn"> heredaba el color de enlace del visor negro
+   (rosa subrayado sobre gris): se leía mal.
+   ========================================================= */
+.win-body a.btn,
+.body-txt a.btn { color: var(--ink); text-decoration: none; }
+
+/* =========================================================
+   PANTALLA DE ARRANQUE
+   Solo con html.boot-on (lo pone script.js): sin JavaScript
+   no aparece y no tapa nada.
+   ========================================================= */
+.boot { display: none; }
+html.boot-on .boot {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  padding: clamp(24px, 6vh, 56px) clamp(20px, 6vw, 64px);
+  background: #000;
+  color: #c8c8c8;
+  transition: opacity 0.3s ease;
+}
+html.boot-on body { overflow: hidden; }
+.boot.is-done { opacity: 0; }
+.boot-text {
+  margin: 0;
+  font: 500 clamp(11px, 1.6vw, 15px) / 1.8 var(--font-mono);
+  white-space: pre-wrap;
+  min-height: 15em;
+}
+.boot-bar {
+  width: min(420px, 100%);
+  height: 18px;
+  margin-top: 2.2rem;
+  padding: 2px;
+  border: 2px solid #c8c8c8;
+}
+.boot-fill {
+  width: 0;
+  height: 100%;
+  background: repeating-linear-gradient(90deg, var(--accent) 0 14px, transparent 14px 18px);
+  transition: width 0.2s steps(4);
+}
+.boot-skip { margin: 1.4rem 0 0; font: 12px var(--font-mono); color: #7a7a7a; }
+
+/* =========================================================
+   PERFIL EN TEXTO: oculto a la vista, no a los buscadores
+   ni a los lectores de pantalla
+   ========================================================= */
+.seo-profile {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* =========================================================
+   BIENVENIDA
+   ========================================================= */
+.body-welcome .dlg-head { margin-bottom: 1.1rem; }
+.welcome-ico { width: 44px; height: 44px; }
+.welcome-hi { font-size: 1rem !important; font-weight: 700; margin-bottom: 0.4rem !important; }
+.welcome-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+.welcome-btn {
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.8rem 0.4rem;
+  justify-content: center;
+}
+.welcome-btn-ico { width: 32px; height: 32px; }
+.welcome-btn-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+/* =========================================================
+   CURRÍCULUM: una hoja sobre fondo gris, como un procesador
+   de textos de la época
+   ========================================================= */
+.body-doc {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  background: var(--face-dark);
+}
+.doc-toolbar {
+  display: flex;
+  gap: 0.4rem;
+  padding: 5px 6px;
+  background: var(--face);
+  box-shadow: inset 0 -1px 0 var(--shadow);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.doc-paper {
+  width: min(640px, calc(100% - 24px));
+  margin: 12px auto 18px;
+  padding: 28px 32px;
+  background: #fff;
+  color: #151515;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+.cv-head { border-bottom: 3px solid var(--accent); padding-bottom: 0.7rem; margin-bottom: 1rem; }
+.cv-name { margin: 0; font: 700 1.35rem var(--font-display); letter-spacing: 0; }
+.cv-role { margin: 0.2rem 0 0.4rem !important; font-weight: 700; color: #8a1414; }
+.cv-contact { margin: 0 !important; font-size: 0.72rem; color: #444; word-break: break-word; }
+.cv-sec { margin-bottom: 1rem; }
+.cv-sec h2 {
+  margin: 0 0 0.45rem;
+  font: 700 0.72rem var(--font-display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #8a1414;
+}
+.cv-sec p { margin: 0 0 0.45rem !important; }
+.cv-skills { margin: 0; padding-left: 1rem; }
+.cv-skills li { margin-bottom: 0.15rem; }
+.cv-row { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.45rem; }
+.cv-row > div { display: flex; flex-direction: column; }
+.cv-row span { color: #555; }
+.cv-when { flex-shrink: 0; font-size: 0.72rem; text-align: right; }
+.cv-proj { margin-bottom: 0.6rem; }
+.cv-proj p { margin: 0.1rem 0 0.1rem !important; }
+.cv-lang { margin-left: 0.5rem; font-size: 0.68rem; color: #8a1414; }
+.cv-url { font-size: 0.7rem; color: #666; }
+
+/* Imprimir: solo la copia del CV. El resto de la página no existe. */
+.print-root { display: none; }
+@media print {
+  @page { size: A4; margin: 16mm 15mm; }
+  html.is-printing, html.is-printing body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+  html.is-printing body > *:not(.print-root) { display: none !important; }
+  html.is-printing .print-root {
+    display: block !important;
+    color: #151515;
+    font: 10.5pt/1.55 var(--font-mono);
+  }
+  html.is-printing .print-root .cv-proj,
+  html.is-printing .print-root .cv-row { break-inside: avoid; }
+}
+
+/* =========================================================
+   MI PC
+   ========================================================= */
+.props-dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  font-size: 0.76rem;
+}
+.props-dl dt { color: var(--ink-soft); }
+.props-dl dd { margin: 0; font-weight: 700; }
+.comp-list.drives { padding: 0.4rem; }
+
+/* =========================================================
+   FICHA DE PROYECTO: imagen de GitHub arriba
+   ========================================================= */
+.repo-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 0 1.1rem;
+  border: 2px solid #333;
+  background: #1a1a1a;
+  aspect-ratio: 2 / 1;
+}
+
+/* =========================================================
+   BANDEJA: altavoz
+   ========================================================= */
+.sound-btn { display: grid; place-items: center; padding: 2px 3px; }
+.sound-ico { width: 16px; height: 16px; display: block; }
+.sound-ico svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+
+/* =========================================================
+   PORTAL: editores de habilidades y educación
+   ========================================================= */
+.edit-card {
+  position: relative;
+  margin: 0 0 0.7rem;
+  padding: 0.7rem 2.4rem 0.2rem 0.7rem;
+  border: 0;
+  background: var(--paper);
+  box-shadow:
+    inset 1px 1px 0 0 var(--shadow),
+    inset -1px -1px 0 0 var(--light);
+}
+.edit-card .field label { display: flex; flex-direction: column; gap: 0.25rem; }
+.edit-remove { position: absolute; top: 6px; right: 6px; }
+
+/* =========================================================
+   LANZADOR (solo teléfono) y botón Atrás de las ventanas
+   ========================================================= */
+.launcher { display: none; }
+.win-back { display: none; }
+
+/* =========================================================
    MÓVIL
-   Las ventanas ocupan casi toda la pantalla: arrastrar
-   ventanitas con el dedo no funciona bien.
+   El escritorio se cambia por el lanzador en lista, y las
+   ventanas se abren a pantalla completa con botón Atrás:
+   arrastrar ventanitas con el dedo no funciona bien.
    ========================================================= */
 @media (max-width: 640px) {
   :root { --taskbar-h: 46px; }
 
   .win:not(.is-max) {
-    inset: 8px 8px calc(var(--taskbar-h) + 8px) 8px !important;
+    inset: 0 0 0 0 !important;
     width: auto !important;
     height: auto !important;
   }
   .win-grip { display: none; }
-  .win-bar { cursor: inherit; }
+  .win-bar { cursor: inherit; min-height: 40px; }
+  .win-controls [data-act="min"],
+  .win-controls [data-act="max"] { display: none; }
+  .win-back {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 30px;
+    padding: 0 0.6rem;
+    border: 0;
+    background: var(--face);
+    font-size: 0.78rem;
+    box-shadow:
+      inset 1px 1px 0 0 var(--light),
+      inset -1px -1px 0 0 var(--dark),
+      inset 2px 2px 0 0 var(--face),
+      inset -2px -2px 0 0 var(--shadow);
+  }
+  .win-back:active {
+    box-shadow:
+      inset 1px 1px 0 0 var(--shadow),
+      inset -1px -1px 0 0 var(--light);
+  }
 
-  .icon-grid { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); grid-auto-rows: 88px; }
-  .d-icon-img { width: 34px; height: 34px; }
+  .icon-grid { display: none; }
+  .launcher {
+    position: absolute;
+    inset: 8px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    padding: 3px;
+    background: var(--face);
+    box-shadow:
+      inset 1px 1px 0 0 var(--light),
+      inset -1px -1px 0 0 var(--dark),
+      inset 2px 2px 0 0 var(--face),
+      inset -2px -2px 0 0 var(--shadow);
+  }
+  .launcher .win-bar { background: linear-gradient(90deg, #5c5c5c, #cfcfcf); color: #000; }
+  .launcher-body { flex: 1; overflow: auto; padding: 0.7rem 0.5rem; }
+  .launcher-role { margin: 0 0.2rem 0.7rem; font-size: 0.78rem; }
+  .launch-row { min-height: 56px; padding: 0.6rem 0.6rem; }
+  .launch-row .send-ico { width: 34px; height: 34px; }
+  .launch-row .send-txt strong { font-size: 0.9rem; }
+  .launch-row .send-txt span { font-size: 0.72rem; }
+  .launcher .win-status { margin-top: 3px; }
+
+  .welcome-grid { grid-template-columns: 1fr; }
+  .doc-paper { padding: 18px 16px; }
 
   .linkedin-btn span { display: none; }
   .task-buttons .tb-btn { flex: 1 1 40px; }

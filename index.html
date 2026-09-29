@@ -8,6 +8,58 @@
     name="description"
     content="Portafolio de Andres Madrid, desarrollador de software. Un escritorio donde cada icono abre una parte de mi perfil."
   />
+  <link rel="canonical" href="https://andresmadrid.vercel.app/" />
+
+  <!-- ====== Vista previa al compartir el enlace (LinkedIn, WhatsApp, X…) ======
+       og:image necesita la dirección completa, no una ruta relativa. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://andresmadrid.vercel.app/" />
+  <meta property="og:site_name" content="Andres Madrid" />
+  <meta property="og:title" content="Andres Madrid · Desarrollador de Software" />
+  <meta property="og:description" content="Portafolio con forma de escritorio: proyectos, habilidades y contacto." />
+  <meta property="og:image" content="https://andresmadrid.vercel.app/og.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="Escritorio retro del portafolio de Andres Madrid con la ventana de bienvenida abierta" />
+  <meta property="og:locale" content="es_CO" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Andres Madrid · Desarrollador de Software" />
+  <meta name="twitter:description" content="Portafolio con forma de escritorio: proyectos, habilidades y contacto." />
+  <meta name="twitter:image" content="https://andresmadrid.vercel.app/og.png" />
+
+  <!-- ====== Datos estructurados para buscadores ====== -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Andres Madrid",
+      "jobTitle": "Desarrollador de Software",
+      "url": "https://andresmadrid.vercel.app/",
+      "email": "mailto:mvandres08@gmail.com",
+      "address": { "@type": "PostalAddress", "addressLocality": "Santa Marta", "addressCountry": "CO" },
+      "sameAs": [
+        "https://github.com/afMadridv",
+        "https://www.linkedin.com/in/andr%C3%A9s-felipe-madrid-villar-9987693a8/"
+      ]
+    }
+  </script>
+
+  <!-- ====== Sin JavaScript: se ve el perfil en texto, no un escritorio vacío ====== -->
+  <noscript>
+    <style>
+      .desktop, .taskbar, .start-menu, .admin-overlay { display: none !important; }
+      html, body { overflow: auto !important; background: #0b0b0b !important; }
+      .seo-profile {
+        position: static !important; width: auto !important; height: auto !important;
+        clip: auto !important; margin: 0 auto !important; overflow: visible !important;
+        white-space: normal !important; max-width: 760px; padding: 32px 20px;
+        color: #e4e4e4; line-height: 1.7;
+      }
+      .seo-profile a { color: #ff8a8a; }
+      .seo-profile h1 { color: #ff4a4a; }
+    </style>
+  </noscript>
 
   <!-- ====== Icono de la pestaña (favicon, integrado, no necesita archivo) ====== -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23FA4040'/><text x='50' y='71' font-size='62' font-weight='bold' text-anchor='middle' fill='white' font-family='monospace'>A</text></svg>" />
@@ -21,11 +73,62 @@
 
   <!-- El ?v= evita que el navegador sirva la versión vieja en caché.
        Si tocas styles.css o script.js y no ves el cambio, sube el número. -->
-  <link rel="stylesheet" href="styles.css?v=14" />
-  <script src="script.js?v=14"></script>
+  <link rel="stylesheet" href="styles.css?v=15" />
+  <script src="script.js?v=15"></script>
 </head>
 
 <body>
+  <!-- =========================================================
+       PANTALLA DE ARRANQUE
+       Sale en cada visita y se salta con cualquier tecla o toque.
+       Solo se ve con JavaScript: el <html> recibe la clase
+       boot-on desde script.js, antes de pintar nada.
+       ========================================================= -->
+  <div class="boot" id="boot" aria-hidden="true">
+    <pre class="boot-text" id="boot-text"></pre>
+    <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+    <p class="boot-skip" id="boot-skip" data-i18n="boot.skip">Pulsa cualquier tecla para saltar</p>
+  </div>
+
+  <!-- =========================================================
+       PERFIL EN TEXTO
+       Oculto a la vista pero legible para buscadores y lectores
+       de pantalla, y visible si el navegador no tiene JavaScript.
+       La lista de proyectos la refresca script.js con GitHub.
+       ========================================================= -->
+  <article class="seo-profile" id="seo-profile" lang="es">
+    <h1>Andres Madrid — Desarrollador de Software</h1>
+    <p>Santa Marta, Colombia.</p>
+    <p>
+      Diseño sistemas escalables, seguros y eficientes, con experiencia entregando
+      soluciones en entornos altamente regulados: construcción, mantenimiento eléctrico
+      e insolvencia y conciliación. Optimizo el rendimiento de los sistemas y acompaño a
+      los equipos para elevar su nivel técnico.
+    </p>
+    <h2>Habilidades</h2>
+    <ul>
+      <li>Frontend: JavaScript, HTML/CSS</li>
+      <li>Backend: Java, Python</li>
+      <li>Bases de datos: MySQL, PostgreSQL</li>
+      <li>Herramientas: GitHub, Git, Figma, Claude, VS Code, Vercel</li>
+    </ul>
+    <h2>Educación</h2>
+    <ul>
+      <li>Ingeniería de Sistemas — Universidad de la Costa (2025 - Presente)</li>
+      <li>Técnico en Desarrollo de Software y Aplicaciones Móviles — Corporación Bolivariana del Norte (2022 - 2024)</li>
+    </ul>
+    <h2>Proyectos</h2>
+    <ul id="seo-projects">
+      <li><a href="https://github.com/afMadridv">Todos mis proyectos en GitHub</a></li>
+    </ul>
+    <h2>Contacto</h2>
+    <ul>
+      <li>Email: <a href="mailto:mvandres08@gmail.com">mvandres08@gmail.com</a></li>
+      <li><a href="https://www.linkedin.com/in/andr%C3%A9s-felipe-madrid-villar-9987693a8/">LinkedIn</a></li>
+      <li><a href="https://github.com/afMadridv">GitHub</a></li>
+    </ul>
+  </article>
+
   <!-- =========================================================
        ESCRITORIO
        El fondo se aplica desde JS (config.wallpaper) para que
@@ -34,6 +137,20 @@
   <main class="desktop" id="desktop">
     <!-- Iconos del escritorio: los genera renderDesktop() -->
     <div class="icon-grid" id="icon-grid"></div>
+
+    <!-- Lanzador para el teléfono: los mismos elementos en lista.
+         Solo se ve en pantallas estrechas (ver styles.css). -->
+    <section class="launcher" id="launcher" aria-labelledby="launcher-title">
+      <div class="win-bar">
+        <span class="win-ico" id="launcher-ico" aria-hidden="true"></span>
+        <span class="win-title" id="launcher-title">Andres Madrid</span>
+      </div>
+      <div class="launcher-body">
+        <p class="launcher-role" data-i18n="launcher.role">Desarrollador de software · Santa Marta, Colombia</p>
+        <div class="send-list" id="launcher-list"></div>
+      </div>
+      <div class="win-status" data-i18n="launcher.hint">Toca un elemento para abrirlo</div>
+    </section>
 
     <!-- Ventanas abiertas -->
     <div class="windows" id="windows"></div>
@@ -113,6 +230,10 @@
     <div class="task-buttons" id="task-buttons"></div>
 
     <div class="tray">
+      <!-- Sonidos de sistema: apagados por defecto -->
+      <button type="button" class="tray-btn sound-btn" id="sound-toggle" aria-pressed="false" data-i18n-aria="aria.sound" aria-label="Sonido">
+        <span class="sound-ico" id="sound-ico" aria-hidden="true"></span>
+      </button>
       <button type="button" class="tray-btn" id="lang-toggle" data-i18n-aria="aria.lang" aria-label="Cambiar idioma">
         <span class="lang-code" id="lang-code">EN</span>
       </button>
@@ -154,6 +275,8 @@
             <button type="button" class="tab is-active" data-tab="items" data-i18n="admin.tab.items">Iconos</button>
             <button type="button" class="tab" data-tab="look" data-i18n="admin.tab.look">Fondo</button>
             <button type="button" class="tab" data-tab="repos" data-i18n="admin.tab.repos">Proyectos</button>
+            <button type="button" class="tab" data-tab="skills" data-i18n="admin.tab.skills">Habilidades</button>
+            <button type="button" class="tab" data-tab="edu" data-i18n="admin.tab.edu">Educación</button>
           </div>
 
           <!-- Iconos, carpetas y archivos -->
@@ -200,6 +323,9 @@
                     <option value="education">Educación</option>
                     <option value="contact">Contacto</option>
                     <option value="social">Redes</option>
+                    <option value="cv">Currículum</option>
+                    <option value="mypc">Mi PC</option>
+                    <option value="trash">Papelera</option>
                   </select>
                 </div>
                 <div class="field" id="field-url">
@@ -264,6 +390,25 @@
             <div class="admin-list" id="admin-repos"></div>
           </section>
 
+          <!-- Habilidades: grupos con sus tecnologías -->
+          <section class="tab-panel" id="tab-skills" hidden>
+            <p class="admin-hint" data-i18n="admin.sk.hint">
+              Cada grupo sale como un bloque en la ventana Habilidades, en el CV y en el
+              arranque. Las tecnologías van separadas por coma.
+            </p>
+            <div id="admin-skills"></div>
+            <button type="button" class="btn" id="skill-add" data-i18n="admin.sk.add">+ Grupo</button>
+          </section>
+
+          <!-- Educación: un bloque por estudio -->
+          <section class="tab-panel" id="tab-edu" hidden>
+            <p class="admin-hint" data-i18n="admin.ed.hint">
+              Cada estudio sale como una fila en la ventana Educación y en el CV.
+            </p>
+            <div id="admin-edu"></div>
+            <button type="button" class="btn" id="edu-add" data-i18n="admin.ed.add">+ Estudio</button>
+          </section>
+
           <div class="admin-foot">
             <span class="admin-count" id="admin-count"></span>
             <button type="button" class="btn" id="admin-reset" data-i18n="admin.reset">Restablecer</button>
@@ -274,5 +419,8 @@
       </div>
     </div>
   </div>
+
+  <!-- Copia del CV para "Guardar como PDF": solo se imprime esto -->
+  <div class="print-root" id="print-root" aria-hidden="true"></div>
 </body>
 </html>

@@ -10,6 +10,10 @@
      3. DEFAULT_DESKTOP -> lo que trae el código
    ========================================================= */
 
+/* Se ejecuta en el <head>, antes de pintar nada: activa la pantalla
+   de arranque. Sin JavaScript la clase no llega y no se ve. */
+document.documentElement.classList.add("boot-on");
+
 const TZ = "America/Bogota";
 const EMAIL = "mvandres08@gmail.com";
 const GITHUB_USER = "afMadridv";
@@ -25,7 +29,9 @@ const DEFAULT_LANG = "es";
 let lang = DEFAULT_LANG;
 let config = null;
 let allRepos = [];
+let trashRepos = []; // forks y archivados: salen en la Papelera
 let reposError = false;
+let bootRunning = false;
 
 /* =========================================================
    ICONOS DE PÍXELES
@@ -643,6 +649,112 @@ const PIXELS = {
     "................................",
     "................................",
   ],
+
+  /* Documento PDF (currículum), papelera y altavoz de la bandeja */
+  pdf: [
+    "................................",
+    "................................",
+    "......kkkkkkkkkkkkkkkk..........",
+    "......kwwwwwwwwwwwwwwkk.........",
+    "......kwwwwwwwwwwwwwwkCk........",
+    "......kwwwwwwwwwwwwwwkCCk.......",
+    "......kwwwwwwwwwwwwwwkCCCk......",
+    "......kwwwwwwwwwwwwwwkkkkkk.....",
+    "......kwwwwwwwwwwwwwwwwwwwkD....",
+    "......kwwggggggggggggggwwwkD....",
+    "......kwwwwwwwwwwwwwwwwwwwkD....",
+    "......kwwggggggggggggwwwwwkD....",
+    "......kwwwwwwwwwwwwwwwwwwwkD....",
+    "......kwwgggggggggggggggwwkD....",
+    "......kwwwwwwwwwwwwwwwwwwwkD....",
+    "...qqqqqqqqqqqqqqqqqqqqwwwkD....",
+    "...rrrrwwrrwwrrwwwrrrrrwwwkD....",
+    "...rrrrwrwrwrwrwrrrrrrrwwwkD....",
+    "...rrrrwwrrwrwrwwrrrrrrwwwkD....",
+    "...rrrrwrrrwrwrwrrrrrrrwwwkD....",
+    "...rrrrwrrrwwrrwrrrrrrrwwwkD....",
+    "...qqqqqqqqqqqqqqqqqqqqwwwkD....",
+    "......kwwwwwwwwwwwwwwwwwwwkD....",
+    "......kwwggggggggggwwwwwwwkD....",
+    "......kwwwwwwwwwwwwwwwwwwwkD....",
+    "......kkkkkkkkkkkkkkkkkkkkkD....",
+    ".......DDDDDDDDDDDDDDDDDDDDD....",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+  ],
+  trash: [
+    "................................",
+    "................................",
+    "................................",
+    "...........kkkkkkkkkk...........",
+    "...........kCCCCCCCCk...........",
+    "....kkkkkkkkkkkkkkkkkkkkkkkk....",
+    "....kwCCCCCCCCCCCCCCCCCCCCGkD...",
+    "....kGGGGGGGGGGGGGGGGGGGGGGkD...",
+    "....kkkkkkkkkkkkkkkkkkkkkkkkD...",
+    ".....kwCCGCCCGCCCGCCCGCCCGkD....",
+    ".....kwCCGCCCGCCCGCCCGCCCGkD....",
+    ".....kwCCGCCCGCCCGCCCGCCCGkD....",
+    ".....kwCCGCCCGCCCGCCCGCCCGkD....",
+    ".....kwCCGCCCGCCCGCCCGCCCGkD....",
+    "......kwCGCCCGCCCGCCCGCCGkD.....",
+    "......kwCGCCCGCCCGCCCGCCGkD.....",
+    "......kwCGCCCGCCCGCCCGCCGkD.....",
+    "......kwCGCCCGCCCGCCCGCCGkD.....",
+    "......kwCGCCCGCCCGCCCGCCGkD.....",
+    ".......kwGCCCGCCCGCCCGCGkD......",
+    ".......kwGCCCGCCCGCCCGCGkD......",
+    ".......kwGCCCGCCCGCCCGCGkD......",
+    ".......kwGCCCGCCCGCCCGCGkD......",
+    ".......kkkkkkkkkkkkkkkkkkD......",
+    "........DDDDDDDDDDDDDDDDDD......",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+  ],
+  sound: [
+    "................",
+    "......k.........",
+    ".....kk.........",
+    "....kwk....k....",
+    "kkkkwwk.....k...",
+    "kwwwwwk...k..k..",
+    "kwwwwwk....k.k..",
+    "kwwwwwk....k.k..",
+    "kwwwwwk...k..k..",
+    "kkkkwwk.....k...",
+    "....kwk....k....",
+    ".....kk.........",
+    "......k.........",
+    "................",
+    "................",
+    "................",
+  ],
+  mute: [
+    "................",
+    "......k.........",
+    ".....kk.........",
+    "....kwk.........",
+    "kkkkwwk...r...r.",
+    "kwwwwwk....r.r..",
+    "kwwwwwk.....r...",
+    "kwwwwwk....r.r..",
+    "kwwwwwk...r...r.",
+    "kkkkwwk.........",
+    "....kwk.........",
+    ".....kk.........",
+    "......k.........",
+    "................",
+    "................",
+    "................",
+  ],
 };
 
 /* =========================================================
@@ -842,16 +954,25 @@ function iconSvg(key) {
   return ICON_CACHE[name];
 }
 
-const ICON_KEYS = Object.keys(PIXELS);
+// Los de 16x16 son de la bandeja: no se ofrecen para el escritorio
+const ICON_KEYS = Object.keys(PIXELS).filter((k) => PIXELS[k].length >= 32);
 
 
 
 
 /* =========================================================
-   CONTENIDO FIJO
-   Lo que no se edita desde el portal se cambia aquí.
-   Los archivos .txt sí son editables desde el portal.
+   CONTENIDO DE FÁBRICA
+   SKILLS y EDUCATION son los valores iniciales: desde el portal
+   se editan y quedan en la config (config.skills, config.education).
+   SOCIAL se cambia aquí.
+
+   CV_URL: si subes tu currículum en PDF junto a index.html,
+   pon aquí su nombre ("cv-andres-madrid.pdf") y la ventana del
+   CV ofrecerá descargarlo. Vacío = se genera desde tus datos y
+   se guarda con "Guardar como PDF".
    ========================================================= */
+const CV_URL = "";
+
 const SKILLS = [
   { es: "Frontend", en: "Frontend", items: ["JavaScript", "HTML/CSS"] },
   { es: "Backend", en: "Backend", items: ["Java", "Python"] },
@@ -897,12 +1018,16 @@ const DEFAULT_DESKTOP = {
   wallpaper: { type: "color", value: "#000000", value2: "#2a0d0d", url: "" },
   showFx: true,
   projects: { selected: [] },
+  skills: SKILLS,
+  education: EDUCATION,
+  // "sub" es la segunda línea en el lanzador del teléfono
   items: [
     {
       id: "about",
       type: "txt",
       icon: "info",
       name: { es: "Sobre mí.txt", en: "About me.txt" },
+      sub: { es: "Quién soy y qué hago", en: "Who I am and what I do" },
       text: {
         es:
           "ANDRES MADRID\nDesarrollador de Software\n\n" +
@@ -944,6 +1069,13 @@ const DEFAULT_DESKTOP = {
       name: { es: "Educación", en: "Education" },
     },
     {
+      id: "cv",
+      type: "app",
+      app: "cv",
+      icon: "pdf",
+      name: { es: "CV_Andres.pdf", en: "CV_Andres.pdf" },
+    },
+    {
       id: "contact",
       type: "app",
       app: "contact",
@@ -956,6 +1088,20 @@ const DEFAULT_DESKTOP = {
       app: "social",
       icon: "globe",
       name: { es: "Redes", en: "Links" },
+    },
+    {
+      id: "mypc",
+      type: "app",
+      app: "mypc",
+      icon: "pc",
+      name: { es: "Mi PC", en: "My Computer" },
+    },
+    {
+      id: "trash",
+      type: "app",
+      app: "trash",
+      icon: "trash",
+      name: { es: "Papelera", en: "Recycle Bin" },
     },
   ],
 };
@@ -1007,6 +1153,81 @@ const I18N = {
     "col.state": "Estado",
     "col.lang": "Lenguaje",
     "col.stars": "Estrellas",
+
+    "win.back": "Atrás",
+    "ui.welcome": "Bienvenida",
+    "ui.sound.on": "Sonido: encendido",
+    "ui.sound.off": "Sonido: apagado",
+
+    "boot.sub": "Portafolio BIOS v1.4 · Santa Marta, CO",
+    "boot.mem": "Detectando memoria",
+    "boot.skills": "Cargando habilidades",
+    "boot.repos": "Montando /proyectos",
+    "boot.reposN": "{n} repos (GitHub)",
+    "boot.reposWait": "conectando con GitHub…",
+    "boot.reposErr": "GitHub no responde",
+    "boot.clock": "Sincronizando reloj",
+    "boot.desk": "Iniciando escritorio",
+
+    "app.welcome.hi": "Hola, soy Andres Madrid",
+    "app.welcome.text":
+      "Desarrollador de software en Santa Marta, Colombia. Esto es mi portafolio con forma de escritorio: doble clic en un icono para abrirlo.",
+    "app.welcome.projects": "Ver proyectos",
+    "app.welcome.about": "Sobre mí",
+    "app.welcome.contact": "Contactar",
+    "app.welcome.dont": "No volver a mostrar",
+    "st.welcome": "Primera visita · se cierra con Esc · vuelve desde Inicio",
+
+    "app.cv.save": "Guardar como PDF",
+    "app.cv.download": "Descargar PDF",
+    "app.cv.role": "Desarrollador de Software",
+    "app.cv.profile": "Perfil",
+    "app.cv.skills": "Habilidades",
+    "app.cv.education": "Educación",
+    "app.cv.projects": "Proyectos",
+    "st.cv": "Vista previa · \"Guardar como PDF\" lo descarga",
+
+    "app.mypc.system": "Sistema",
+    "app.mypc.os": "Sistema operativo",
+    "app.mypc.user": "Usuario",
+    "app.mypc.place": "Ubicación",
+    "app.mypc.time": "Hora local",
+    "app.mypc.repos": "Proyectos públicos",
+    "app.mypc.mem": "Memoria",
+    "app.mypc.drives": "Unidades",
+    "app.mypc.driveA": "A: Currículum",
+    "app.mypc.driveC": "C: Proyectos",
+    "app.mypc.driveD": "D: Documentos",
+    "st.mypc": "Doble clic en una unidad para abrirla",
+
+    "app.trash.empty":
+      "La papelera está vacía. Aquí aparecen los repos de GitHub archivados o bifurcados.",
+    "app.projects.shotAlt": "Vista previa de {name} en GitHub",
+
+    "sub.folder": "{n} elementos",
+    "sub.link": "Enlace",
+    "sub.txt": "Archivo de texto",
+    "sub.projects": "{n} proyectos de GitHub",
+    "sub.loading": "Cargando…",
+    "sub.skills": "Lenguajes y herramientas",
+    "sub.education": "Estudios",
+    "sub.contact": "Gmail, Outlook o copiar",
+    "sub.social": "GitHub y LinkedIn",
+    "sub.cv": "Ver y guardar como PDF",
+    "sub.mypc": "Sistema y unidades",
+    "sub.trash": "{n} repos archivados",
+
+    "admin.sk.name.es": "Grupo (español)",
+    "admin.sk.name.en": "Grupo (inglés)",
+    "admin.sk.items": "Tecnologías, separadas por coma",
+    "admin.ed.title.es": "Título (español)",
+    "admin.ed.title.en": "Título (inglés)",
+    "admin.ed.place": "Centro",
+    "admin.ed.when.es": "Años (español)",
+    "admin.ed.when.en": "Años (inglés)",
+    "admin.ed.state.es": "Estado (español)",
+    "admin.ed.state.en": "Estado (inglés)",
+    "admin.remove": "Quitar",
 
     "app.contact.title": "Escríbeme",
     "app.contact.hint":
@@ -1130,6 +1351,93 @@ const I18N = {
     "col.state": "State",
     "col.lang": "Language",
     "col.stars": "Stars",
+
+    "win.back": "Back",
+    "ui.welcome": "Welcome",
+    "ui.sound.on": "Sound: on",
+    "ui.sound.off": "Sound: off",
+    "aria.sound": "Sound",
+
+    "boot.skip": "Press any key to skip",
+    "boot.sub": "Portfolio BIOS v1.4 · Santa Marta, CO",
+    "boot.mem": "Detecting memory",
+    "boot.skills": "Loading skills",
+    "boot.repos": "Mounting /projects",
+    "boot.reposN": "{n} repos (GitHub)",
+    "boot.reposWait": "connecting to GitHub…",
+    "boot.reposErr": "GitHub is not responding",
+    "boot.clock": "Syncing clock",
+    "boot.desk": "Starting desktop",
+
+    "launcher.role": "Software developer · Santa Marta, Colombia",
+    "launcher.hint": "Tap an item to open it",
+
+    "app.welcome.hi": "Hi, I'm Andres Madrid",
+    "app.welcome.text":
+      "Software developer in Santa Marta, Colombia. This is my portfolio shaped like a desktop: double-click an icon to open it.",
+    "app.welcome.projects": "See projects",
+    "app.welcome.about": "About me",
+    "app.welcome.contact": "Contact",
+    "app.welcome.dont": "Don't show again",
+    "st.welcome": "First visit · closes with Esc · reopen from Start",
+
+    "app.cv.save": "Save as PDF",
+    "app.cv.download": "Download PDF",
+    "app.cv.role": "Software Developer",
+    "app.cv.profile": "Profile",
+    "app.cv.skills": "Skills",
+    "app.cv.education": "Education",
+    "app.cv.projects": "Projects",
+    "st.cv": "Preview · \"Save as PDF\" downloads it",
+
+    "app.mypc.system": "System",
+    "app.mypc.os": "Operating system",
+    "app.mypc.user": "User",
+    "app.mypc.place": "Location",
+    "app.mypc.time": "Local time",
+    "app.mypc.repos": "Public projects",
+    "app.mypc.mem": "Memory",
+    "app.mypc.drives": "Drives",
+    "app.mypc.driveA": "A: Résumé",
+    "app.mypc.driveC": "C: Projects",
+    "app.mypc.driveD": "D: Documents",
+    "st.mypc": "Double-click a drive to open it",
+
+    "app.trash.empty":
+      "The recycle bin is empty. Archived or forked GitHub repos show up here.",
+    "app.projects.shotAlt": "Preview of {name} on GitHub",
+
+    "sub.folder": "{n} items",
+    "sub.link": "Link",
+    "sub.txt": "Text file",
+    "sub.projects": "{n} GitHub projects",
+    "sub.loading": "Loading…",
+    "sub.skills": "Languages and tools",
+    "sub.education": "Studies",
+    "sub.contact": "Gmail, Outlook or copy",
+    "sub.social": "GitHub and LinkedIn",
+    "sub.cv": "View and save as PDF",
+    "sub.mypc": "System and drives",
+    "sub.trash": "{n} archived repos",
+
+    "admin.tab.skills": "Skills",
+    "admin.tab.edu": "Education",
+    "admin.sk.hint":
+      "Each group shows as a block in the Skills window, the résumé and the boot screen. Separate technologies with commas.",
+    "admin.sk.add": "+ Group",
+    "admin.sk.name.es": "Group (Spanish)",
+    "admin.sk.name.en": "Group (English)",
+    "admin.sk.items": "Technologies, comma-separated",
+    "admin.ed.hint": "Each entry shows as a row in the Education window and the résumé.",
+    "admin.ed.add": "+ Entry",
+    "admin.ed.title.es": "Title (Spanish)",
+    "admin.ed.title.en": "Title (English)",
+    "admin.ed.place": "School",
+    "admin.ed.when.es": "Years (Spanish)",
+    "admin.ed.when.en": "Years (English)",
+    "admin.ed.state.es": "Status (Spanish)",
+    "admin.ed.state.en": "Status (English)",
+    "admin.remove": "Remove",
 
     "app.contact.title": "Write to me",
     "app.contact.hint":
@@ -1270,8 +1578,10 @@ function applyLang(next) {
 
   renderDesktop();
   renderStartMenu();
+  renderLauncher();
   repaintOpenWindows();
   tickClock();
+  if (document.getElementById("sound-ico").firstChild) paintSoundButton();
 }
 
 /* =========================================================
@@ -1292,10 +1602,13 @@ function normalizeConfig(raw) {
     showFx: raw.showFx !== false,
     projects: { selected: [] },
     items: Array.isArray(raw.items) && raw.items.length ? raw.items : base.items,
+    skills: base.skills,
+    education: base.education,
   };
   if (raw.projects && Array.isArray(raw.projects.selected)) {
     out.projects.selected = raw.projects.selected;
   }
+  const obj = (v) => (v && typeof v === "object" ? v : { es: String(v || "") });
   out.items = out.items
     .filter((it) => it && it.id && it.type)
     .map((it) => ({
@@ -1305,9 +1618,29 @@ function normalizeConfig(raw) {
       icon: PIXELS[it.icon] ? it.icon : "txt",
       url: it.url || "",
       parent: it.parent || null,
-      name: typeof it.name === "object" ? it.name : { es: String(it.name || "") },
-      text: typeof it.text === "object" ? it.text : { es: String(it.text || "") },
+      name: obj(it.name),
+      text: obj(it.text),
+      sub: it.sub ? obj(it.sub) : null,
     }));
+  if (Array.isArray(raw.skills) && raw.skills.length) {
+    out.skills = raw.skills
+      .filter((g) => g && Array.isArray(g.items))
+      .map((g) => ({
+        es: String(g.es || ""),
+        en: String(g.en || g.es || ""),
+        items: g.items.map(String).filter(Boolean),
+      }));
+  }
+  if (Array.isArray(raw.education) && raw.education.length) {
+    out.education = raw.education
+      .filter((e) => e && e.title)
+      .map((e) => ({
+        title: obj(e.title),
+        place: obj(e.place),
+        when: obj(e.when),
+        state: obj(e.state),
+      }));
+  }
   return out;
 }
 
@@ -1419,9 +1752,53 @@ function markOpenIcons() {
 /* =========================================================
    GESTOR DE VENTANAS
    ========================================================= */
-const openWins = new Map(); // id -> { el, item, btn }
+const openWins = new Map(); // id -> { el, item, btn, opener }
 let zTop = 10;
 let cascade = 0;
+let winSeq = 0; // para ids únicos de título (aria-labelledby)
+
+const POS_KEY = "win-pos";
+
+function isMobile() {
+  return window.matchMedia("(max-width: 640px)").matches;
+}
+
+/* Posición y tamaño de cada ventana, para que al volver el
+   escritorio esté como se dejó. En móvil no: ahí las ventanas
+   ocupan toda la pantalla. */
+function loadPositions() {
+  try {
+    return JSON.parse(localStorage.getItem(POS_KEY) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function savePosition(id, el) {
+  if (isMobile() || el.classList.contains("is-max")) return;
+  const all = loadPositions();
+  all[id] = {
+    x: el.offsetLeft,
+    y: el.offsetTop,
+    w: el.offsetWidth,
+    h: el.offsetHeight,
+  };
+  try {
+    localStorage.setItem(POS_KEY, JSON.stringify(all));
+  } catch (e) {}
+}
+
+/* Lo que se puede enfocar dentro de una ventana */
+const FOCUSABLE =
+  'button:not([disabled]), a[href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
+function activeWinId() {
+  let top = null;
+  openWins.forEach((w, id) => {
+    if (w.el.classList.contains("is-active") && !w.el.classList.contains("is-min")) top = id;
+  });
+  return top;
+}
 
 function openItem(item) {
   if (item.type === "link") {
@@ -1442,34 +1819,62 @@ function createWindow(item) {
   el.className = "win";
   el.dataset.id = item.id;
 
-  // Posición en cascada, sin salirse de la pantalla
-  const w = Math.min(560, window.innerWidth - 40);
-  const h = Math.min(420, window.innerHeight - 120);
-  const off = (cascade % 6) * 26;
-  cascade++;
+  // Posición guardada, o en cascada; nunca fuera de la pantalla
+  const saved = loadPositions()[item.id];
+  const vw = window.innerWidth;
+  const vh = window.innerHeight - 40; // menos la barra de tareas
+  let w = Math.min(item.w || 560, vw - 40);
+  let h = Math.min(item.h || 420, vh - 80);
+  let x, y;
+  if (saved && !isMobile()) {
+    w = Math.min(saved.w, vw - 16);
+    h = Math.min(saved.h, vh - 16);
+    x = Math.min(Math.max(8, saved.x), vw - w - 8);
+    y = Math.min(Math.max(8, saved.y), vh - h - 8);
+  } else if (item.center) {
+    x = Math.round((vw - w) / 2);
+    y = Math.max(8, Math.round((vh - h) / 2.4));
+  } else {
+    const off = (cascade % 6) * 26;
+    cascade++;
+    x = Math.max(8, 48 + off);
+    y = Math.max(8, 32 + off);
+  }
   el.style.width = w + "px";
   el.style.height = h + "px";
-  el.style.left = Math.max(8, 48 + off) + "px";
-  el.style.top = Math.max(8, 32 + off) + "px";
+  el.style.left = x + "px";
+  el.style.top = y + "px";
+
+  // Accesibilidad: cada ventana es un diálogo no modal con título
+  const titleId = "wt-" + ++winSeq;
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-labelledby", titleId);
+  el.tabIndex = -1;
 
   el.innerHTML =
     '<div class="win-bar">' +
-    '<span class="win-ico"></span>' +
-    '<span class="win-title"></span>' +
+    '<button type="button" class="win-back">←</button>' +
+    '<span class="win-ico" aria-hidden="true"></span>' +
+    '<span class="win-title" id="' + titleId + '"></span>' +
     '<span class="win-controls">' +
     '<button type="button" class="win-btn" data-act="min">_</button>' +
     '<button type="button" class="win-btn" data-act="max">□</button>' +
     '<button type="button" class="win-btn" data-act="close">✕</button>' +
     "</span></div>" +
     '<div class="win-body"></div>' +
-    '<div class="win-status"></div>' +
-    '<div class="win-grip"></div>';
+    '<div class="win-status" role="status"></div>' +
+    '<div class="win-grip" aria-hidden="true"></div>';
 
   el.querySelector(".win-ico").innerHTML = iconSvg(item.icon);
   el.querySelector(".win-title").textContent = L(item.name);
-  el.querySelector('[data-act="min"]').title = t("win.min");
-  el.querySelector('[data-act="max"]').title = t("win.max");
-  el.querySelector('[data-act="close"]').title = t("win.close");
+  [["min", "win.min"], ["max", "win.max"], ["close", "win.close"]].forEach(([act, key]) => {
+    const b = el.querySelector('[data-act="' + act + '"]');
+    b.title = t(key);
+    b.setAttribute("aria-label", t(key));
+  });
+  const back = el.querySelector(".win-back");
+  back.setAttribute("aria-label", t("win.back"));
+  back.appendChild(document.createTextNode(" " + t("win.back")));
 
   document.getElementById("windows").appendChild(el);
 
@@ -1485,22 +1890,51 @@ function createWindow(item) {
   btn.addEventListener("click", () => toggleWin(item.id));
   document.getElementById("task-buttons").appendChild(btn);
 
-  openWins.set(item.id, { el, item, btn });
+  // Quién abrió la ventana: al cerrarla, el foco vuelve ahí
+  const opener = document.activeElement;
+  openWins.set(item.id, { el, item, btn, opener });
 
   // Controles
-  el.querySelector('[data-act="close"]').addEventListener("click", () => closeWin(item.id));
+  el.querySelector('[data-act="close"]').addEventListener("click", () => requestClose(item.id));
+  back.addEventListener("click", () => requestClose(item.id));
   el.querySelector('[data-act="min"]').addEventListener("click", () => minimizeWin(item.id));
   el.querySelector('[data-act="max"]').addEventListener("click", () => {
     el.classList.toggle("is-max");
   });
   el.addEventListener("pointerdown", () => focusWin(item.id), true);
+  el.addEventListener("focusin", () => {
+    if (!el.classList.contains("is-active")) focusWin(item.id);
+  });
 
-  makeDraggable(el);
-  makeResizable(el);
+  makeDraggable(el, () => savePosition(item.id, el));
+  makeResizable(el, () => savePosition(item.id, el));
   renderWindowBody(item, el.querySelector(".win-body"));
 
   focusWin(item.id);
   markOpenIcons();
+  playSound("open");
+
+  // En móvil la ventana ocupa la pantalla: el botón Atrás del
+  // teléfono debe cerrarla, no salir del portafolio
+  if (isMobile()) {
+    try {
+      history.pushState({ win: item.id }, "");
+    } catch (e) {}
+  }
+
+  // El foco entra en la ventana: primer control, o la ventana
+  const first = el.querySelector(".win-body " + FOCUSABLE.split(", ").join(", .win-body "));
+  (first || el).focus({ preventScroll: true });
+}
+
+/* Cierre pedido por la persona (botón, Esc). En móvil pasa por el
+   historial para que el botón Atrás del teléfono quede en su sitio. */
+function requestClose(id) {
+  if (isMobile() && history.state && history.state.win === id) {
+    history.back(); // el popstate la cierra
+    return;
+  }
+  closeWin(id);
 }
 
 function focusWin(id) {
@@ -1539,10 +1973,31 @@ function minimizeWin(id) {
 function closeWin(id) {
   const w = openWins.get(id);
   if (!w) return;
+  const hadFocus = w.el.contains(document.activeElement);
   w.el.remove();
   w.btn.remove();
   openWins.delete(id);
   markOpenIcons();
+  playSound("close");
+
+  // Si el foco estaba dentro, vuelve a quien abrió la ventana; si
+  // ya no existe, a la ventana que quede arriba o al primer icono
+  if (hadFocus) {
+    let next = w.opener && document.contains(w.opener) ? w.opener : null;
+    if (!next) {
+      let top = null;
+      let z = -1;
+      openWins.forEach((o) => {
+        const oz = Number(o.el.style.zIndex) || 0;
+        if (!o.el.classList.contains("is-min") && oz > z) {
+          z = oz;
+          top = o.el;
+        }
+      });
+      next = top || document.querySelector(".d-icon, .launch-row");
+    }
+    if (next) next.focus({ preventScroll: true });
+  }
 }
 
 function closeAllWins() {
@@ -1556,17 +2011,25 @@ function repaintOpenWindows() {
     w.item = fresh;
     w.el.querySelector(".win-title").textContent = L(fresh.name);
     w.btn.lastElementChild.textContent = L(fresh.name);
+    [["min", "win.min"], ["max", "win.max"], ["close", "win.close"]].forEach(([act, key]) => {
+      const b = w.el.querySelector('[data-act="' + act + '"]');
+      b.title = t(key);
+      b.setAttribute("aria-label", t(key));
+    });
+    const back = w.el.querySelector(".win-back");
+    back.lastChild.textContent = " " + t("win.back");
+    back.setAttribute("aria-label", t("win.back"));
     renderWindowBody(fresh, w.el.querySelector(".win-body"));
   });
 }
 
 /* ----- Arrastrar por la barra de título ----- */
-function makeDraggable(el) {
+function makeDraggable(el, onEnd) {
   const bar = el.querySelector(".win-bar");
   let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
 
   bar.addEventListener("pointerdown", (e) => {
-    if (e.target.closest(".win-btn")) return;     // los botones no arrastran
+    if (e.target.closest(".win-btn, .win-back")) return; // los botones no arrastran
     if (el.classList.contains("is-max")) return;
     if (window.matchMedia("(max-width: 640px)").matches) return;
     dragging = true;
@@ -1587,13 +2050,14 @@ function makeDraggable(el) {
     if (!dragging) return;
     dragging = false;
     try { bar.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (onEnd) onEnd();
   };
   bar.addEventListener("pointerup", stop);
   bar.addEventListener("pointercancel", stop);
 }
 
 /* ----- Redimensionar con el tirador ----- */
-function makeResizable(el) {
+function makeResizable(el, onEnd) {
   const grip = el.querySelector(".win-grip");
   let sx = 0, sy = 0, ow = 0, oh = 0, sizing = false;
 
@@ -1615,6 +2079,7 @@ function makeResizable(el) {
     if (!sizing) return;
     sizing = false;
     try { grip.releasePointerCapture(e.pointerId); } catch (err) {}
+    if (onEnd) onEnd();
   };
   grip.addEventListener("pointerup", stop);
   grip.addEventListener("pointercancel", stop);
@@ -1661,11 +2126,15 @@ function linkBtn(href, label, iconKey) {
 function tabbedView(body, tabs, statusFor) {
   const row = el("div", "tabs-row");
   const pane = el("div", "explorer-pane");
+  row.setAttribute("role", "tablist");
+  pane.setAttribute("role", "tabpanel");
 
   function show(tab) {
-    [...row.children].forEach((b) =>
-      b.classList.toggle("is-active", b.dataset.tab === tab.id)
-    );
+    [...row.children].forEach((b) => {
+      const on = b.dataset.tab === tab.id;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
     pane.innerHTML = "";
     tab.fill(pane);
     setStatus(body, statusFor ? statusFor(tab) : "");
@@ -1676,6 +2145,7 @@ function tabbedView(body, tabs, statusFor) {
     b.type = "button";
     b.className = "etab";
     b.dataset.tab = tab.id;
+    b.setAttribute("role", "tab");
     if (tab.icon) {
       const ico = el("span", "etab-ico");
       ico.innerHTML = iconSvg(tab.icon);
@@ -1865,7 +2335,7 @@ const APPS = {
 
     // Sin barras de nivel: no tengo un porcentaje real que enseñar,
     // así que es una lista de componentes, no un medidor inventado.
-    SKILLS.forEach((group) => {
+    config.skills.forEach((group) => {
       const box = el("fieldset", "group");
       box.appendChild(el("legend", "", L(group)));
       const list = el("div", "comp-list");
@@ -1881,8 +2351,8 @@ const APPS = {
       body.appendChild(box);
     });
 
-    const total = SKILLS.reduce((n, g) => n + g.items.length, 0);
-    setStatus(body, t("st.skills", { n: total, g: SKILLS.length }));
+    const total = config.skills.reduce((n, g) => n + g.items.length, 0);
+    setStatus(body, t("st.skills", { n: total, g: config.skills.length }));
   },
 
   /* ----- Educación: vista de lista con columnas ----- */
@@ -1900,7 +2370,7 @@ const APPS = {
       "</tr></thead>";
 
     const tb = document.createElement("tbody");
-    EDUCATION.forEach((e) => {
+    config.education.forEach((e) => {
       const tr = document.createElement("tr");
       const first = document.createElement("td");
       const ico = el("span", "cell-ico");
@@ -1915,7 +2385,7 @@ const APPS = {
     });
     table.appendChild(tb);
     body.appendChild(table);
-    setStatus(body, t("st.items", { n: EDUCATION.length }));
+    setStatus(body, t("st.items", { n: config.education.length }));
   },
 
   /* ----- Redes: entorno de red, iconos grandes ----- */
@@ -2131,11 +2601,27 @@ const APPS = {
   /* ----- Ficha de un proyecto ----- */
   repo(body, item) {
     body.classList.add("body-txt", "body-repo");
-    const repo = allRepos.find((r) => r.name === item.repoName);
+    const repo = allRepos.concat(trashRepos).find((r) => r.name === item.repoName);
     if (!repo) {
       body.appendChild(el("p", "muted", t("app.projects.empty")));
       return;
     }
+
+    // Imagen que GitHub genera para cada repo. El número cambia con
+    // el último push, así la imagen se renueva cuando cambia el repo.
+    const img = document.createElement("img");
+    img.className = "repo-shot";
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.width = 1200;
+    img.height = 600;
+    img.alt = t("app.projects.shotAlt", { name: repo.name });
+    img.src =
+      "https://opengraph.githubassets.com/" +
+      (Date.parse(repo.pushed_at) || 1) + "/" +
+      repo.full_name;
+    img.addEventListener("error", () => img.remove());
+    body.appendChild(img);
 
     body.appendChild(el("h1", "txt-head", repo.name));
     body.appendChild(
@@ -2169,7 +2655,231 @@ const APPS = {
 
     setStatus(body, repo.html_url.replace("https://", ""));
   },
+
+  /* ----- Bienvenida: quién soy y qué hacer, en la primera visita ----- */
+  welcome(body) {
+    body.classList.add("body-dialog", "body-welcome");
+
+    const head = el("div", "dlg-head");
+    const ico = el("span", "dlg-ico welcome-ico");
+    ico.innerHTML = iconSvg("user");
+    head.appendChild(ico);
+    const txt = el("div");
+    txt.appendChild(el("p", "welcome-hi", t("app.welcome.hi")));
+    txt.appendChild(el("p", "", t("app.welcome.text")));
+    head.appendChild(txt);
+    body.appendChild(head);
+
+    // Tres atajos grandes: lo que un reclutador busca primero
+    const grid = el("div", "welcome-grid");
+    [
+      ["projects", "folder", "app.welcome.projects"],
+      ["about", "info", "app.welcome.about"],
+      ["contact", "mail", "app.welcome.contact"],
+    ].forEach(([id, icon, key]) => {
+      const target = itemById(id) || config.items.find((it) => it.app === id);
+      if (!target) return;
+      const b = el("button", "btn welcome-btn");
+      b.type = "button";
+      const i = el("span", "welcome-btn-ico");
+      i.innerHTML = iconSvg(icon);
+      b.appendChild(i);
+      b.appendChild(document.createTextNode(t(key)));
+      b.addEventListener("click", () => {
+        closeWin("welcome");
+        openItem(target);
+      });
+      grid.appendChild(b);
+    });
+    body.appendChild(grid);
+
+    // Marcado de fábrica: cerrar ya cuenta como "visto"
+    const lab = el("label", "check");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = true;
+    lab.appendChild(cb);
+    lab.appendChild(el("span", "", t("app.welcome.dont")));
+    body.appendChild(lab);
+    const remember = () => {
+      try {
+        if (cb.checked) localStorage.setItem(WELCOME_KEY, "1");
+        else localStorage.removeItem(WELCOME_KEY);
+      } catch (e) {}
+    };
+    cb.addEventListener("change", remember);
+    remember();
+
+    setStatus(body, t("st.welcome"));
+  },
+
+  /* ----- Currículum: documento generado con tus datos ----- */
+  cv(body) {
+    body.classList.add("body-doc");
+
+    const bar = el("div", "doc-toolbar");
+    const print = el("button", "btn btn-primary", t("app.cv.save"));
+    print.type = "button";
+    print.addEventListener("click", printCv);
+    bar.appendChild(print);
+    if (CV_URL) {
+      const dl = linkBtn(CV_URL, t("app.cv.download"), "pdf");
+      dl.setAttribute("download", "");
+      bar.appendChild(dl);
+    }
+    body.appendChild(bar);
+
+    const paper = el("div", "doc-paper");
+    buildCv(paper);
+    body.appendChild(paper);
+    setStatus(body, t("st.cv"));
+  },
+
+  /* ----- Mi PC: datos del sistema y unidades que abren secciones ----- */
+  mypc(body) {
+    body.classList.add("body-props");
+
+    const sys = el("fieldset", "group");
+    sys.appendChild(el("legend", "", t("app.mypc.system")));
+    const dl = el("dl", "props-dl");
+    const add = (k, v) => {
+      dl.appendChild(el("dt", "", k));
+      dl.appendChild(el("dd", "", v));
+    };
+    add(t("app.mypc.os"), "Portafolio OS 1.4");
+    add(t("app.mypc.user"), "Andres Madrid");
+    add(t("app.mypc.place"), "Santa Marta, Colombia");
+    add(t("app.mypc.time"), document.getElementById("clock-time").textContent + " (" + TZ + ")");
+    add(t("app.mypc.repos"), allRepos.length ? String(visibleRepos().length) : "…");
+    add(t("app.mypc.mem"), "640K OK");
+    sys.appendChild(dl);
+    body.appendChild(sys);
+
+    // Unidades: cada una abre una parte del portafolio
+    const drives = el("fieldset", "group");
+    drives.appendChild(el("legend", "", t("app.mypc.drives")));
+    const pane = el("div", "comp-list drives");
+    iconGridInto(
+      pane,
+      [
+        ["cv", "disk", "app.mypc.driveA"],
+        ["projects", "folder", "app.mypc.driveC"],
+        ["about", "txt", "app.mypc.driveD"],
+      ]
+        .map(([id, icon, key]) => {
+          const target = itemById(id) || config.items.find((it) => it.app === id);
+          return target ? { icon: icon, label: t(key), open: () => openItem(target) } : null;
+        })
+        .filter(Boolean)
+    );
+    drives.appendChild(pane);
+    body.appendChild(drives);
+    setStatus(body, t("st.mypc"));
+  },
+
+  /* ----- Papelera: forks y repos archivados de GitHub ----- */
+  trash(body) {
+    body.classList.add("body-explorer");
+    const pane = el("div", "explorer-pane");
+    if (!trashRepos.length) {
+      pane.appendChild(el("p", "folder-empty", t("app.trash.empty")));
+    } else {
+      iconGridInto(
+        pane,
+        trashRepos.map((r) => ({ icon: "github", label: r.name, open: () => openRepo(r) }))
+      );
+    }
+    body.appendChild(pane);
+    setStatus(body, t("st.files", { n: trashRepos.length }));
+  },
 };
+
+/* =========================================================
+   CURRÍCULUM
+   Se arma con los mismos datos del escritorio: si cambias
+   habilidades o educación en el portal, el CV cambia solo.
+   ========================================================= */
+function buildCv(root) {
+  root.innerHTML = "";
+  const about = itemById("about");
+  const aboutLines = about ? L(about.text).split("\n") : [];
+
+  const head = el("header", "cv-head");
+  head.appendChild(el("h1", "cv-name", "Andres Madrid"));
+  head.appendChild(el("p", "cv-role", t("app.cv.role")));
+  const contact = el("p", "cv-contact");
+  contact.textContent =
+    "Santa Marta, Colombia · " + EMAIL +
+    " · linkedin.com/in/andrés-felipe-madrid-villar · github.com/" + GITHUB_USER;
+  head.appendChild(contact);
+  root.appendChild(head);
+
+  const section = (titleKey) => {
+    const s = el("section", "cv-sec");
+    s.appendChild(el("h2", "", t(titleKey)));
+    root.appendChild(s);
+    return s;
+  };
+
+  // Perfil: el texto de Sobre mí sin las dos líneas de título
+  const profile = aboutLines.slice(2).join("\n").trim().replace(/\n(?!\n)/g, " ");
+  if (profile) {
+    const s = section("app.cv.profile");
+    profile.split(/\n\n+/).forEach((p) => s.appendChild(el("p", "", p.trim())));
+  }
+
+  const sk = section("app.cv.skills");
+  const skl = el("ul", "cv-skills");
+  config.skills.forEach((g) => {
+    const li = el("li");
+    li.appendChild(el("strong", "", L(g) + ": "));
+    li.appendChild(document.createTextNode(g.items.join(", ")));
+    skl.appendChild(li);
+  });
+  sk.appendChild(skl);
+
+  const ed = section("app.cv.education");
+  config.education.forEach((e) => {
+    const row = el("div", "cv-row");
+    const left = el("div");
+    left.appendChild(el("strong", "", L(e.title)));
+    left.appendChild(el("span", "", L(e.place)));
+    row.appendChild(left);
+    row.appendChild(el("span", "cv-when", L(e.when) + " · " + L(e.state)));
+    ed.appendChild(row);
+  });
+
+  const repos = visibleRepos().slice(0, 6);
+  if (repos.length) {
+    const pr = section("app.cv.projects");
+    repos.forEach((r) => {
+      const row = el("div", "cv-proj");
+      row.appendChild(el("strong", "", r.name));
+      if (r.language) row.appendChild(el("span", "cv-lang", r.language));
+      row.appendChild(el("p", "", r.description || t("app.projects.nodesc")));
+      row.appendChild(el("span", "cv-url", (r.homepage || r.html_url).replace(/^https?:\/\//, "")));
+      pr.appendChild(row);
+    });
+  }
+}
+
+/* "Guardar como PDF": imprime solo una copia del CV. El título de la
+   página se cambia un momento para que el PDF se guarde con ese nombre. */
+function printCv() {
+  const root = document.getElementById("print-root");
+  buildCv(root);
+  const oldTitle = document.title;
+  document.title = "CV - Andres Madrid";
+  document.documentElement.classList.add("is-printing");
+  const done = () => {
+    document.documentElement.classList.remove("is-printing");
+    document.title = oldTitle;
+    root.innerHTML = "";
+    window.removeEventListener("afterprint", done);
+  };
+  window.addEventListener("afterprint", done);
+  window.print();
+}
 
 /* Abre la ficha de un repo como ventana propia */
 function openRepo(repo) {
@@ -2199,8 +2909,13 @@ function visibleRepos() {
 async function loadRepos() {
   try {
     const cached = JSON.parse(localStorage.getItem(GH_CACHE_KEY) || "null");
-    if (cached && cached.user === GITHUB_USER && Date.now() - cached.at < GH_CACHE_TTL) {
+    // La caché vieja no tenía "trash": entonces se vuelve a pedir
+    if (
+      cached && cached.user === GITHUB_USER && Array.isArray(cached.trash) &&
+      Date.now() - cached.at < GH_CACHE_TTL
+    ) {
       allRepos = cached.data;
+      trashRepos = cached.trash;
       return;
     }
   } catch (e) {}
@@ -2214,10 +2929,12 @@ async function loadRepos() {
     allRepos = data
       .filter((r) => !r.fork && !r.archived)
       .sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at));
+    // Forks y archivados no salen en Proyectos: van a la Papelera
+    trashRepos = data.filter((r) => r.fork || r.archived);
     try {
       localStorage.setItem(
         GH_CACHE_KEY,
-        JSON.stringify({ user: GITHUB_USER, at: Date.now(), data: allRepos })
+        JSON.stringify({ user: GITHUB_USER, at: Date.now(), data: allRepos, trash: trashRepos })
       );
     } catch (e) {}
   } catch (e) {
@@ -2275,6 +2992,7 @@ function renderStartMenu() {
   sep.className = "start-sep";
   list.appendChild(sep);
 
+  row(t("ui.welcome"), "info", () => openItem(WELCOME_ITEM));
   row(t("ui.openLinkedin"), "globe", () =>
     window.open(LINKEDIN, "_blank", "noopener,noreferrer")
   );
@@ -2303,10 +3021,10 @@ function hideStart() {
    puedes hacer tú.
    Cambiar la clave: en la consola ejecuta
    await hashText("tu-clave") y pega el resultado aquí.
-   Clave por defecto: pixel-f1
+   La clave no se escribe en ningún archivo: el repo es público.
    ========================================================= */
 const ADMIN_HASH =
-  "61adbce0bda68f1bcf8ab4534ec8458444a09cd9f19116b6fb94fc0939ff7e4a";
+  "e2c7a461e3a735815d2d7b65248345fcd899dbc17be1d5356fb81c662a52d32c";
 
 async function hashText(text) {
   const bytes = new TextEncoder().encode(text);
@@ -2338,6 +3056,8 @@ function adminUnlocked() {
   fillIconSelect();
   renderAdminItems();
   renderAdminRepos();
+  renderSkillsEditor();
+  renderEduEditor();
   fillWallpaperForm();
   updateAdminCount();
 }
@@ -2553,6 +3273,115 @@ function readWallpaperForm() {
   applyWallpaper();
 }
 
+/* ----- Habilidades: un bloque por grupo ----- */
+function adminInput(labelKey, value, cls) {
+  const wrap = el("div", "field");
+  const lab = el("label", "", t(labelKey));
+  const input = document.createElement("input");
+  input.className = "input " + (cls || "");
+  input.value = value || "";
+  lab.appendChild(input);
+  wrap.appendChild(lab);
+  return wrap;
+}
+
+function removeBtn(onClick) {
+  const b = el("button", "mini edit-remove", "✕");
+  b.type = "button";
+  b.title = t("admin.remove");
+  b.setAttribute("aria-label", t("admin.remove"));
+  b.addEventListener("click", onClick);
+  return b;
+}
+
+function renderSkillsEditor() {
+  const box = document.getElementById("admin-skills");
+  box.innerHTML = "";
+  config.skills.forEach((g, i) => {
+    const card = el("fieldset", "edit-card");
+    card.appendChild(removeBtn(() => {
+      readSkillsForm();
+      config.skills.splice(i, 1);
+      renderSkillsEditor();
+    }));
+    const grid = el("div", "form-grid");
+    grid.appendChild(adminInput("admin.sk.name.es", g.es, "sk-es"));
+    grid.appendChild(adminInput("admin.sk.name.en", g.en, "sk-en"));
+    card.appendChild(grid);
+    card.appendChild(adminInput("admin.sk.items", g.items.join(", "), "sk-items"));
+    box.appendChild(card);
+  });
+}
+
+function readSkillsForm() {
+  const cards = document.querySelectorAll("#admin-skills .edit-card");
+  if (!cards.length) return; // editor sin pintar: no tocar la config
+  config.skills = [...cards]
+    .map((c) => ({
+      es: c.querySelector(".sk-es").value.trim(),
+      en: c.querySelector(".sk-en").value.trim() || c.querySelector(".sk-es").value.trim(),
+      items: c.querySelector(".sk-items").value.split(",").map((s) => s.trim()).filter(Boolean),
+    }))
+    .filter((g) => g.es || g.items.length);
+}
+
+/* ----- Educación: un bloque por estudio ----- */
+const EDU_FIELDS = [
+  ["title", "es", "admin.ed.title.es"],
+  ["title", "en", "admin.ed.title.en"],
+  ["place", "es", "admin.ed.place"],
+  ["when", "es", "admin.ed.when.es"],
+  ["when", "en", "admin.ed.when.en"],
+  ["state", "es", "admin.ed.state.es"],
+  ["state", "en", "admin.ed.state.en"],
+];
+
+function renderEduEditor() {
+  const box = document.getElementById("admin-edu");
+  box.innerHTML = "";
+  config.education.forEach((e, i) => {
+    const card = el("fieldset", "edit-card");
+    card.appendChild(removeBtn(() => {
+      readEduForm();
+      config.education.splice(i, 1);
+      renderEduEditor();
+    }));
+    const grid = el("div", "form-grid");
+    EDU_FIELDS.forEach(([field, lng, key]) => {
+      grid.appendChild(adminInput(key, (e[field] || {})[lng], "ed-" + field + "-" + lng));
+    });
+    card.appendChild(grid);
+    box.appendChild(card);
+  });
+}
+
+function readEduForm() {
+  const cards = document.querySelectorAll("#admin-edu .edit-card");
+  if (!cards.length) return;
+  config.education = [...cards]
+    .map((c) => {
+      const v = (f, l) => c.querySelector(".ed-" + f + "-" + l).value.trim();
+      const pair = (f) => ({ es: v(f, "es"), en: v(f, "en") || v(f, "es") });
+      return {
+        title: pair("title"),
+        // el centro se escribe una vez: vale para los dos idiomas
+        place: { es: v("place", "es"), en: v("place", "es") },
+        when: pair("when"),
+        state: pair("state"),
+      };
+    })
+    .filter((e) => e.title.es);
+}
+
+/* Lo que hay en los formularios pasa a la config */
+function readAdminForms() {
+  readWallpaperForm();
+  if (!document.getElementById("admin-panel-body").hidden) {
+    readSkillsForm();
+    readEduForm();
+  }
+}
+
 function exportConfig() {
   const blob = new Blob([JSON.stringify(config, null, 2)], {
     type: "application/json",
@@ -2599,9 +3428,25 @@ function initAdmin() {
     document.querySelectorAll("#admin-tabs .tab").forEach((b) => {
       b.classList.toggle("is-active", b === tab);
     });
-    ["items", "look", "repos"].forEach((name) => {
+    ["items", "look", "repos", "skills", "edu"].forEach((name) => {
       document.getElementById("tab-" + name).hidden = name !== tab.dataset.tab;
     });
+  });
+
+  document.getElementById("skill-add").addEventListener("click", () => {
+    readSkillsForm();
+    config.skills.push({ es: "", en: "", items: [] });
+    renderSkillsEditor();
+    const last = document.querySelector("#admin-skills .edit-card:last-child .sk-es");
+    if (last) last.focus();
+  });
+  document.getElementById("edu-add").addEventListener("click", () => {
+    readEduForm();
+    const empty = { es: "", en: "" };
+    config.education.push({ title: { ...empty }, place: { ...empty }, when: { ...empty }, state: { ...empty } });
+    renderEduEditor();
+    const last = document.querySelector("#admin-edu .edit-card:last-child input");
+    if (last) last.focus();
   });
 
   document.getElementById("item-add").addEventListener("click", () => editItem(null));
@@ -2620,16 +3465,17 @@ function initAdmin() {
   });
 
   document.getElementById("admin-save").addEventListener("click", () => {
-    readWallpaperForm();
+    readAdminForms();
     saveConfig();
     renderDesktop();
     renderStartMenu();
+    renderLauncher();
     repaintOpenWindows();
     document.getElementById("admin-count").textContent = t("admin.saved");
   });
 
   document.getElementById("admin-export").addEventListener("click", () => {
-    readWallpaperForm();
+    readAdminForms();
     exportConfig();
   });
 
@@ -2640,14 +3486,9 @@ function initAdmin() {
     applyWallpaper();
     renderDesktop();
     renderStartMenu();
+    renderLauncher();
     closeAllWins();
     adminUnlocked();
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && !document.getElementById("admin-overlay").hidden) {
-      closeAdmin();
-    }
   });
 }
 
@@ -2765,6 +3606,270 @@ function initSpaceFx() {
 }
 
 /* =========================================================
+   SONIDOS DE SISTEMA
+   Apagados por defecto; se encienden con el altavoz de la
+   bandeja. Se generan con Web Audio: no hay archivos.
+   ========================================================= */
+const SOUND_KEY = "sound";
+let soundOn = false;
+let audioCtx = null;
+
+const SOUNDS = {
+  open: [660, 880],
+  close: [880, 587],
+  boot: [523, 659, 784, 1047],
+  on: [784, 1175],
+};
+
+function playSound(kind) {
+  if (!soundOn) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const now = audioCtx.currentTime;
+    (SOUNDS[kind] || [800]).forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = "square"; // timbre de altavoz de PC
+      osc.frequency.value = freq;
+      const t0 = now + i * 0.075;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.04, t0 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.1);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(t0);
+      osc.stop(t0 + 0.11);
+    });
+  } catch (e) {}
+}
+
+function paintSoundButton() {
+  const btn = document.getElementById("sound-toggle");
+  document.getElementById("sound-ico").innerHTML = iconSvg(soundOn ? "sound" : "mute");
+  btn.setAttribute("aria-pressed", soundOn ? "true" : "false");
+  btn.title = t(soundOn ? "ui.sound.on" : "ui.sound.off");
+}
+
+function initSound() {
+  try {
+    soundOn = localStorage.getItem(SOUND_KEY) === "1";
+  } catch (e) {}
+  paintSoundButton();
+  document.getElementById("sound-toggle").addEventListener("click", () => {
+    soundOn = !soundOn;
+    try {
+      localStorage.setItem(SOUND_KEY, soundOn ? "1" : "0");
+    } catch (e) {}
+    paintSoundButton();
+    playSound("on");
+  });
+}
+
+/* =========================================================
+   PANTALLA DE ARRANQUE
+   En cada visita, unos dos segundos. Cualquier tecla, clic o
+   toque la salta. Con "reducir movimiento" sale entera de golpe
+   y dura menos.
+   ========================================================= */
+const BOOT_LINE_MS = 230;
+
+function runBoot() {
+  const boot = document.getElementById("boot");
+  const textEl = document.getElementById("boot-text");
+  const fill = document.getElementById("boot-fill");
+  if (!boot || !document.documentElement.classList.contains("boot-on")) {
+    return Promise.resolve();
+  }
+  bootRunning = true;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const dots = (label) => (label + " ").padEnd(32, ".") + " ";
+  const skills = config.skills
+    .reduce((all, g) => all.concat(g.items), [])
+    .slice(0, 4)
+    .join(", ");
+  const reposLine = () =>
+    dots(t("boot.repos")) +
+    (allRepos.length
+      ? t("boot.reposN", { n: visibleRepos().length })
+      : reposError ? t("boot.reposErr") : t("boot.reposWait"));
+
+  const lines = [
+    "AMBIOS (C) " + new Date().getFullYear() + " Andres Madrid Software",
+    t("boot.sub"),
+    "",
+    dots(t("boot.mem")) + "640K OK",
+    dots(t("boot.skills")) + skills,
+    reposLine, // función: se reescribe si GitHub responde a tiempo
+    dots(t("boot.clock")) + TZ,
+    dots(t("boot.desk")) + "OK",
+  ];
+
+  return new Promise((resolve) => {
+    let shown = 0;
+    let finished = false;
+    let timer = null;
+
+    const paint = () => {
+      textEl.textContent = lines
+        .slice(0, shown)
+        .map((l) => (typeof l === "function" ? l() : l))
+        .join("\n");
+      fill.style.width = Math.round((shown / lines.length) * 100) + "%";
+    };
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      clearInterval(timer);
+      shown = lines.length;
+      paint();
+      document.removeEventListener("keydown", finish, true);
+      document.removeEventListener("pointerdown", finish, true);
+      boot.classList.add("is-done");
+      setTimeout(() => {
+        document.documentElement.classList.remove("boot-on");
+        bootRunning = false;
+        playSound("boot");
+        resolve();
+      }, reduce ? 0 : 320);
+    };
+
+    // Saltar: cualquier tecla, clic o toque
+    document.addEventListener("keydown", finish, true);
+    document.addEventListener("pointerdown", finish, true);
+
+    if (reduce) {
+      shown = lines.length;
+      paint();
+      setTimeout(finish, 700);
+      return;
+    }
+
+    paint();
+    timer = setInterval(() => {
+      shown++;
+      paint();
+      if (shown >= lines.length) {
+        clearInterval(timer);
+        setTimeout(finish, 450);
+      }
+    }, BOOT_LINE_MS);
+  });
+}
+
+/* =========================================================
+   BIENVENIDA
+   Sale tras el arranque en la primera visita, y siempre desde
+   Inicio → Bienvenida. En el teléfono no: allí el lanzador ya
+   explica cada elemento.
+   ========================================================= */
+const WELCOME_KEY = "welcome-seen";
+
+const WELCOME_ITEM = {
+  id: "welcome",
+  type: "app",
+  app: "welcome",
+  icon: "info",
+  name: { es: "Bienvenido.exe", en: "Welcome.exe" },
+  w: 600,
+  h: 330,
+  center: true,
+};
+
+function maybeWelcome() {
+  let seen = false;
+  try {
+    seen = localStorage.getItem(WELCOME_KEY) === "1";
+  } catch (e) {}
+  if (!seen && !isMobile()) openItem(WELCOME_ITEM);
+}
+
+/* =========================================================
+   LANZADOR DEL TELÉFONO
+   Los mismos elementos del escritorio en lista, con una línea
+   que dice qué hay dentro antes de abrirlo.
+   ========================================================= */
+function launchSub(item) {
+  if (item.sub) return L(item.sub);
+  if (item.type === "folder") return t("sub.folder", { n: childrenOf(item.id).length });
+  if (item.type === "link") {
+    try {
+      return new URL(item.url, location.href).host;
+    } catch (e) {
+      return t("sub.link");
+    }
+  }
+  if (item.type === "txt") return t("sub.txt");
+  if (item.app === "projects") {
+    return allRepos.length
+      ? t("sub.projects", { n: visibleRepos().length })
+      : t("sub.loading");
+  }
+  if (item.app === "education" && config.education[0]) return L(config.education[0].title);
+  if (item.app === "trash") return t("sub.trash", { n: trashRepos.length });
+  return t("sub." + item.app);
+}
+
+function renderLauncher() {
+  const list = document.getElementById("launcher-list");
+  if (!list) return;
+  document.getElementById("launcher-ico").innerHTML = iconSvg("pc");
+  list.innerHTML = "";
+  childrenOf(null).forEach((item) => {
+    const b = el("button", "send-opt launch-row");
+    b.type = "button";
+    const ico = el("span", "send-ico");
+    ico.innerHTML = iconSvg(item.icon);
+    b.appendChild(ico);
+    const txt = el("span", "send-txt");
+    txt.appendChild(el("strong", "", L(item.name)));
+    txt.appendChild(el("span", "", launchSub(item)));
+    b.appendChild(txt);
+    b.addEventListener("click", () => openItem(item));
+    list.appendChild(b);
+  });
+}
+
+/* =========================================================
+   PERFIL EN TEXTO
+   Pone la lista real de repos en el <article> oculto, para
+   lectores de pantalla y buscadores que ejecutan JavaScript.
+   ========================================================= */
+function refreshSeoProjects() {
+  const ul = document.getElementById("seo-projects");
+  if (!ul || !allRepos.length) return;
+  ul.innerHTML = "";
+  visibleRepos().forEach((r) => {
+    const li = el("li");
+    const a = el("a", "", r.name);
+    a.href = r.homepage || r.html_url;
+    li.appendChild(a);
+    if (r.description) li.appendChild(document.createTextNode(" — " + r.description));
+    ul.appendChild(li);
+  });
+}
+
+/* =========================================================
+   ANALÍTICA
+   Vercel Web Analytics: sin cookies. Solo carga en la web
+   publicada; hay que activarla una vez en el panel de Vercel
+   (proyecto → Analytics → Enable), si no la ruta da 404.
+   ========================================================= */
+function initAnalytics() {
+  // En local no: ni hay analítica ni se quiere contar uno mismo
+  const host = location.hostname;
+  if (location.protocol === "file:" || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(host)) return;
+  window.va = window.va || function () {
+    (window.vaq = window.vaq || []).push(arguments);
+  };
+  const s = document.createElement("script");
+  s.defer = true;
+  s.src = "/_vercel/insights/script.js";
+  document.head.appendChild(s);
+}
+
+/* =========================================================
    ARRANQUE
    ========================================================= */
 document.addEventListener("DOMContentLoaded", async function () {
@@ -2795,8 +3900,28 @@ document.addEventListener("DOMContentLoaded", async function () {
   document.addEventListener("click", (e) => {
     if (!e.target.closest("#start-menu") && !e.target.closest("#start-btn")) hideStart();
   });
+
+  // Esc cierra lo que esté más arriba: panel, menú Inicio o ventana
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") hideStart();
+    if (e.key !== "Escape" || bootRunning) return;
+    if (!document.getElementById("admin-overlay").hidden) return closeAdmin();
+    if (!document.getElementById("start-menu").hidden) return hideStart();
+    const id = activeWinId();
+    if (id) requestClose(id);
+  });
+
+  // Botón Atrás del teléfono: cierra la ventana de arriba
+  window.addEventListener("popstate", () => {
+    let top = null;
+    let z = -1;
+    openWins.forEach((w, id) => {
+      const wz = Number(w.el.style.zIndex) || 0;
+      if (wz > z) {
+        z = wz;
+        top = id;
+      }
+    });
+    if (top) closeWin(top);
   });
 
   // Reloj de Colombia
@@ -2804,13 +3929,23 @@ document.addEventListener("DOMContentLoaded", async function () {
   setInterval(tickClock, 15000);
 
   initCursors();
+  initSound();
   initAdmin();
   initSpaceFx();
+  initAnalytics();
 
-  // Los repos llegan después: al terminar se repintan las ventanas abiertas
+  // Los repos se piden ya, en paralelo con el arranque: si GitHub
+  // responde a tiempo, la pantalla de arranque dice cuántos hay
   document.body.classList.add("is-busy"); // reloj de arena mientras cargan
-  await loadRepos();
-  document.body.classList.remove("is-busy");
-  repaintOpenWindows();
-  if (!document.getElementById("admin-panel-body").hidden) renderAdminRepos();
+  const repos = loadRepos().then(() => {
+    document.body.classList.remove("is-busy");
+    repaintOpenWindows();
+    renderLauncher();
+    refreshSeoProjects();
+    if (!document.getElementById("admin-panel-body").hidden) renderAdminRepos();
+  });
+
+  await runBoot();
+  maybeWelcome();
+  await repos;
 });
