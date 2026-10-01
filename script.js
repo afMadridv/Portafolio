@@ -4,9 +4,11 @@
    (iconos, carpetas, archivos y fondo) vive en una config que
    se puede editar desde el portal de administración.
 
-   Orden de la config, de más a menos prioritario:
-     1. localStorage  -> borrador tuyo, solo en tu navegador
-     2. desktop.json  -> lo publicado, lo que ven las visitas
+   De dónde sale la config, de más a menos prioritario:
+     1. Supabase      -> lo publicado desde el portal. Lo ven
+                         todos y llega en vivo a quien tenga
+                         la página abierta (supabase/schema.sql)
+     2. desktop.json  -> respaldo si Supabase no responde
      3. DEFAULT_DESKTOP -> lo que trae el código
    ========================================================= */
 
@@ -20,7 +22,19 @@ const GITHUB_USER = "afMadridv";
 const LINKEDIN =
   "https://www.linkedin.com/in/andr%C3%A9s-felipe-madrid-villar-9987693a8/";
 
-const CFG_KEY = "desktop-cfg";
+/* Supabase. La clave "publishable" está hecha para ir en la web:
+   solo deja hacer lo que permiten las reglas RLS de
+   supabase/schema.sql (leer todos, publicar solo tú).
+   La clave secreta (sb_secret_… / service_role) NUNCA va aquí. */
+const SUPABASE_URL = "https://mfhyxbekkiugplawbddt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_jRkmQGoUTw182zPQu7lBhw_soW0SQJv";
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js";
+const SUPABASE_JS_SRI = "sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok";
+const CFG_TABLE = "site_config";
+const CFG_ROW = "desktop";
+
+const CFG_CACHE_KEY = "desktop-cache"; // última config publicada, por si no hay red
+const CFG_KEY = "desktop-cfg"; // borrador del portal de antes de Supabase
 const GH_CACHE_KEY = "gh-repos";
 const GH_CACHE_TTL = 60 * 60 * 1000; // 1 hora
 const LANG_KEY = "lang";
@@ -287,6 +301,42 @@ const PIXELS = {
     "................................",
     "................................",
     "................................",
+    "................................",
+  ],
+
+  /* Sobre enviado: el de "mail" con una insignia verde con visto */
+  sent: [
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "..kkkkkkkkkkkkkkkkkkkkkkkk......",
+    "..kwwwwwwwwwwwwwwwwwwwwwwkD.....",
+    "..kGwwwwwwwwwwwwwwwwwwwwGkD.....",
+    "..kwGwwwwwwwwwwwwwwwwwwGwkD.....",
+    "..kwwGwwwwwwwwwwwwwwwwGwwkD.....",
+    "..kwwwGwwwwwwwwwwwwwwGwwwkD.....",
+    "..kwwwwGwwwwwwwwwwwwGwwwwkD.....",
+    "..kwwwwwGwwwwwwwwwwGwwwwwkD.....",
+    "..kwwwwwwGwwwwwwwwGwwwwwwkD.....",
+    "..kwwwwwwwGwwwwwwGwwwwwwwkD.....",
+    "..kwwwwwwwwGwwwwGwwwwwwwwkD.....",
+    "..kwwwwwwwwwGGGGwwwwwwwwwkD.....",
+    "..kwwwwwwwwwwwwwwwwwwwkkkkkk....",
+    "..kwwwwwwwwwwwwwwwwwkkEEeeeekk..",
+    "..kwwwrrrrrrrrrrwwwkEEeeeeeeeek.",
+    "..kwwwwwwwwwwwwwwwwkEeeeeeeeeek.",
+    "..kwwwggggggggggggkeeeeeeeeeewek",
+    "..kwwwwwwwwwwwwwwwkeeeeeeeeewwek",
+    "..kwwwggggggggggwwkeeweeeeewweek",
+    "..kwwwwwwwwwwwwwwwkeewweeewweeek",
+    "..kkkkkkkkkkkkkkkkkeeewwewweeeek",
+    "...DDDDDDDDDDDDDDDkeeeewwweeeeek",
+    "...................keeeeweeeeek.",
+    "...................keeeeeeeeeek.",
+    "....................kkeeeeeekk..",
+    "......................kkkkkk....",
     "................................",
   ],
 
@@ -1211,7 +1261,7 @@ const I18N = {
     "sub.loading": "Cargando…",
     "sub.skills": "Lenguajes y herramientas",
     "sub.education": "Estudios",
-    "sub.contact": "Gmail, Outlook o copiar",
+    "sub.contact": "Directo a mi correo",
     "sub.social": "GitHub y LinkedIn",
     "sub.cv": "Ver y guardar como PDF",
     "sub.mypc": "Sistema y unidades",
@@ -1231,7 +1281,7 @@ const I18N = {
 
     "app.contact.title": "Escríbeme",
     "app.contact.hint":
-      "Escribe tu mensaje y elige con qué correo mandarlo. Llega todo escrito: solo tienes que pulsar enviar.",
+      "Escribe tu mensaje y me llega directo al correo. Te respondo a la dirección que pongas.",
     "app.contact.name": "Nombre",
     "app.contact.name.ph": "Tu nombre",
     "app.contact.email": "Tu email",
@@ -1258,17 +1308,39 @@ const I18N = {
       "No se pudo copiar automáticamente: el texto está seleccionado abajo, cópialo con Ctrl+C.",
     "app.contact.toolong":
       "El mensaje es muy largo para la app de correo. Usa Gmail, Outlook o cópialo y mándalo a {mail}.",
-    "app.contact.from": "Enviado desde el portafolio por",
-    "app.contact.reply": "Responder a",
+    "app.contact.privacy": "Solo uso tus datos para responderte. Sin cookies ni listas de correo.",
+    "app.contact.you": "Tú",
+    "app.contact.sending": "Enviando mensaje…",
+    "app.contact.done": "¡Mensaje enviado!",
+    "app.contact.doneText":
+      "Gracias, {name}. Ya está en mi bandeja: te respondo a {email} lo antes posible.",
+    "app.contact.another": "Escribir otro",
+    "app.contact.close": "Cerrar",
+    "app.contact.invalid": "Revisa este campo: falta o no es válido.",
+    "app.contact.fail.off": "El envío directo no está disponible ahora mismo.",
+    "app.contact.fail.network": "No hubo conexión con el servidor.",
+    "app.contact.fail.server": "El servidor de correo no respondió.",
+    "app.contact.fail.busy": "Se enviaron muchos mensajes seguidos desde aquí.",
+    "app.contact.planB": "Mándalo con tu correo: ya va todo escrito.",
+    "app.contact.greet": "Hola, Andrés:",
+    "app.contact.sentFrom": "Escrito en el formulario de {site}",
 
     "folder.empty": "Esta carpeta está vacía.",
 
     "admin.title": "Panel de administración",
-    "admin.gate": "Escribe la clave para administrar el escritorio.",
-    "admin.pass": "Clave",
+    "admin.gate": "Entra con tu cuenta de Supabase. Lo que publiques lo ven todos al instante.",
+    "admin.email": "Correo",
+    "admin.pass": "Contraseña",
     "admin.enter": "Entrar",
-    "admin.wrongpass": "Clave incorrecta.",
-    "admin.nocrypto": "Este navegador no puede comprobar la clave.",
+    "admin.checking": "Comprobando…",
+    "admin.badlogin": "Correo o contraseña incorrectos.",
+    "admin.notadmin": "Esta cuenta no tiene permiso para publicar.",
+    "admin.offline": "No se pudo conectar con Supabase. Revisa la conexión.",
+    "admin.logout": "Cerrar sesión",
+    "admin.legacy": "Este navegador tiene un escritorio guardado de antes, que solo veías tú.",
+    "admin.legacy.load": "Cargarlo",
+    "admin.legacy.drop": "Descartar",
+    "admin.legacy.loaded": "Cargado. Pulsa Publicar para que lo vean todos.",
     "admin.tab.items": "Iconos",
     "admin.tab.look": "Fondo",
     "admin.tab.repos": "Proyectos",
@@ -1293,19 +1365,21 @@ const I18N = {
     "admin.wp.color2": "Segundo color",
     "admin.wp.url": "Dirección de la imagen",
     "admin.wp.fx": "Mostrar el caza TIE y la Estrella de la Muerte",
-    "admin.wp.hint": "El fondo se ve al instante. Recuerda pulsar Guardar abajo.",
+    "admin.wp.hint": "El fondo cambia al instante aquí. Pulsa Publicar abajo para que lo vean todos.",
     "admin.repos.hint":
       "Marca los repos que quieres mostrar en Proyectos. Sin nada marcado, salen todos.",
     "admin.repos.wait": "Los repos aún no han cargado.",
     "admin.reset": "Restablecer",
-    "admin.export": "Descargar desktop.json",
-    "admin.save": "Guardar",
-    "admin.saved": "Guardado en este navegador.",
+    "admin.export": "Copia (desktop.json)",
+    "admin.save": "Publicar",
+    "admin.saving": "Publicando…",
+    "admin.saved": "Publicado: ya lo ven todos.",
+    "admin.saveFail": "No se pudo publicar: {msg}",
     "admin.resetAsk":
-      "¿Restablecer el escritorio como venía de fábrica? Se pierden tus cambios locales.",
+      "¿Volver al escritorio de fábrica? Se publica para todos al instante.",
     "admin.count": "{n} elementos · {r} repos marcados",
     "admin.exported":
-      "Descargado. Sube desktop.json junto a index.html para que lo vean las visitas.",
+      "Descargado. Es una copia de seguridad: lo publicado vive en Supabase.",
 
     "aria.lang": "Cambiar idioma",
     "aria.close": "Cerrar",
@@ -1414,7 +1488,7 @@ const I18N = {
     "sub.loading": "Loading…",
     "sub.skills": "Languages and tools",
     "sub.education": "Studies",
-    "sub.contact": "Gmail, Outlook or copy",
+    "sub.contact": "Straight to my inbox",
     "sub.social": "GitHub and LinkedIn",
     "sub.cv": "View and save as PDF",
     "sub.mypc": "System and drives",
@@ -1441,7 +1515,7 @@ const I18N = {
 
     "app.contact.title": "Write to me",
     "app.contact.hint":
-      "Write your message and pick which mail to send it with. It arrives fully written: you only have to hit send.",
+      "Write your message and it lands straight in my inbox. I'll reply to the address you give.",
     "app.contact.name": "Name",
     "app.contact.name.ph": "Your name",
     "app.contact.email": "Your email",
@@ -1468,17 +1542,39 @@ const I18N = {
       "Could not copy automatically: the text is selected below, copy it with Ctrl+C.",
     "app.contact.toolong":
       "The message is too long for the mail app. Use Gmail, Outlook or copy it and send it to {mail}.",
-    "app.contact.from": "Sent from the portfolio by",
-    "app.contact.reply": "Reply to",
+    "app.contact.privacy": "I only use your details to reply. No cookies, no mailing lists.",
+    "app.contact.you": "You",
+    "app.contact.sending": "Sending message…",
+    "app.contact.done": "Message sent!",
+    "app.contact.doneText":
+      "Thanks, {name}. It's in my inbox: I'll reply to {email} as soon as I can.",
+    "app.contact.another": "Write another",
+    "app.contact.close": "Close",
+    "app.contact.invalid": "Check this field: it's missing or not valid.",
+    "app.contact.fail.off": "Direct sending isn't available right now.",
+    "app.contact.fail.network": "Couldn't reach the server.",
+    "app.contact.fail.server": "The mail server didn't respond.",
+    "app.contact.fail.busy": "Too many messages were sent from here in a row.",
+    "app.contact.planB": "Send it with your own mail: it's all written.",
+    "app.contact.greet": "Hi Andrés,",
+    "app.contact.sentFrom": "Written in the form at {site}",
 
     "folder.empty": "This folder is empty.",
 
     "admin.title": "Admin panel",
-    "admin.gate": "Enter the passphrase to manage the desktop.",
-    "admin.pass": "Passphrase",
-    "admin.enter": "Enter",
-    "admin.wrongpass": "Wrong passphrase.",
-    "admin.nocrypto": "This browser cannot verify the passphrase.",
+    "admin.gate": "Sign in with your Supabase account. Whatever you publish shows for everyone instantly.",
+    "admin.email": "Email",
+    "admin.pass": "Password",
+    "admin.enter": "Sign in",
+    "admin.checking": "Checking…",
+    "admin.badlogin": "Wrong email or password.",
+    "admin.notadmin": "This account isn't allowed to publish.",
+    "admin.offline": "Couldn't reach Supabase. Check your connection.",
+    "admin.logout": "Sign out",
+    "admin.legacy": "This browser has a desktop saved earlier that only you could see.",
+    "admin.legacy.load": "Load it",
+    "admin.legacy.drop": "Discard",
+    "admin.legacy.loaded": "Loaded. Press Publish so everyone sees it.",
     "admin.tab.items": "Icons",
     "admin.tab.look": "Wallpaper",
     "admin.tab.repos": "Projects",
@@ -1503,19 +1599,21 @@ const I18N = {
     "admin.wp.color2": "Second color",
     "admin.wp.url": "Image address",
     "admin.wp.fx": "Show the TIE fighter and the Death Star",
-    "admin.wp.hint": "The wallpaper updates live. Remember to press Save below.",
+    "admin.wp.hint": "The wallpaper changes here right away. Press Publish below so everyone sees it.",
     "admin.repos.hint":
       "Tick the repos you want inside Projects. With none ticked, all of them show.",
     "admin.repos.wait": "Repos have not loaded yet.",
     "admin.reset": "Reset",
-    "admin.export": "Download desktop.json",
-    "admin.save": "Save",
-    "admin.saved": "Saved in this browser.",
+    "admin.export": "Backup (desktop.json)",
+    "admin.save": "Publish",
+    "admin.saving": "Publishing…",
+    "admin.saved": "Published: everyone sees it now.",
+    "admin.saveFail": "Couldn't publish: {msg}",
     "admin.resetAsk":
-      "Reset the desktop to how it shipped? Your local changes will be lost.",
+      "Go back to the factory desktop? It's published for everyone instantly.",
     "admin.count": "{n} items · {r} repos ticked",
     "admin.exported":
-      "Downloaded. Upload desktop.json next to index.html so visitors see it.",
+      "Downloaded. It's a backup: the published desktop lives in Supabase.",
 
     "aria.lang": "Change language",
     "aria.close": "Close",
@@ -1644,7 +1742,9 @@ function normalizeConfig(raw) {
   return out;
 }
 
-function localConfig() {
+/* Borrador que guardaba el portal en este navegador antes de
+   Supabase. Ya no se usa para pintar: el portal ofrece publicarlo. */
+function legacyDraft() {
   try {
     const raw = JSON.parse(localStorage.getItem(CFG_KEY) || "null");
     return raw ? normalizeConfig(raw) : null;
@@ -1663,10 +1763,175 @@ async function publishedConfig() {
   }
 }
 
-function saveConfig() {
+/* "{}" o vacío en Supabase = escritorio de fábrica */
+const isBlank = (data) => !data || typeof data !== "object" || !Object.keys(data).length;
+
+/* Lo publicado en Supabase, por REST: una petición, sin librería,
+   para no retrasar el arranque. Devuelve el JSON tal cual,
+   o undefined si no hubo respuesta. */
+async function fetchRemoteData() {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 3000);
   try {
-    localStorage.setItem(CFG_KEY, JSON.stringify(config));
+    const res = await fetch(
+      SUPABASE_URL + "/rest/v1/" + CFG_TABLE + "?id=eq." + CFG_ROW + "&select=data",
+      { headers: { apikey: SUPABASE_KEY }, cache: "no-store", signal: ctrl.signal }
+    );
+    if (!res.ok) return undefined;
+    const rows = await res.json();
+    return rows.length ? rows[0].data || {} : {};
+  } catch (e) {
+    return undefined;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function cacheRemoteData(data) {
+  try {
+    localStorage.setItem(CFG_CACHE_KEY, JSON.stringify(data || {}));
   } catch (e) {}
+}
+
+function cachedRemoteData() {
+  try {
+    const raw = localStorage.getItem(CFG_CACHE_KEY);
+    return raw ? JSON.parse(raw) : undefined;
+  } catch (e) {
+    return undefined;
+  }
+}
+
+/* Del JSON publicado a una config lista para pintar */
+async function configFromData(data) {
+  if (!isBlank(data)) return normalizeConfig(data);
+  return (await publishedConfig()) || cloneDefaults();
+}
+
+/* ---------------------------------------------------------
+   Cliente de Supabase (supabase-js desde jsDelivr, con SRI).
+   Se carga después del arranque: lo necesitan el tiempo real
+   y el inicio de sesión del portal, no la primera pintada.
+   --------------------------------------------------------- */
+let sbClient = null;
+let sbLoading = null;
+
+function getSupabase() {
+  if (sbClient) return Promise.resolve(sbClient);
+  if (!sbLoading) {
+    sbLoading = new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = SUPABASE_JS;
+      s.integrity = SUPABASE_JS_SRI;
+      s.crossOrigin = "anonymous";
+      s.onload = () => {
+        try {
+          sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+          });
+          resolve(sbClient);
+        } catch (e) {
+          reject(e);
+        }
+      };
+      s.onerror = () => {
+        sbLoading = null; // se podrá reintentar
+        s.remove();
+        reject(new Error("supabase-js no cargó"));
+      };
+      document.head.appendChild(s);
+    });
+  }
+  return sbLoading;
+}
+
+/* JSON con las claves ordenadas: Postgres (jsonb) devuelve las
+   claves en otro orden, y así dos configs iguales comparan igual */
+function stableJson(v) {
+  if (Array.isArray(v)) return "[" + v.map(stableJson).join(",") + "]";
+  if (v && typeof v === "object") {
+    return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + stableJson(v[k])).join(",") + "}";
+  }
+  return JSON.stringify(v === undefined ? null : v);
+}
+
+/* Huella de la última versión publicada que vio esta pestaña. Solo
+   se aplica lo que llega si es distinto: así no se pisan cambios
+   del portal aún sin publicar cada vez que se vuelve a la pestaña. */
+let lastRemote = null;
+
+/* Cambia la config por otra y repinta lo que dependa de ella,
+   sin tocar lo que el visitante esté escribiendo en Contacto */
+function applyConfig(next) {
+  if (stableJson(next) === stableJson(normalizeConfig(config))) return false;
+  const before = new Set(config.items.map((it) => it.id));
+  config = next;
+  applyWallpaper();
+  renderDesktop();
+  renderStartMenu();
+  renderLauncher();
+  // Ventanas de elementos que ya no existen: se cierran
+  [...openWins.keys()].forEach((id) => {
+    if (before.has(id) && !itemById(id)) closeWin(id);
+  });
+  repaintOpenWindows({ keepForms: true });
+  if (!document.getElementById("admin-overlay").hidden && !document.getElementById("admin-panel-body").hidden) {
+    adminUnlocked();
+  }
+  return true;
+}
+
+/* Llega una versión publicada (al cargar, en vivo o al volver a la pestaña) */
+async function receiveRemote(data) {
+  if (data === undefined) return;
+  cacheRemoteData(data);
+  const next = await configFromData(data);
+  const mark = stableJson(next);
+  if (mark === lastRemote) return;
+  lastRemote = mark;
+  applyConfig(next);
+}
+
+async function refreshRemote() {
+  receiveRemote(await fetchRemoteData());
+}
+
+/* Tiempo real: Supabase avisa de cada cambio en la fila del
+   escritorio y aquí se aplica sin recargar la página */
+async function startLiveConfig() {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") refreshRemote(); // lo que pasó en segundo plano
+  });
+  try {
+    const sb = await getSupabase();
+    sb.channel("site-config")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: CFG_TABLE, filter: "id=eq." + CFG_ROW },
+        (payload) => {
+          if (payload.new && "data" in payload.new) receiveRemote(payload.new.data);
+          else refreshRemote();
+        }
+      )
+      .subscribe((status) => {
+        // Al (re)conectar se pide la versión actual por si algo se perdió
+        if (status === "SUBSCRIBED") refreshRemote();
+      });
+  } catch (e) {
+    // Sin supabase-js (bloqueado o sin red): queda lo cargado al inicio
+  }
+}
+
+/* Publica la config para todos. Necesita sesión de admin.
+   Devuelve la config tal como la verán las visitas. */
+async function publishData(data) {
+  const sb = await getSupabase();
+  const { error } = await sb.from(CFG_TABLE).upsert({ id: CFG_ROW, data: data });
+  if (error) throw error;
+  cacheRemoteData(data);
+  const next = await configFromData(data);
+  lastRemote = stableJson(next); // el aviso en vivo de este cambio ya no hace nada
+  return next;
 }
 
 /* =========================================================
@@ -2004,8 +2269,11 @@ function closeAllWins() {
   [...openWins.keys()].forEach(closeWin);
 }
 
-/* Vuelve a pintar títulos y contenido (al cambiar de idioma) */
-function repaintOpenWindows() {
+/* Vuelve a pintar títulos y contenido (al cambiar de idioma o
+   llegar una config nueva). keepForms deja quieta la ventana de
+   Contacto, para no borrar un mensaje a medio escribir. */
+function repaintOpenWindows(opts) {
+  const keepForms = !!(opts && opts.keepForms);
   openWins.forEach((w) => {
     const fresh = itemById(w.item.id) || w.item;
     w.item = fresh;
@@ -2019,6 +2287,7 @@ function repaintOpenWindows() {
     const back = w.el.querySelector(".win-back");
     back.lastChild.textContent = " " + t("win.back");
     back.setAttribute("aria-label", t("win.back"));
+    if (keepForms && fresh.app === "contact") return;
     renderWindowBody(fresh, w.el.querySelector(".win-body"));
   });
 }
@@ -2194,6 +2463,33 @@ function setStatus(body, text) {
   if (!win) return;
   const bar = win.querySelector(".win-status");
   if (bar) bar.textContent = text || "";
+}
+
+/* Manda el formulario de contacto a la función de Vercel
+   (api/contact.js). Devuelve { ok: true } o { ok: false, reason }
+   con reason = invalid | busy | off | server | network.
+   En local no hay función: responde 404 y se va al plan B. */
+async function postContact(payload) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    const res = await fetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: ctrl.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.ok) return { ok: true };
+    if (res.status === 400 && data.field) return { ok: false, reason: "invalid", field: data.field };
+    if (res.status === 429) return { ok: false, reason: "busy" };
+    if ([404, 405, 501, 503].includes(res.status)) return { ok: false, reason: "off" };
+    return { ok: false, reason: "server" };
+  } catch (e) {
+    return { ok: false, reason: "network" };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function renderWindowBody(item, body) {
@@ -2405,8 +2701,13 @@ const APPS = {
   },
 
   /* ----- Contacto: cuadro de diálogo ----- */
+  /* Envía directo a tu correo por api/contact.js. Si eso falla
+     (sin conexión, sin configurar o en local), pasa al plan B:
+     "Enviar con…", como el "Abrir con" de Windows, con el
+     correo ya escrito en Gmail, Outlook o la app del equipo. */
   contact(body) {
     body.classList.add("body-dialog");
+    const openedAt = Date.now();
 
     const head = el("div", "dlg-head");
     const ico = el("span", "dlg-ico");
@@ -2415,7 +2716,10 @@ const APPS = {
     head.appendChild(el("p", "", t("app.contact.hint")));
     body.appendChild(head);
 
+    /* ---------- 1) Formulario ---------- */
     const form = document.createElement("form");
+    const LIMIT = { name: 80, email: 120, subject: 120, message: 4000 };
+    const AUTO = { name: "name", email: "email", subject: "off", message: "off" };
 
     const mkField = (id, labelKey, phKey, tag) => {
       const wrap = el("div", "field");
@@ -2426,34 +2730,100 @@ const APPS = {
       input.id = "cf-" + id;
       input.name = id;
       input.required = true;
+      input.maxLength = LIMIT[id];
+      input.autocomplete = AUTO[id];
       input.placeholder = t(phKey);
       if (id === "email") input.type = "email";
-      if (tag === "textarea") input.rows = 4;
+      if (tag === "textarea") input.rows = 5;
       wrap.appendChild(lab);
       wrap.appendChild(input);
       return wrap;
     };
 
-    form.appendChild(mkField("name", "app.contact.name", "app.contact.name.ph"));
-    form.appendChild(mkField("email", "app.contact.email", "app.contact.email.ph"));
+    const row = el("div", "field-row");
+    row.appendChild(mkField("name", "app.contact.name", "app.contact.name.ph"));
+    row.appendChild(mkField("email", "app.contact.email", "app.contact.email.ph"));
+    form.appendChild(row);
     form.appendChild(mkField("subject", "app.contact.subject", "app.contact.subject.ph"));
-    form.appendChild(
-      mkField("message", "app.contact.message", "app.contact.message.ph", "textarea")
-    );
+    const msgField = mkField("message", "app.contact.message", "app.contact.message.ph", "textarea");
+    const counter = el("span", "char-count");
+    msgField.appendChild(counter);
+    form.appendChild(msgField);
+    const msgInput = msgField.querySelector("textarea");
+    const paintCount = () => {
+      counter.textContent = msgInput.value.length + " / " + LIMIT.message;
+      counter.classList.toggle("is-near", msgInput.value.length > LIMIT.message * 0.9);
+    };
+    msgInput.addEventListener("input", paintCount);
+    paintCount();
 
-    const actions = el("div", "dlg-actions");
+    // Trampa para bots: un campo que nadie ve y una persona deja vacío
+    const trap = document.createElement("input");
+    trap.type = "text";
+    trap.name = "website";
+    trap.tabIndex = -1;
+    trap.autocomplete = "off";
+    trap.className = "hp";
+    trap.setAttribute("aria-hidden", "true");
+    form.appendChild(trap);
+
+    const formStatus = el("p", "form-status is-warn");
+    formStatus.hidden = true;
+    form.appendChild(formStatus);
+
+    const foot = el("div", "dlg-foot");
+    foot.appendChild(el("p", "form-note", t("app.contact.privacy")));
     const send = el("button", "btn btn-primary", t("app.contact.send"));
     send.type = "submit";
-    actions.appendChild(send);
-    form.appendChild(actions);
+    foot.appendChild(send);
+    form.appendChild(foot);
 
-    /* Segundo paso: "Enviar con…", como el "Abrir con" de Windows.
-       Antes el botón hacía window.location = mailto:, que solo
-       funciona si el visitante tiene una app de correo instalada.
-       Casi todos usan Gmail u Outlook en el navegador: no pasaba
-       nada, o salía el selector de apps de Windows. */
+    /* ---------- 2) Enviando: el sobre viaja de tu PC a mi buzón ---------- */
+    const sending = el("div", "send-progress");
+    sending.setAttribute("role", "status");
+    const trip = el("div", "send-trip");
+    const ends = (icon, label) => {
+      const end = el("div", "trip-end");
+      const pic = el("span", "trip-ico");
+      pic.innerHTML = iconSvg(icon);
+      end.appendChild(pic);
+      end.appendChild(el("span", "", label));
+      return end;
+    };
+    trip.appendChild(ends("pc", t("app.contact.you")));
+    const lane = el("div", "trip-lane");
+    const flyer = el("span", "trip-flyer");
+    flyer.innerHTML = iconSvg("mail");
+    lane.appendChild(flyer);
+    trip.appendChild(lane);
+    trip.appendChild(ends("user", "Andrés"));
+    sending.appendChild(trip);
+    sending.appendChild(el("p", "send-label", t("app.contact.sending")));
+    const bar = el("div", "progress");
+    bar.appendChild(el("div", "progress-fill"));
+    sending.appendChild(bar);
+
+    /* ---------- 3) Enviado ---------- */
+    const done = el("div", "send-done");
+    const doneIco = el("span", "done-ico");
+    doneIco.innerHTML = iconSvg("sent");
+    done.appendChild(doneIco);
+    done.appendChild(el("h3", "done-title", t("app.contact.done")));
+    const doneText = el("p", "done-text");
+    done.appendChild(doneText);
+    const doneActions = el("div", "dlg-actions");
+    const again = el("button", "btn", t("app.contact.another"));
+    again.type = "button";
+    const closeBtn = el("button", "btn btn-primary", t("app.contact.close"));
+    closeBtn.type = "button";
+    doneActions.appendChild(again);
+    doneActions.appendChild(closeBtn);
+    done.appendChild(doneActions);
+
+    /* ---------- 4) Plan B: "Enviar con…" ---------- */
     const chooser = el("div", "send-chooser");
-    chooser.hidden = true;
+    const fail = el("p", "send-fail");
+    chooser.appendChild(fail);
     chooser.appendChild(el("p", "send-q", t("app.contact.choose")));
     const list = el("div", "send-list");
     chooser.appendChild(list);
@@ -2473,7 +2843,7 @@ const APPS = {
     back.type = "button";
     chooser.appendChild(el("div", "dlg-actions")).appendChild(back);
 
-    let msg = null; // { subject, body }
+    let msg = null; // { subject, body } para el plan B
 
     const say = (text, warn) => {
       status.hidden = false;
@@ -2566,35 +2936,90 @@ const APPS = {
       list.appendChild(b);
     });
 
-    form.addEventListener("submit", (e) => {
+    /* ---------- Cambio de paso ---------- */
+    const panels = { form, sending, done, chooser };
+    const show = (name) => {
+      head.hidden = name !== "form";
+      Object.keys(panels).forEach((k) => (panels[k].hidden = k !== name));
+      body.scrollTop = 0;
+    };
+    show("form");
+
+    // Texto del plan B: saludo, mensaje y firma, en el idioma del visitante
+    const plainBody = (d) =>
+      t("app.contact.greet") + "\n\n" + d.message + "\n\n" +
+      "— — —\n" + d.name + "\n" + d.email + "\n" +
+      t("app.contact.sentFrom", { site: location.host || "andresmadrid.vercel.app" });
+
+    let busy = false;
+    form.addEventListener("submit", async (e) => {
       e.preventDefault(); // la validación nativa ya pasó
-      const d = new FormData(form);
-      msg = {
-        subject: String(d.get("subject") || "").trim(),
-        body:
-          String(d.get("message") || "").trim() +
-          "\n\n—\n" +
-          t("app.contact.from") + ": " + String(d.get("name") || "").trim() +
-          "\n" +
-          t("app.contact.reply") + ": " + String(d.get("email") || "").trim(),
+      if (busy) return;
+      busy = true;
+      const fd = new FormData(form);
+      const data = {
+        name: String(fd.get("name") || "").trim(),
+        email: String(fd.get("email") || "").trim(),
+        subject: String(fd.get("subject") || "").trim(),
+        message: String(fd.get("message") || "").trim(),
       };
-      form.hidden = true;
-      head.hidden = true;
+      msg = { subject: data.subject, body: plainBody(data) };
+      formStatus.hidden = true;
+      show("sending");
+
+      // El sobre se ve viajar al menos un momento, aunque el servidor vuele
+      const [result] = await Promise.all([
+        postContact(
+          Object.assign({}, data, {
+            website: String(fd.get("website") || ""),
+            lang: lang,
+            elapsed: Date.now() - openedAt,
+          })
+        ),
+        new Promise((r) => setTimeout(r, 1100)),
+      ]);
+      busy = false;
+      if (!form.isConnected) return; // la ventana se cerró o se repintó
+
+      if (result.ok) {
+        doneText.textContent = t("app.contact.doneText", { name: data.name.split(/\s+/)[0], email: data.email });
+        form.reset();
+        paintCount();
+        show("done");
+        playSound("sent");
+        closeBtn.focus();
+        return;
+      }
+      if (result.field) {
+        show("form");
+        formStatus.textContent = t("app.contact.invalid");
+        formStatus.hidden = false;
+        const bad = form.querySelector('[name="' + result.field + '"]');
+        if (bad) bad.focus();
+        return;
+      }
+      fail.textContent = t("app.contact.fail." + result.reason) + " " + t("app.contact.planB");
       status.hidden = true;
       copyBox.hidden = true;
-      chooser.hidden = false;
+      show("chooser");
+      playSound("error");
       list.querySelector("button").focus();
     });
 
+    again.addEventListener("click", () => {
+      show("form");
+      form.querySelector("input").focus();
+    });
+    closeBtn.addEventListener("click", () => {
+      const win = body.closest(".win");
+      if (win) requestClose(win.dataset.id);
+    });
     back.addEventListener("click", () => {
-      chooser.hidden = true;
-      form.hidden = false;
-      head.hidden = false;
+      show("form");
       form.querySelector("input").focus();
     });
 
-    body.appendChild(form);
-    body.appendChild(chooser);
+    Object.keys(panels).forEach((k) => body.appendChild(panels[k]));
     setStatus(body, EMAIL);
   },
 
@@ -3014,36 +3439,40 @@ function hideStart() {
 
 /* =========================================================
    PORTAL DE ADMINISTRACIÓN
-   La clave solo evita que un curioso abra el panel. NO es
-   seguridad real: este archivo es público y cualquiera puede
-   leerlo. Lo que protege el sitio es que publicar un cambio
-   exige subir desktop.json al repositorio, y eso solo lo
-   puedes hacer tú.
-   Cambiar la clave: en la consola ejecuta
-   await hashText("tu-clave") y pega el resultado aquí.
-   La clave no se escribe en ningún archivo: el repo es público.
+   Se entra con una cuenta de Supabase (correo y contraseña).
+   La seguridad real está en la base de datos: las reglas RLS
+   de supabase/schema.sql solo dejan publicar a los correos de
+   la tabla site_admins. Sin eso, aunque alguien abriera este
+   panel desde la consola, Supabase rechazaría el cambio.
    ========================================================= */
-const ADMIN_HASH =
-  "e2c7a461e3a735815d2d7b65248345fcd899dbc17be1d5356fb81c662a52d32c";
-
-async function hashText(text) {
-  const bytes = new TextEncoder().encode(text);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return [...new Uint8Array(digest)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 let editingId = null;
 
-function openAdmin() {
-  const ov = document.getElementById("admin-overlay");
-  ov.hidden = false;
+function showAdminGate(message) {
   document.getElementById("admin-gate").hidden = false;
   document.getElementById("admin-panel-body").hidden = true;
-  document.getElementById("admin-error").textContent = "";
+  document.getElementById("admin-error").textContent = message || "";
   document.getElementById("admin-pass").value = "";
-  document.getElementById("admin-pass").focus();
+  const email = document.getElementById("admin-email");
+  (email.value ? document.getElementById("admin-pass") : email).focus();
+}
+
+/* ¿La sesión abierta es de alguien que puede publicar? */
+async function isSiteAdmin(sb) {
+  const { data, error } = await sb.rpc("is_site_admin");
+  return !error && data === true;
+}
+
+async function openAdmin() {
+  document.getElementById("admin-overlay").hidden = false;
+  showAdminGate(t("admin.checking"));
+  try {
+    const sb = await getSupabase();
+    const { data } = await sb.auth.getSession();
+    if (data.session && (await isSiteAdmin(sb))) return adminUnlocked();
+    showAdminGate("");
+  } catch (e) {
+    showAdminGate(t("admin.offline"));
+  }
 }
 
 function closeAdmin() {
@@ -3053,6 +3482,7 @@ function closeAdmin() {
 function adminUnlocked() {
   document.getElementById("admin-gate").hidden = true;
   document.getElementById("admin-panel-body").hidden = false;
+  document.getElementById("admin-legacy").hidden = !legacyDraft();
   fillIconSelect();
   renderAdminItems();
   renderAdminRepos();
@@ -3062,7 +3492,14 @@ function adminUnlocked() {
   updateAdminCount();
 }
 
+function adminSay(text, warn) {
+  const box = document.getElementById("admin-count");
+  box.textContent = text;
+  box.classList.toggle("is-warn", !!warn);
+}
+
 function updateAdminCount() {
+  document.getElementById("admin-count").classList.remove("is-warn");
   document.getElementById("admin-count").textContent = t("admin.count", {
     n: config.items.length,
     r: config.projects.selected.length,
@@ -3392,7 +3829,7 @@ function exportConfig() {
   a.download = "desktop.json";
   a.click();
   URL.revokeObjectURL(url);
-  document.getElementById("admin-count").textContent = t("admin.exported");
+  adminSay(t("admin.exported"));
 }
 
 function initAdmin() {
@@ -3401,25 +3838,65 @@ function initAdmin() {
     if (e.target.id === "admin-overlay") closeAdmin();
   });
 
+  const email = document.getElementById("admin-email");
   const pass = document.getElementById("admin-pass");
+  const enter = document.getElementById("admin-submit");
   const submit = async () => {
     const err = document.getElementById("admin-error");
-    err.textContent = "";
+    if (!email.value.trim() || !pass.value) return email.value.trim() ? pass.focus() : email.focus();
+    err.textContent = t("admin.checking");
+    enter.disabled = true;
     try {
-      if ((await hashText(pass.value)) !== ADMIN_HASH) {
-        err.textContent = t("admin.wrongpass");
-        pass.select();
+      const sb = await getSupabase();
+      const { error } = await sb.auth.signInWithPassword({
+        email: email.value.trim(),
+        password: pass.value,
+      });
+      pass.value = "";
+      if (error) {
+        err.textContent = t("admin.badlogin");
+        pass.focus();
         return;
       }
+      if (!(await isSiteAdmin(sb))) {
+        await sb.auth.signOut();
+        err.textContent = t("admin.notadmin");
+        return;
+      }
+      err.textContent = "";
+      adminUnlocked();
     } catch (e) {
-      err.textContent = t("admin.nocrypto");
-      return;
+      err.textContent = t("admin.offline");
+    } finally {
+      enter.disabled = false;
     }
-    adminUnlocked();
   };
-  document.getElementById("admin-submit").addEventListener("click", submit);
-  pass.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") submit();
+  enter.addEventListener("click", submit);
+  [email, pass].forEach((input) =>
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") submit();
+    })
+  );
+
+  document.getElementById("admin-logout").addEventListener("click", async () => {
+    try {
+      await (await getSupabase()).auth.signOut();
+    } catch (e) {}
+    showAdminGate("");
+  });
+
+  // Borrador de antes de Supabase: cargarlo en el panel o tirarlo
+  document.getElementById("legacy-load").addEventListener("click", () => {
+    const draft = legacyDraft();
+    if (!draft) return;
+    applyConfig(draft);
+    adminUnlocked();
+    document.getElementById("admin-legacy").hidden = false;
+    adminSay(t("admin.legacy.loaded"));
+  });
+  document.getElementById("legacy-drop").addEventListener("click", () => {
+    try { localStorage.removeItem(CFG_KEY); } catch (e) {}
+    document.getElementById("admin-legacy").hidden = true;
   });
 
   document.getElementById("admin-tabs").addEventListener("click", (e) => {
@@ -3464,14 +3941,27 @@ function initAdmin() {
     });
   });
 
-  document.getElementById("admin-save").addEventListener("click", () => {
+  // Publicar: va a Supabase y de ahí, en vivo, a todas las visitas
+  const save = document.getElementById("admin-save");
+  save.addEventListener("click", async () => {
     readAdminForms();
-    saveConfig();
     renderDesktop();
     renderStartMenu();
     renderLauncher();
-    repaintOpenWindows();
-    document.getElementById("admin-count").textContent = t("admin.saved");
+    repaintOpenWindows({ keepForms: true });
+    save.disabled = true;
+    adminSay(t("admin.saving"));
+    try {
+      config = await publishData(normalizeConfig(config));
+      // Lo de este navegador ya está publicado: el borrador viejo sobra
+      try { localStorage.removeItem(CFG_KEY); } catch (e) {}
+      document.getElementById("admin-legacy").hidden = true;
+      adminSay(t("admin.saved"));
+    } catch (e) {
+      adminSay(t("admin.saveFail", { msg: (e && e.message) || "?" }), true);
+    } finally {
+      save.disabled = false;
+    }
   });
 
   document.getElementById("admin-export").addEventListener("click", () => {
@@ -3479,16 +3969,20 @@ function initAdmin() {
     exportConfig();
   });
 
-  document.getElementById("admin-reset").addEventListener("click", () => {
+  // Restablecer publica "{}": todos vuelven al escritorio de fábrica,
+  // y los iconos nuevos que traiga el código aparecen solos
+  document.getElementById("admin-reset").addEventListener("click", async () => {
     if (!window.confirm(t("admin.resetAsk"))) return;
-    try { localStorage.removeItem(CFG_KEY); } catch (e) {}
-    config = cloneDefaults();
-    applyWallpaper();
-    renderDesktop();
-    renderStartMenu();
-    renderLauncher();
-    closeAllWins();
-    adminUnlocked();
+    adminSay(t("admin.saving"));
+    try {
+      const next = await publishData({});
+      closeAllWins();
+      applyConfig(next);
+      adminUnlocked();
+      adminSay(t("admin.saved"));
+    } catch (e) {
+      adminSay(t("admin.saveFail", { msg: (e && e.message) || "?" }), true);
+    }
   });
 }
 
@@ -3619,6 +4113,8 @@ const SOUNDS = {
   close: [880, 587],
   boot: [523, 659, 784, 1047],
   on: [784, 1175],
+  sent: [784, 988, 1319],
+  error: [440, 311],
 };
 
 function playSound(kind) {
@@ -3875,8 +4371,13 @@ function initAnalytics() {
 document.addEventListener("DOMContentLoaded", async function () {
   harvestBaseLang(); // el HTML manda: antes de traducir nada
 
-  // Config: borrador local > desktop.json > valores de fábrica
-  config = localConfig() || (await publishedConfig()) || cloneDefaults();
+  // Config: Supabase > última copia vista > desktop.json > fábrica.
+  // La pantalla de arranque tapa la espera (3 s como mucho).
+  let data = await fetchRemoteData();
+  if (data === undefined) data = cachedRemoteData();
+  else cacheRemoteData(data);
+  config = await configFromData(data);
+  lastRemote = stableJson(config);
   applyWallpaper();
 
   let startLang = DEFAULT_LANG;
@@ -3947,5 +4448,6 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   await runBoot();
   maybeWelcome();
+  startLiveConfig(); // a partir de aquí, lo que publiques llega en vivo
   await repos;
 });

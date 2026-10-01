@@ -73,8 +73,8 @@
 
   <!-- El ?v= evita que el navegador sirva la versión vieja en caché.
        Si tocas styles.css o script.js y no ves el cambio, sube el número. -->
-  <link rel="stylesheet" href="styles.css?v=15" />
-  <script src="script.js?v=15"></script>
+  <link rel="stylesheet" href="styles.css?v=17" />
+  <script src="script.js?v=17"></script>
 </head>
 
 <body>
@@ -258,12 +258,16 @@
       </div>
 
       <div class="win-body">
-        <!-- Paso 1: clave -->
+        <!-- Paso 1: cuenta de Supabase -->
         <div id="admin-gate">
-          <p class="admin-hint" data-i18n="admin.gate">Escribe la clave para administrar el escritorio.</p>
+          <p class="admin-hint" data-i18n="admin.gate">Entra con tu cuenta de Supabase. Lo que publiques lo ven todos al instante.</p>
           <div class="field">
-            <label for="admin-pass" data-i18n="admin.pass">Clave</label>
-            <input class="input" id="admin-pass" type="password" autocomplete="off" />
+            <label for="admin-email" data-i18n="admin.email">Correo</label>
+            <input class="input" id="admin-email" type="email" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label for="admin-pass" data-i18n="admin.pass">Contraseña</label>
+            <input class="input" id="admin-pass" type="password" autocomplete="current-password" />
           </div>
           <p class="admin-error" id="admin-error"></p>
           <button type="button" class="btn" id="admin-submit" data-i18n="admin.enter">Entrar</button>
@@ -271,6 +275,11 @@
 
         <!-- Paso 2: administración -->
         <div id="admin-panel-body" hidden>
+          <div class="admin-legacy" id="admin-legacy" hidden>
+            <p data-i18n="admin.legacy">Este navegador tiene un escritorio guardado de antes, que solo veías tú.</p>
+            <button type="button" class="btn" id="legacy-load" data-i18n="admin.legacy.load">Cargarlo</button>
+            <button type="button" class="btn" id="legacy-drop" data-i18n="admin.legacy.drop">Descartar</button>
+          </div>
           <div class="tabs" id="admin-tabs">
             <button type="button" class="tab is-active" data-tab="items" data-i18n="admin.tab.items">Iconos</button>
             <button type="button" class="tab" data-tab="look" data-i18n="admin.tab.look">Fondo</button>
@@ -377,7 +386,7 @@
               <span data-i18n="admin.wp.fx">Mostrar el caza TIE y la Estrella de la Muerte</span>
             </label>
             <p class="admin-hint" data-i18n="admin.wp.hint">
-              El fondo se ve al instante. Recuerda pulsar Guardar abajo.
+              El fondo cambia al instante aquí. Pulsa Publicar abajo para que lo vean todos.
             </p>
           </section>
 
@@ -411,9 +420,10 @@
 
           <div class="admin-foot">
             <span class="admin-count" id="admin-count"></span>
+            <button type="button" class="btn" id="admin-logout" data-i18n="admin.logout">Cerrar sesión</button>
             <button type="button" class="btn" id="admin-reset" data-i18n="admin.reset">Restablecer</button>
-            <button type="button" class="btn" id="admin-export" data-i18n="admin.export">Descargar desktop.json</button>
-            <button type="button" class="btn btn-primary" id="admin-save" data-i18n="admin.save">Guardar</button>
+            <button type="button" class="btn" id="admin-export" data-i18n="admin.export">Copia (desktop.json)</button>
+            <button type="button" class="btn btn-primary" id="admin-save" data-i18n="admin.save">Publicar</button>
           </div>
         </div>
       </div>

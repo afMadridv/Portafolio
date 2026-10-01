@@ -1,8 +1,10 @@
 # Portafolio — Andres Madrid
 
 Portafolio con forma de escritorio de PC: cada icono abre una ventana que se
-arrastra, se minimiza y se cierra. HTML, CSS y JavaScript puro — sin Node.js,
-sin compilación, sin dependencias.
+arrastra, se minimiza y se cierra. HTML, CSS y JavaScript puro — sin
+compilación ni npm. Del lado del servidor hay dos piezas: **Supabase** guarda el
+escritorio publicado y lo reparte en vivo, y una función de Vercel
+(`api/contact.js`) envía el formulario de contacto.
 
 Publicado en **https://andresmadrid.vercel.app**.
 
@@ -13,8 +15,11 @@ Publicado en **https://andresmadrid.vercel.app**.
 | [`index.html`](index.html) | Arranque, escritorio, lanzador móvil, barra de tareas, portal y perfil en texto |
 | [`styles.css`](styles.css) | Los estilos (chrome biselado, ventanas, iconos, impresión del CV) |
 | [`script.js`](script.js) | La lógica (ventanas, idiomas, reloj, GitHub, portal, arranque, sonidos) |
-| [`desktop.json`](desktop.json) | El escritorio publicado. Vacío = valores de fábrica. Lo reemplaza el portal |
+| [`supabase/schema.sql`](supabase/schema.sql) | Tablas, reglas de seguridad y tiempo real del servidor (Supabase) |
+| [`desktop.json`](desktop.json) | Respaldo si Supabase no responde. Vacío = valores de fábrica |
 | [`og.png`](og.png) | Imagen de 1200×630 para la vista previa al compartir el enlace |
+| [`api/contact.js`](api/contact.js) | Función de Vercel que envía el formulario de contacto a tu correo |
+| [`img/mail.png`](img/mail.png) | Icono del sobre que sale en el correo de contacto |
 
 > Deben quedar **en la misma carpeta**. El archivo se llama `index.html` a
 > propósito: es el nombre que buscan Vercel, GitHub Pages y Netlify en la raíz.
@@ -22,12 +27,15 @@ Publicado en **https://andresmadrid.vercel.app**.
 
 ## Cómo usarlo
 
-- **Ver:** doble clic en `index.html`. Para que `desktop.json` se pueda leer
-  hace falta un servidor: abriendo con `file://` esa petición falla y sale el
-  escritorio de fábrica.
+- **Ver:** doble clic en `index.html`. El escritorio publicado viene de
+  Supabase, así que se ve igual que en la web (si hay internet).
 - **Previsualizar con servidor:** `.claude/launch.json` levanta uno en
   `http://localhost:4173`.
-- **Publicar:** sube los archivos a cualquier hosting estático.
+- **Publicar:** sube los archivos a cualquier hosting estático. El envío
+  directo del formulario necesita Vercel (por `api/`); en otro hosting el
+  formulario usa el plan B.
+- **En local** la ruta `/api/contact` no tiene clave de Resend: el formulario
+  pasa al plan B, como debe.
 
 ## Lo que ve una visita
 
@@ -81,7 +89,7 @@ generan con Web Audio, sin archivos.
 
 En pantallas de 640 px o menos el escritorio se cambia por un **lanzador**: los
 mismos elementos en lista, cada uno con una línea que dice qué hay dentro ("7
-proyectos de GitHub", "Gmail, Outlook o copiar"). Las ventanas se abren a
+proyectos de GitHub", "Directo a mi correo"). Las ventanas se abren a
 pantalla completa con botón **Atrás**, y el botón atrás del teléfono también las
 cierra en vez de salir del portafolio.
 
@@ -102,8 +110,10 @@ la constante `CV_URL` de `script.js`. La ventana ofrecerá también descargarlo.
 
 ## Portal de administración
 
-Se abre desde **Inicio → Panel de administración**. La clave **no está escrita
-en ningún archivo** a propósito: el repositorio es público.
+Se abre desde **Inicio → Panel de administración** y se entra con una cuenta de
+**Supabase** (correo y contraseña). Lo que publicas se guarda en Supabase y
+**llega en vivo** a todas las visitas que tengan la página abierta, sin
+recargar. Ver [Servidor (Supabase)](#servidor-supabase).
 
 Cinco pestañas:
 
@@ -119,31 +129,68 @@ Cinco pestañas:
 Habilidades y educación salen en su ventana, en el CV y en la pantalla de
 arranque.
 
-Abajo, tres botones:
+Mientras editas, los cambios se ven solo en tu pantalla. Abajo:
 
-| Botón | Qué hace | Quién lo ve |
-|---|---|---|
-| **Guardar** | Escribe la config en `localStorage` | Solo tú, en ese navegador |
-| **Descargar desktop.json** | Baja el archivo | Todos, **cuando lo subas al repo** |
-| **Restablecer** | Borra tus cambios locales y vuelve al escritorio de fábrica | — |
+| Botón | Qué hace |
+|---|---|
+| **Publicar** | Guarda en Supabase: todos lo ven al instante |
+| **Copia (desktop.json)** | Baja la config como archivo, de respaldo |
+| **Restablecer** | Publica el escritorio de fábrica para todos |
+| **Cerrar sesión** | Sale de tu cuenta en ese navegador |
 
-Para publicar tus cambios: *Descargar desktop.json*, reemplaza el
-`desktop.json` del repositorio por ese y súbelo.
+> **Borrador de antes:** si en un navegador guardaste algo con el portal viejo
+> (que solo guardaba en ese navegador), el panel lo avisa arriba: **Cargarlo**
+> lo pone en el panel para que lo revises y lo publiques; **Descartar** lo
+> borra.
 
-> Si guardaste algo en el portal antes de que existieran Mi PC, la Papelera o el
-> CV, tu navegador sigue mostrando tu versión guardada. Pulsa **Restablecer**
-> para ver los iconos nuevos.
+Restablecer publica `{}`, que significa "lo que traiga el código". Así, si el
+código añade iconos nuevos, aparecen solos. Si publicas una config completa,
+esa queda fija hasta que la cambies.
 
-**Aviso de seguridad:** la clave solo evita que un curioso abra el panel. No es
-seguridad real — `script.js` es público y cualquiera puede leerlo, o abrir el
-panel desde las herramientas de desarrollo. Es aceptable porque el panel no
-puede cambiar lo que ven las visitas: para eso hace falta subir `desktop.json`
-a tu repositorio, y eso solo lo puedes hacer tú. No uses ahí una clave que
-reutilices en otra cuenta.
+## Servidor (Supabase)
 
-Cambiar la clave: en la consola del navegador ejecuta `await hashText("nueva")`
-y pega el resultado en la constante `ADMIN_HASH` de `script.js`. No escribas la
-clave en ningún archivo del repositorio.
+Proyecto `mfhyxbekkiugplawbddt`. Una sola fila de la tabla `site_config`
+(`id = 'desktop'`) guarda toda la config del escritorio en JSON.
+
+| Quién | Qué puede hacer |
+|---|---|
+| Cualquier visita | Leer la fila (y recibir los cambios en vivo) |
+| Correos de la tabla `site_admins` con sesión iniciada | Publicar |
+| Nadie desde la web | Borrar la fila, ver o tocar `site_admins` |
+
+Lo hacen cumplir las reglas **RLS** de la base de datos, no el JavaScript: aunque
+alguien abra el panel desde la consola, Supabase rechaza el cambio.
+
+**De dónde sale lo que se pinta**, en orden:
+
+1. Supabase (una petición REST al cargar; la pantalla de arranque tapa la espera,
+   3 s como mucho).
+2. La última versión vista en ese navegador (`desktop-cache`), si no hay red.
+3. [`desktop.json`](desktop.json), si Supabase está vacío o caído.
+4. `DEFAULT_DESKTOP` de `script.js`.
+
+Después del arranque se carga `supabase-js` (jsDelivr, versión fija y con
+SRI) y se suscribe a los cambios de la fila. Al volver a la pestaña también se
+vuelve a pedir, por si se perdió algún aviso. La ventana de Contacto no se
+repinta, para no borrar un mensaje a medio escribir.
+
+### Montarlo (una vez)
+
+1. Supabase → **SQL Editor** → pega [`supabase/schema.sql`](supabase/schema.sql)
+   → **Run**. Crea las tablas, las reglas, el tiempo real y te pone
+   (`amvcbn@gmail.com`) como admin. Se puede volver a ejecutar sin romper nada.
+2. **Authentication → Users → Add user → Create new user**: tu correo, una
+   contraseña y **Auto Confirm User** marcado.
+3. **Authentication → Sign In / Providers**: desactiva **Allow new users to sign
+   up**. Solo existirán los usuarios que crees tú.
+
+Otro admin: `insert into public.site_admins (email) values ('otro@correo.com');`
+y créale el usuario como en el paso 2.
+
+**Claves:** la `sb_publishable_…` está en `script.js` a propósito: está hecha
+para ir en la web y solo permite lo que dejan las reglas RLS. La **secreta**
+(`sb_secret_…` o `service_role`) salta esas reglas: nunca en el código ni en el
+repo.
 
 ## Proyectos automáticos
 
@@ -190,7 +237,7 @@ da 404 en la consola; es inofensivo.
 | Quieres cambiar… | Dónde, en `script.js` |
 |---|---|
 | Cuenta de GitHub | `GITHUB_USER` |
-| Correo de contacto | `EMAIL` |
+| Correo de contacto | `EMAIL` (y `CONTACT_TO` en Vercel para el envío directo) |
 | Perfil de LinkedIn | `LINKEDIN` (y el `href` de `#linkedin-btn`) |
 | Zona horaria del reloj | `TZ` |
 | PDF del currículum | `CV_URL` |
@@ -264,8 +311,46 @@ sistema pide reducir movimiento, y también desde el portal.
 
 ## Formulario de contacto
 
-No hay servidor detrás ni servicio externo. El visitante escribe el mensaje,
-pulsa **Enviar mensaje** y elige con qué correo mandarlo:
+El visitante escribe, pulsa **Enviar mensaje** y el correo te llega solo: no
+sale del portafolio ni abre su correo. Mientras se envía, un sobre cruza de
+"Tú" a "Andrés" con una barra de progreso; al terminar sale **¡Mensaje
+enviado!**.
+
+Lo envía [`api/contact.js`](api/contact.js), una función de Vercel que reenvía
+el formulario con [Resend](https://resend.com). No necesita npm ni compilación:
+Vercel convierte cada archivo de `api/` en una función.
+
+### El correo que recibes
+
+Una ventana del escritorio en pequeño: barra de título roja, ficha con nombre,
+correo, asunto, fecha (hora de Colombia) e idioma del visitante, el mensaje en
+un panel hundido y los botones **Responder** y **Abrir portafolio**. Va con
+`reply_to` del visitante: pulsar *Responder* en Gmail le contesta a él.
+
+Está hecho con tablas y estilos en línea, lo único que respetan Gmail, Outlook y
+el correo del móvil. El icono del sobre es [`img/mail.png`](img/mail.png).
+
+### Activarlo (una vez)
+
+1. Crea una cuenta gratis en **resend.com con el correo que recibe los
+   mensajes** (`mvandres08@gmail.com`). Sin dominio propio, Resend solo deja
+   enviar a ese correo.
+2. Resend → **API Keys** → *Create API Key*, permiso *Sending access*.
+3. vercel.com → proyecto → **Settings → Environment Variables**: añade
+   `RESEND_API_KEY` con esa clave (Production y Preview).
+4. **Deployments → Redeploy** para que la función la lea.
+
+> La clave va **solo** en Vercel, nunca en `script.js` ni en el repo: es
+> pública y con ella cualquiera mandaría correos desde tu cuenta.
+
+Opcionales: `CONTACT_TO` (otro destinatario) y `CONTACT_FROM` (remitente, si
+verificas un dominio propio en Resend).
+
+### Plan B
+
+Si el envío directo falla — sin la clave, sin conexión, en local o con el
+servidor caído — la ventana lo dice y ofrece mandarlo con el correo del
+visitante, ya escrito:
 
 | Opción | Qué hace |
 |---|---|
@@ -274,9 +359,16 @@ pulsa **Enviar mensaje** y elige con qué correo mandarlo:
 | **App de correo del equipo** | `mailto:` para Outlook de escritorio, Correo, Thunderbird… |
 | **Copiar el mensaje** | Lo copia con destinatario y asunto, para pegarlo donde quiera |
 
-**Por qué no un solo botón con `mailto:`:** solo funciona si el visitante tiene
-una app de correo instalada; casi todo el mundo usa Gmail u Outlook en el
-navegador.
+### Spam y privacidad
+
+- **Campo trampa** invisible (`website`) y un mínimo de 2,5 s entre abrir la
+  ventana y enviar: si un bot cae, recibe "ok" y no se manda nada.
+- **Mismo origen:** la función solo acepta envíos desde el propio sitio.
+- **Freno:** 5 mensajes cada 10 minutos por IP (aproximado: va en memoria).
+- **Sin cookies.** Ni el formulario ni la función guardan nada; no hace falta
+  aviso de cookies. Lo que el sitio guarda en `localStorage` (idioma, sonido,
+  posición de ventanas, última copia del escritorio y, solo para ti, la sesión
+  del portal) es funcional, no rastreo.
 
 ## Peso
 
@@ -292,8 +384,8 @@ la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
 en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=15" />
-<script src="script.js?v=15"></script>
+<link rel="stylesheet" href="styles.css?v=17" />
+<script src="script.js?v=17"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:
