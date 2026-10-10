@@ -1064,6 +1064,355 @@ const SOCIAL = [
 /* =========================================================
    ESCRITORIO POR DEFECTO
    ========================================================= */
+/* =========================================================
+   LEGAL
+   Carpeta "Legal" del escritorio: política de datos, términos,
+   cómo ejercer los derechos de habeas data y normas que aplican
+   (Colombia, Ley 1581 de 2012). Si cambias algo, actualiza la
+   fecha de LEGAL_DATE.
+   ========================================================= */
+const LEGAL_DATE = { es: "10 de octubre de 2026", en: "October 10, 2026" };
+/* Los textos se escriben en líneas cortas para leerlos aquí, pero
+   en la ventana cada párrafo debe fluir: una línea que sigue la
+   frase anterior (minúscula, paréntesis, número o sangría) se une
+   a ella. Títulos, listas y líneas tras ".", ":" o ";" no se unen. */
+const legalText = (...rows) =>
+  rows
+    .reduce((out, row) => {
+      const prev = out[out.length - 1];
+      const follows =
+        prev &&
+        row &&
+        /[a-záéíóúñ]/.test(prev) &&
+        (/^\s{2,}\S/.test(row) ||
+          (!/[.:;]$/.test(prev) && /^([a-záéíóúñ(]|\d+(?![\d.]))/.test(row)));
+      if (follows) out[out.length - 1] = prev + " " + row.trim();
+      else out.push(row);
+      return out;
+    }, [])
+    .join("\n");
+
+const LEGAL_ITEMS = [
+  {
+    id: "legal",
+    type: "folder",
+    icon: "folder",
+    name: { es: "Legal", en: "Legal" },
+    sub: { es: "Datos, términos y derechos", en: "Data, terms and rights" },
+  },
+  {
+    id: "legal-data",
+    type: "txt",
+    icon: "txt",
+    parent: "legal",
+    name: { es: "Tratamiento de datos.txt", en: "Data processing.txt" },
+    text: {
+      es: legalText(
+        "POLÍTICA DE TRATAMIENTO DE DATOS",
+        "Última actualización: " + LEGAL_DATE.es,
+        "",
+        "1. RESPONSABLE",
+        "Andrés Felipe Madrid Villar, persona natural, Santa Marta, Colombia.",
+        "Correo: " + EMAIL,
+        "Sitio: andresmadrid.vercel.app",
+        "",
+        "2. QUÉ DATOS SE RECOGEN",
+        "- Formulario de Contacto: el nombre, correo, asunto y mensaje que escribas.",
+        "- Analítica: Vercel Web Analytics cuenta visitas de forma agregada y",
+        "  anónima, sin cookies.",
+        "No se piden datos sensibles ni se recogen a sabiendas datos de menores.",
+        "",
+        "3. PARA QUÉ SE USAN",
+        "Solo para leer y responder tu mensaje. No se venden, no se ceden y no se",
+        "usan para publicidad ni listas de correo.",
+        "",
+        "4. DÓNDE QUEDAN",
+        "El formulario no guarda tus datos en ninguna base de datos: el mensaje se",
+        "envía a mi correo por medio de Resend (Estados Unidos) y queda en mi bandeja",
+        "de Gmail (Google). Es una transferencia internacional necesaria para que el",
+        "mensaje llegue.",
+        "Otros proveedores del sitio: Vercel (alojamiento), Supabase (configuración",
+        "del escritorio, sin datos de visitantes), GitHub (lista pública de",
+        "proyectos), Google Fonts y jsDelivr (tipografías y librerías). Como en",
+        "cualquier web, al cargar la página tu navegador se conecta a ellos y pueden",
+        "ver tu dirección IP.",
+        "",
+        "5. CUÁNTO TIEMPO",
+        "Los mensajes se conservan mientras sirvan para la conversación y como",
+        "máximo 2 años, salvo que pidas antes que se borren.",
+        "",
+        "6. TU NAVEGADOR",
+        "El sitio no usa cookies. Guarda en el almacenamiento local de tu navegador",
+        "tus preferencias (idioma, sonido, posición de ventanas) y una copia del",
+        "escritorio para cargar más rápido. Puedes borrarlo desde la configuración",
+        "del navegador.",
+        "",
+        "7. AUTORIZACIÓN",
+        "Al enviar el formulario autorizas este tratamiento, conforme a la Ley 1581",
+        "de 2012. Puedes revocar la autorización cuando quieras.",
+        "",
+        "8. TUS DERECHOS",
+        "Conocer, actualizar, rectificar y suprimir tus datos, revocar la",
+        "autorización y acudir a la SIC. Cómo hacerlo: \"Ejercer mis derechos.txt\".",
+        "",
+        "9. SEGURIDAD",
+        "Conexión cifrada (HTTPS), claves fuera del código, reglas de acceso en la",
+        "base de datos y filtros contra spam.",
+        "",
+        "10. CAMBIOS",
+        "Si esta política cambia, se actualiza la fecha de arriba."
+      ),
+      en: legalText(
+        "DATA PROCESSING POLICY",
+        "Last updated: " + LEGAL_DATE.en,
+        "",
+        "1. CONTROLLER",
+        "Andrés Felipe Madrid Villar, private individual, Santa Marta, Colombia.",
+        "Email: " + EMAIL,
+        "Site: andresmadrid.vercel.app",
+        "",
+        "2. WHAT DATA IS COLLECTED",
+        "- Contact form: the name, email, subject and message you write.",
+        "- Analytics: Vercel Web Analytics counts visits in an aggregated,",
+        "  anonymous way, without cookies.",
+        "No sensitive data is requested and no data from minors is knowingly collected.",
+        "",
+        "3. WHAT IT IS USED FOR",
+        "Only to read and answer your message. It is not sold, not shared and not",
+        "used for advertising or mailing lists.",
+        "",
+        "4. WHERE IT ENDS UP",
+        "The form does not store your data in any database: the message is sent to",
+        "my email through Resend (United States) and stays in my Gmail (Google)",
+        "inbox. This international transfer is needed for the message to arrive.",
+        "Other providers: Vercel (hosting), Supabase (desktop configuration, no",
+        "visitor data), GitHub (public project list), Google Fonts and jsDelivr",
+        "(fonts and libraries). As with any website, your browser connects to them",
+        "when the page loads and they can see your IP address.",
+        "",
+        "5. HOW LONG",
+        "Messages are kept while they are useful for the conversation and for 2",
+        "years at most, unless you ask for them to be deleted sooner.",
+        "",
+        "6. YOUR BROWSER",
+        "The site uses no cookies. It keeps your preferences (language, sound,",
+        "window positions) and a copy of the desktop in your browser's local",
+        "storage to load faster. You can clear it from your browser settings.",
+        "",
+        "7. CONSENT",
+        "By sending the form you authorize this processing, under Colombian Law",
+        "1581 of 2012. You can withdraw your consent at any time.",
+        "",
+        "8. YOUR RIGHTS",
+        "Access, update, correct and delete your data, withdraw consent and go to",
+        "the SIC. How: \"Exercise my rights.txt\".",
+        "",
+        "9. SECURITY",
+        "Encrypted connection (HTTPS), keys kept out of the code, access rules in",
+        "the database and spam filters.",
+        "",
+        "10. CHANGES",
+        "If this policy changes, the date above is updated."
+      ),
+    },
+  },
+  {
+    id: "legal-terms",
+    type: "txt",
+    icon: "txt",
+    parent: "legal",
+    name: { es: "Términos de uso.txt", en: "Terms of use.txt" },
+    text: {
+      es: legalText(
+        "TÉRMINOS DE USO",
+        "Última actualización: " + LEGAL_DATE.es,
+        "",
+        "1. QUÉ ES ESTE SITIO",
+        "Un portafolio personal con fines informativos y profesionales. Al usarlo",
+        "aceptas estos términos.",
+        "",
+        "2. PROPIEDAD INTELECTUAL",
+        "Los textos, el diseño, los iconos de píxeles y el código del sitio son",
+        "de Andrés Madrid, salvo que se indique otra cosa. El código de cada proyecto",
+        "se rige por la licencia de su repositorio en GitHub. Las marcas de terceros",
+        "(GitHub, LinkedIn, Star Wars, entre otras) pertenecen a sus dueños; las",
+        "referencias a Star Wars son un homenaje sin fines comerciales.",
+        "",
+        "3. USO PERMITIDO",
+        "Puedes navegar, ver los proyectos y escribirme. No está permitido:",
+        "- intentar entrar al panel de administración sin autorización;",
+        "- alterar, saturar o atacar el sitio o sus servicios;",
+        "- usar el formulario para spam o contenido ilícito;",
+        "- copiar el sitio para hacerte pasar por su autor.",
+        "",
+        "4. ENLACES EXTERNOS",
+        "Los enlaces a otros sitios se ofrecen por comodidad; no respondo por su",
+        "contenido ni por sus políticas.",
+        "",
+        "5. SIN GARANTÍAS",
+        "El sitio se ofrece tal cual y la información de los proyectos puede",
+        "cambiar. En la medida que la ley lo permita, no respondo por daños",
+        "derivados de su uso.",
+        "",
+        "6. LEY APLICABLE",
+        "Estos términos se rigen por las leyes de la República de Colombia.",
+        "",
+        "7. CONTACTO",
+        EMAIL
+      ),
+      en: legalText(
+        "TERMS OF USE",
+        "Last updated: " + LEGAL_DATE.en,
+        "",
+        "1. WHAT THIS SITE IS",
+        "A personal portfolio for informational and professional purposes. By",
+        "using it you accept these terms.",
+        "",
+        "2. INTELLECTUAL PROPERTY",
+        "The site's text, design, pixel icons and code belong to Andrés Madrid",
+        "unless stated otherwise. Each project's code is governed by the license in",
+        "its GitHub repository. Third-party trademarks (GitHub, LinkedIn, Star Wars,",
+        "among others) belong to their owners; the Star Wars references are a",
+        "non-commercial tribute.",
+        "",
+        "3. ALLOWED USE",
+        "You may browse, view the projects and write to me. It is not allowed to:",
+        "- try to enter the admin panel without authorization;",
+        "- alter, overload or attack the site or its services;",
+        "- use the form for spam or unlawful content;",
+        "- copy the site to impersonate its author.",
+        "",
+        "4. EXTERNAL LINKS",
+        "Links to other sites are provided for convenience; I am not responsible",
+        "for their content or policies.",
+        "",
+        "5. NO WARRANTIES",
+        "The site is provided as is and project information may change. To the",
+        "extent permitted by law, I am not liable for damages arising from its use.",
+        "",
+        "6. GOVERNING LAW",
+        "These terms are governed by the laws of the Republic of Colombia.",
+        "",
+        "7. CONTACT",
+        EMAIL
+      ),
+    },
+  },
+  {
+    id: "legal-rights",
+    type: "txt",
+    icon: "txt",
+    parent: "legal",
+    name: { es: "Ejercer mis derechos.txt", en: "Exercise my rights.txt" },
+    text: {
+      es: legalText(
+        "EJERCER MIS DERECHOS (HABEAS DATA)",
+        "",
+        "Como titular de tus datos puedes:",
+        "- conocer qué datos tuyos tengo;",
+        "- actualizarlos o rectificarlos;",
+        "- pedir que se borren;",
+        "- revocar la autorización que diste;",
+        "- pedir prueba de esa autorización;",
+        "- saber qué uso se les ha dado;",
+        "- quejarte ante la Superintendencia de Industria y Comercio (SIC),",
+        "  después de haber hecho tu solicitud aquí.",
+        "",
+        "CÓMO HACERLO",
+        "1. Escribe a " + EMAIL + " con el asunto \"Habeas data\".",
+        "2. Incluye tu nombre, el correo con el que me escribiste, qué pides y, si",
+        "   es un reclamo, los hechos que lo motivan.",
+        "3. Es gratis. Puedo pedirte que respondas desde el mismo correo para",
+        "   confirmar que eres el titular.",
+        "",
+        "PLAZOS (LEY 1581 DE 2012)",
+        "- Consultas: respuesta en máximo 10 días hábiles, prorrogables 5 días",
+        "  hábiles más con aviso.",
+        "- Reclamos (corregir, borrar, revocar): máximo 15 días hábiles,",
+        "  prorrogables 8 días hábiles más con aviso.",
+        "Si al reclamo le falta información te la pediré; si no llega en 2 meses,",
+        "se entiende que desististe."
+      ),
+      en: legalText(
+        "EXERCISE MY RIGHTS (HABEAS DATA)",
+        "",
+        "As the owner of your data you can:",
+        "- know what data of yours I hold;",
+        "- update or correct it;",
+        "- ask for it to be deleted;",
+        "- withdraw the consent you gave;",
+        "- ask for proof of that consent;",
+        "- know how it has been used;",
+        "- complain to Colombia's Superintendence of Industry and Commerce (SIC),",
+        "  after making your request here.",
+        "",
+        "HOW",
+        "1. Write to " + EMAIL + " with the subject \"Habeas data\".",
+        "2. Include your name, the email you wrote to me from, what you are asking",
+        "   for and, for a complaint, the facts behind it.",
+        "3. It is free. I may ask you to reply from the same email to confirm you",
+        "   are the owner of the data.",
+        "",
+        "DEADLINES (LAW 1581 OF 2012)",
+        "- Queries: answered within 10 business days, extendable by 5 more with",
+        "  notice.",
+        "- Complaints (correct, delete, withdraw): within 15 business days,",
+        "  extendable by 8 more with notice.",
+        "If a complaint is missing information I will ask for it; if it does not",
+        "arrive within 2 months, the request is considered withdrawn."
+      ),
+    },
+  },
+  {
+    id: "legal-framework",
+    type: "txt",
+    icon: "txt",
+    parent: "legal",
+    name: { es: "Marco legal.txt", en: "Legal framework.txt" },
+    text: {
+      es: legalText(
+        "MARCO LEGAL",
+        "",
+        "Este sitio y el tratamiento de datos se rigen por:",
+        "",
+        "- Constitución Política de Colombia, artículos 15 (intimidad y habeas",
+        "  data) y 20 (información).",
+        "- Ley 1581 de 2012: protección de datos personales.",
+        "- Decreto 1377 de 2013, compilado en el Decreto 1074 de 2015:",
+        "  autorización, políticas de tratamiento y transferencias.",
+        "- Ley 527 de 1999: comercio electrónico y validez de los mensajes de datos.",
+        "- Ley 1273 de 2009: delitos informáticos.",
+        "- Ley 23 de 1982 y Decisión Andina 351 de 1993: derechos de autor.",
+        "",
+        "Autoridad de protección de datos: Superintendencia de Industria y Comercio (SIC), www.sic.gov.co.",
+        "",
+        "Para visitantes de la Unión Europea, el sitio sigue además los principios",
+        "del RGPD: datos mínimos, una sola finalidad y conservación limitada."
+      ),
+      en: legalText(
+        "LEGAL FRAMEWORK",
+        "",
+        "This site and its data processing are governed by:",
+        "",
+        "- Political Constitution of Colombia, articles 15 (privacy and habeas",
+        "  data) and 20 (information).",
+        "- Law 1581 of 2012: personal data protection.",
+        "- Decree 1377 of 2013, compiled in Decree 1074 of 2015: consent,",
+        "  processing policies and transfers.",
+        "- Law 527 of 1999: electronic commerce and validity of data messages.",
+        "- Law 1273 of 2009: computer crimes.",
+        "- Law 23 of 1982 and Andean Decision 351 of 1993: copyright.",
+        "",
+        "Data protection authority: Superintendence of Industry and Commerce",
+        "(SIC), www.sic.gov.co.",
+        "",
+        "For visitors from the European Union, the site also follows the GDPR",
+        "principles: minimal data, a single purpose and limited retention."
+      ),
+    },
+  },
+];
+
 const DEFAULT_DESKTOP = {
   wallpaper: { type: "color", value: "#000000", value2: "#2a0d0d", url: "" },
   showFx: true,
@@ -1153,6 +1502,7 @@ const DEFAULT_DESKTOP = {
       icon: "trash",
       name: { es: "Papelera", en: "Recycle Bin" },
     },
+    ...LEGAL_ITEMS,
   ],
 };
 
@@ -1308,7 +1658,8 @@ const I18N = {
       "No se pudo copiar automáticamente: el texto está seleccionado abajo, cópialo con Ctrl+C.",
     "app.contact.toolong":
       "El mensaje es muy largo para la app de correo. Usa Gmail, Outlook o cópialo y mándalo a {mail}.",
-    "app.contact.privacy": "Solo uso tus datos para responderte. Sin cookies ni listas de correo.",
+    "app.contact.privacy": "Al enviar aceptas que use tus datos solo para responderte. Sin cookies ni listas de correo.",
+    "app.contact.policy": "Tratamiento de datos",
     "app.contact.you": "Tú",
     "app.contact.sending": "Enviando mensaje…",
     "app.contact.done": "¡Mensaje enviado!",
@@ -1542,7 +1893,8 @@ const I18N = {
       "Could not copy automatically: the text is selected below, copy it with Ctrl+C.",
     "app.contact.toolong":
       "The message is too long for the mail app. Use Gmail, Outlook or copy it and send it to {mail}.",
-    "app.contact.privacy": "I only use your details to reply. No cookies, no mailing lists.",
+    "app.contact.privacy": "By sending, you agree I use your details only to reply. No cookies, no mailing lists.",
+    "app.contact.policy": "Data processing",
     "app.contact.you": "You",
     "app.contact.sending": "Sending message…",
     "app.contact.done": "Message sent!",
@@ -1707,7 +2059,11 @@ function normalizeConfig(raw) {
     out.projects.selected = raw.projects.selected;
   }
   const obj = (v) => (v && typeof v === "object" ? v : { es: String(v || "") });
+  // Los textos legales siempre están, aunque la config publicada
+  // venga de antes de que existieran
+  const missingLegal = LEGAL_ITEMS.filter((li) => !out.items.some((it) => it && it.id === li.id));
   out.items = out.items
+    .concat(JSON.parse(JSON.stringify(missingLegal)))
     .filter((it) => it && it.id && it.type)
     .map((it) => ({
       id: String(it.id),
@@ -2065,9 +2421,21 @@ function activeWinId() {
   return top;
 }
 
+/* Solo enlaces http(s) y mailto: una URL "javascript:" guardada en
+   la config o en un repo nunca llega a ejecutarse */
+function safeUrl(u) {
+  try {
+    const url = new URL(String(u || ""), location.href);
+    return /^(https?|mailto):$/.test(url.protocol) ? url.href : "";
+  } catch (e) {
+    return "";
+  }
+}
+
 function openItem(item) {
   if (item.type === "link") {
-    if (item.url) window.open(item.url, "_blank", "noopener,noreferrer");
+    const url = safeUrl(item.url);
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
     return;
   }
   if (openWins.has(item.id)) {
@@ -2379,7 +2747,7 @@ function el(tag, cls, text) {
 function linkBtn(href, label, iconKey) {
   const a = document.createElement("a");
   a.className = "btn";
-  a.href = href;
+  a.href = safeUrl(href) || "#";
   a.target = "_blank";
   a.rel = "noopener noreferrer";
   if (iconKey) {
@@ -2772,7 +3140,16 @@ const APPS = {
     form.appendChild(formStatus);
 
     const foot = el("div", "dlg-foot");
-    foot.appendChild(el("p", "form-note", t("app.contact.privacy")));
+    // Autorización (Ley 1581): enviar = aceptar, con la política a un clic
+    const note = el("p", "form-note", t("app.contact.privacy") + " ");
+    const policy = el("button", "note-link", t("app.contact.policy"));
+    policy.type = "button";
+    policy.addEventListener("click", () => {
+      const doc = itemById("legal-data") || LEGAL_ITEMS.find((it) => it.id === "legal-data");
+      openItem(doc);
+    });
+    note.appendChild(policy);
+    foot.appendChild(note);
     const send = el("button", "btn btn-primary", t("app.contact.send"));
     send.type = "submit";
     foot.appendChild(send);
@@ -4339,7 +4716,7 @@ function refreshSeoProjects() {
   visibleRepos().forEach((r) => {
     const li = el("li");
     const a = el("a", "", r.name);
-    a.href = r.homepage || r.html_url;
+    a.href = safeUrl(r.homepage) || safeUrl(r.html_url) || "#";
     li.appendChild(a);
     if (r.description) li.appendChild(document.createTextNode(" — " + r.description));
     ul.appendChild(li);

@@ -370,6 +370,38 @@ visitante, ya escrito:
   posición de ventanas, última copia del escritorio y, solo para ti, la sesión
   del portal) es funcional, no rastreo.
 
+## Legal
+
+Carpeta **Legal** en el escritorio, con cuatro archivos en español e inglés:
+*Tratamiento de datos*, *Términos de uso*, *Ejercer mis derechos* (habeas data,
+plazos de la Ley 1581 de 2012) y *Marco legal*. El aviso bajo el formulario de
+Contacto enlaza a la política: enviar el mensaje es la autorización.
+
+Los textos están en `LEGAL_ITEMS` de `script.js`. Si cambias algo, actualiza
+`LEGAL_DATE`. `normalizeConfig()` los añade siempre, aunque la config publicada
+sea anterior a ellos.
+
+> Son una base razonable para un portafolio personal en Colombia, no asesoría
+> legal. Si el sitio empieza a guardar datos o vender servicios, revísalos con un
+> abogado.
+
+## Seguridad
+
+| Capa | Qué hay |
+|---|---|
+| Claves | `RESEND_API_KEY` solo en Vercel. En el código solo va la clave *publishable* de Supabase, hecha para ser pública. Ningún secreto en el historial de git |
+| Base de datos | RLS: todos leen la fila del escritorio; solo los correos de `site_admins` publican. La web anónima no tiene permisos de escritura ni puede llamar `is_site_admin`. El autor se guarda como id, no como correo |
+| Portal | Supabase Auth (contraseñas con bcrypt, límites de intentos de Supabase). La comprobación real está en la base de datos, no en la interfaz |
+| Formulario | Validación de tipo y tamaño en el servidor, HTML escapado en el correo, campo trampa, tiempo mínimo, mismo origen y 5 envíos / 10 min por IP |
+| Navegador | Cabeceras en [`vercel.json`](vercel.json): CSP, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`. HTTPS y HSTS los pone Vercel. Los enlaces solo abren `http`, `https` o `mailto` (`safeUrl()`) |
+| Dependencias | Sin npm. `supabase-js` va con versión fija y SRI: si el archivo de jsDelivr cambiara, el navegador no lo ejecuta |
+
+**Si añades un recurso de otro dominio** (una fuente, una API, un script), añádelo a la
+`Content-Security-Policy` de `vercel.json` o el navegador lo bloqueará.
+
+**Pendiente en el panel de Supabase:** Authentication → desactivar *Allow new users to
+sign up*, y activar *Leaked password protection* si tu plan lo incluye.
+
 ## Peso
 
 `script.js` pesa unos 130 KB sin comprimir, pero Vercel lo sirve con Brotli: por
@@ -384,8 +416,8 @@ la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
 en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=17" />
-<script src="script.js?v=17"></script>
+<link rel="stylesheet" href="styles.css?v=18" />
+<script src="script.js?v=18"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:

@@ -15,7 +15,8 @@ create table if not exists public.site_config (
   data        jsonb not null default '{}'::jsonb,
   updated_at  timestamptz not null default now(),
   updated_by  text,
-  constraint site_config_size check (octet_length(data::text) < 500000)
+  constraint site_config_size check (octet_length(data::text) < 500000),
+  constraint site_config_is_object check (jsonb_typeof(data) = 'object')
 );
 
 -- Quién puede publicar. Para añadir a alguien:
@@ -48,10 +49,12 @@ as $$
   );
 $$;
 
-revoke all on function public.is_site_admin() from public;
-grant execute on function public.is_site_admin() to anon, authenticated;
+-- Solo quien ya inició sesión necesita preguntarlo
+revoke all on function public.is_site_admin() from public, anon;
+grant execute on function public.is_site_admin() to authenticated;
 
 -- ---------- Fecha y autor de cada cambio ----------
+-- El autor se guarda como id, no como correo: la fila es pública.
 create or replace function public.site_config_touch()
 returns trigger
 language plpgsql
@@ -59,7 +62,7 @@ set search_path = ''
 as $$
 begin
   new.updated_at := now();
-  new.updated_by := auth.jwt() ->> 'email';
+  new.updated_by := auth.uid()::text;
   return new;
 end;
 $$;
@@ -73,9 +76,23 @@ create trigger site_config_touch
 alter table public.site_config enable row level security;
 alter table public.site_admins enable row level security;
 
+-- Permisos mínimos: la web anónima solo lee; el admin lee y edita.
+-- RLS ya lo impide, pero así ni siquiera se puede intentar.
 grant select on public.site_config to anon, authenticated;
 grant insert, update on public.site_config to authenticated;
+revoke insert, update, delete, truncate, references, trigger on public.site_config from anon;
+revoke delete, truncate, references, trigger on public.site_config from authenticated;
 revoke all on public.site_admins from anon, authenticated;
+
+-- Función interna de Supabase (activa RLS en tablas nuevas): no es para la API
+do $$
+begin
+  if exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+             where n.nspname = 'public' and p.proname = 'rls_auto_enable') then
+    revoke execute on function public.rls_auto_enable() from public, anon, authenticated;
+  end if;
+end;
+$$;
 
 drop policy if exists "site_config lectura publica" on public.site_config;
 create policy "site_config lectura publica"

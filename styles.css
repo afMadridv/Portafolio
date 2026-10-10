@@ -532,6 +532,16 @@ button, input, select, textarea { font: inherit; color: inherit; }
   color: var(--ink-soft);
 }
 .dlg-foot .btn { flex-shrink: 0; }
+.note-link {
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: #000080;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.note-link:focus-visible { outline: 1px dotted var(--ink); }
 .body-dialog .dlg-actions { gap: 0.4rem; }
 
 /* Enviando: el sobre cruza de tu PC a mi buzón, como el diálogo
