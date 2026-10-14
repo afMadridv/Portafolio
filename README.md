@@ -178,7 +178,7 @@ repinta, para no borrar un mensaje a medio escribir.
 
 1. Supabase → **SQL Editor** → pega [`supabase/schema.sql`](supabase/schema.sql)
    → **Run**. Crea las tablas, las reglas, el tiempo real y te pone
-   (`amvcbn@gmail.com`) como admin. Se puede volver a ejecutar sin romper nada.
+   (`admin_am@portafolio.com`) como admin. Se puede volver a ejecutar sin romper nada.
 2. **Authentication → Users → Add user → Create new user**: tu correo, una
    contraseña y **Auto Confirm User** marcado.
 3. **Authentication → Sign In / Providers**: desactiva **Allow new users to sign
@@ -246,31 +246,29 @@ da 404 en la consola; es inofensivo.
 | Escritorio de fábrica | `DEFAULT_DESKTOP` |
 | Duración del arranque | `BOOT_LINE_MS` |
 | Sonidos | `SOUNDS` (frecuencias en Hz) |
-| Iconos disponibles | `PIXELS` (dibujos de 32x32 en texto) |
+| Iconos disponibles | `PIXELS` (dibujos de 48x48 en texto) |
 | Colores de los iconos | `PAL` |
 | Colores del chrome | `:root` en `styles.css` |
 
 ### Dibujar un icono
 
-Los iconos son rejillas de **32x32**, la medida de los iconos de escritorio de
-los 90. Se escriben como texto: una letra por píxel, según la paleta `PAL`. El
-punto es transparente y las filas pueden quedarse cortas — lo que falta se
-rellena como transparente. No hace falta ningún editor de imágenes:
+Los iconos son rejillas de **48x48**, la medida de los iconos grandes de los
+escritorios de los 90. Se escriben como texto: una letra por píxel, según la
+paleta `PAL`. El punto es transparente y las filas pueden quedarse cortas — lo
+que falta se rellena como transparente. No hace falta ningún editor de imágenes:
 
 ```js
 folder: [
-  "................................",
-  "....kkkkkkkkkk..................",
-  "...kWWWWWWWWWWk.................",
-  "...kWYYYYYYYYYk.................",
-  "...kWYYYYYYYYYkkkkkkkkkkkkkkk...",
-  "...kWYYYYYYYYYYYYYYYYYYYYYYYYk..",
-  // …hasta 32 filas
+  "................................................",
+  "................................................",
+  "...kkkkkkkkkkkkkkk..............................",
+  "..kooYYYYYYYYYYYYYok............................",
+  // …hasta 48 filas
 ],
 ```
 
-A 32x32 los píxeles quedan finos al pintarlos a 40px, como los iconos
-originales. Los de 16x16 (el altavoz de la bandeja) no se ofrecen en el portal.
+En el escritorio se pintan a 48px: un píxel del dibujo, un píxel de pantalla.
+Los de 16x16 (el altavoz de la bandeja) no se ofrecen en el portal.
 
 `pixelSvg()` los convierte en SVG uniendo los píxeles seguidos del mismo color:
 si no, serían 1024 nodos por icono. El CSS los pinta con
@@ -416,8 +414,8 @@ la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
 en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=18" />
-<script src="script.js?v=18"></script>
+<link rel="stylesheet" href="styles.css?v=19" />
+<script src="script.js?v=19"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:

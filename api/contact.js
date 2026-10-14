@@ -195,7 +195,7 @@ function renderEmail(d, opts) {
 
 <tr><td style="padding:16px 16px 8px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-<td valign="middle" width="64"><img src="${site}/img/mail.png" width="64" height="64" alt="" style="display:block;border:0;image-rendering:pixelated;"></td>
+<td valign="middle" width="48"><img src="${site}/img/mail.png" width="48" height="48" alt="" style="display:block;border:0;image-rendering:pixelated;"></td>
 <td style="padding-left:14px;">
 <div style="font:bold 18px ${FONT_MONO};color:#101010;letter-spacing:0.5px;">Tienes un mensaje nuevo</div>
 <div style="padding-top:4px;font:12px ${FONT_UI};color:#4a4a4a;">${esc(first)} te escribi&oacute; desde el formulario de tu portafolio.</div>

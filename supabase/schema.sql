@@ -25,7 +25,7 @@ create table if not exists public.site_admins (
   email text primary key check (email = lower(email))
 );
 
-insert into public.site_admins (email) values ('amvcbn@gmail.com')
+insert into public.site_admins (email) values ('admin_am@portafolio.com')
 on conflict do nothing;
 
 -- Fila de partida: '{}' = escritorio de fábrica (el de script.js)
