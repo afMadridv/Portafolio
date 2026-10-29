@@ -92,6 +92,35 @@ button, input, select, textarea { font: inherit; color: inherit; }
   overflow: hidden;
 }
 
+/* ----- Tarjeta de presentación (arriba a la derecha) -----
+   Encima de la rejilla de iconos (z 2, va después en el HTML) y
+   debajo de las ventanas (z 3). */
+.hello {
+  position: absolute;
+  top: 1.4rem;
+  right: 1.6rem;
+  z-index: 2;
+  width: min(360px, 42vw);
+  padding: 1rem 1.1rem 1.1rem;
+  color: #f2f2f2;
+  background: rgba(8, 8, 8, 0.86);
+  border: 2px solid #3a3a3a;
+  box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #000, 6px 6px 0 rgba(0, 0, 0, 0.6);
+}
+.hello-kicker { margin: 0 0 0.5rem; font-size: 0.72rem; color: #6fdc6f; }
+.hello-name {
+  margin: 0;
+  font: 400 1.35rem/1.2 var(--font-display);
+  letter-spacing: 0.04em;
+  color: #ff5a5a;
+}
+.hello-role { margin: 0.35rem 0 0.6rem; font-size: 0.82rem; font-weight: 600; color: #ffffff; }
+.hello-pitch { margin: 0 0 0.9rem; font-size: 0.76rem; line-height: 1.55; color: #cfcfcf; }
+.hello-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+@media (max-width: 760px), (max-height: 520px) {
+  .hello { display: none; }
+}
+
 /* ----- Iconos ----- */
 .icon-grid {
   position: absolute;
@@ -258,7 +287,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin-top: 3px;
   padding: 2px 8px;
   min-height: 20px;
-  font-size: 0.7rem;
+  font-size: 0.74rem;
   line-height: 16px;
   color: var(--ink);
   background: var(--face);
@@ -296,9 +325,39 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin: 1.2rem 0;
   font-size: 0.78rem;
 }
-.body-repo dt { color: #8a8a8a; }
+.body-repo dt { color: #b0b0b0; }
 .body-repo dd { margin: 0; }
 .body-repo .repo-links { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+/* Ficha más legible: texto algo mayor y renglones no tan anchos */
+.body-repo .txt-body { max-width: 70ch; font-size: 0.86rem; line-height: 1.75; color: #ececec; }
+
+/* Caso de estudio en bloques: Mi rol, Problema, Solución, Resultado, Stack */
+.repo-case {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.7rem;
+  margin: 1.2rem 0 0.4rem;
+}
+.case-block {
+  padding: 0.7rem 0.85rem;
+  background: #141414;
+  border: 1px solid #2c2c2c;
+  border-left: 3px solid var(--accent);
+}
+.case-role { border-left-color: #6aa8e0; }
+.case-result { border-left-color: #5cc45c; }
+.case-stack { border-left-color: #e8b23c; }
+.case-title {
+  margin: 0 0 0.4rem;
+  font: 400 0.72rem var(--font-display);
+  letter-spacing: 0.06em;
+  color: #ff8a8a;
+}
+.case-text { margin: 0; max-width: 70ch; font-size: 0.82rem; line-height: 1.65; color: #e6e6e6; white-space: pre-wrap; }
+.case-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0; }
+.chip { padding: 0.12rem 0.45rem; font-size: 0.7rem; color: #ffe7a8; background: #1f1a0b; border: 1px solid #4a3d12; }
+.repo-badge.is-star { color: #ffe08a; border-color: #5a4a12; background: #1c170b; }
 
 /* =========================================================
    2) EXPLORADOR CON PESTAÑAS  (carpetas y Proyectos)
@@ -409,6 +468,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-size: 0.75rem;
 }
 .comp-row:hover { background: #000080; color: #fff; }
+/* Con descripción: nombre arriba y qué hago con ella debajo */
+.comp-row:has(.comp-note) { align-items: flex-start; padding: 5px 4px; }
+.comp-row:has(.comp-note) .comp-mark { margin-top: 2px; }
+.comp-text { display: flex; flex-direction: column; gap: 1px; }
+.comp-note { font-size: 0.7rem; line-height: 1.45; color: var(--ink-soft); }
+.comp-row:hover .comp-note { color: #dfe6ff; }
 .comp-mark { width: 14px; height: 14px; flex-shrink: 0; }
 .comp-mark svg { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 
@@ -770,6 +835,9 @@ select.input { cursor: pointer; }
 
 .linkedin-btn { flex-shrink: 0; }
 .linkedin-btn svg { width: 15px; height: 15px; color: #0a66c2; flex-shrink: 0; }
+.contact-btn { flex-shrink: 0; }
+.contact-ico { width: 18px; height: 18px; flex-shrink: 0; }
+.contact-ico svg { width: 100%; height: 100%; display: block; }
 
 .task-buttons {
   flex: 1;
@@ -1096,7 +1164,7 @@ html.boot-on body { overflow: hidden; }
   background: repeating-linear-gradient(90deg, var(--accent) 0 14px, transparent 14px 18px);
   transition: width 0.2s steps(4);
 }
-.boot-skip { margin: 1.4rem 0 0; font: 12px var(--font-mono); color: #7a7a7a; }
+.boot-skip { margin: 1.4rem 0 0; font: 12px var(--font-mono); color: #9a9a9a; }
 
 /* =========================================================
    PERFIL EN TEXTO: oculto a la vista, no a los buscadores
@@ -1178,6 +1246,8 @@ html.boot-on body { overflow: hidden; }
 .cv-sec p { margin: 0 0 0.45rem !important; }
 .cv-skills { margin: 0; padding-left: 1rem; }
 .cv-skills li { margin-bottom: 0.15rem; }
+.cv-skill-list { margin: 0.15rem 0 0.35rem; padding-left: 1rem; list-style: square; }
+.cv-skill-list li { margin-bottom: 0.1rem; font-size: 0.92em; }
 .cv-row { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.45rem; }
 .cv-row > div { display: flex; flex-direction: column; }
 .cv-row span { color: #555; }
@@ -1232,6 +1302,78 @@ html.boot-on body { overflow: hidden; }
   background: #1a1a1a;
   aspect-ratio: 2 / 1;
 }
+
+/* Video anclado: 16:9 con marco hundido; antes de pulsar ▶ se ve
+   la imagen del repo oscurecida (no se carga nada de YouTube) */
+.video-box {
+  position: relative;
+  margin: 0 0 1.1rem;
+  aspect-ratio: 16 / 9;
+  background: #000;
+  border: 2px solid #333;
+  box-shadow: inset 1px 1px 0 #000, 0 0 0 1px #555;
+}
+.video-start {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  border: 0;
+  background: #111 center / cover no-repeat;
+  color: #fff;
+}
+.video-start::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.7));
+}
+.video-play {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding-left: 6px;
+  font-size: 1.6rem;
+  background: var(--accent);
+  box-shadow:
+    inset 2px 2px 0 0 #ff9a9a,
+    inset -2px -2px 0 0 #7a0f0f,
+    0 0 0 2px #000;
+  transition: transform 0.12s steps(2);
+}
+.video-hint {
+  position: relative;
+  font: 400 0.8rem var(--font-display);
+  letter-spacing: 0.05em;
+  text-shadow: 1px 1px 0 #000;
+}
+.video-start:hover .video-play,
+.video-start:focus-visible .video-play { transform: scale(1.08); }
+.video-start:focus-visible { outline: 2px dotted #fff; outline-offset: -6px; }
+.video-media { display: block; width: 100%; height: 100%; border: 0; background: #000; }
+
+.repo-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem 0.6rem; margin-bottom: 0.6rem; }
+.repo-head .txt-head { margin: 0; flex: 1 1 auto; }
+.repo-badge {
+  padding: 0.15rem 0.45rem;
+  font-size: 0.66rem;
+  color: #ffb3b3;
+  border: 1px solid #5a1a1a;
+  background: #1c0b0b;
+}
+.repo-badge.is-live { color: #9be89b; border-color: #1f4a1f; background: #0b1c0b; }
+
+/* Portal: campo de video bajo cada repo */
+.repo-card { padding: 0.2rem 0 0.55rem; border-bottom: 1px dotted var(--face-dark); }
+.repo-video { margin: 0.1rem 0 0 1.6rem; width: calc(100% - 1.6rem); font-size: 0.72rem; }
+.repo-video-note { display: block; margin: 0.15rem 0 0 1.6rem; font-size: 0.68rem; color: #1d6b1d; }
+.repo-video-note.is-bad { color: #a01414; font-weight: 700; }
 
 /* =========================================================
    BANDEJA: altavoz
@@ -1328,7 +1470,8 @@ html.boot-on body { overflow: hidden; }
   .welcome-grid { grid-template-columns: 1fr; }
   .doc-paper { padding: 18px 16px; }
 
-  .linkedin-btn span { display: none; }
+  .linkedin-btn span,
+  .contact-btn span:last-child { display: none; }
   .task-buttons .tb-btn { flex: 1 1 40px; }
   .clock-date { display: none; }
   .start-btn span:not(.start-logo) { display: none; }
@@ -1344,3 +1487,14 @@ html.boot-on body { overflow: hidden; }
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Portal: destacado y caso de estudio de cada repo */
+.repo-star { display: flex; align-items: center; gap: 0.4rem; margin: 0.35rem 0 0 1.6rem; font-size: 0.72rem; cursor: pointer; }
+.repo-case-edit { margin: 0.35rem 0 0 1.6rem; font-size: 0.72rem; }
+.repo-case-edit summary { cursor: pointer; font-weight: 700; padding: 0.2rem 0; }
+.repo-case-edit .field { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.35rem 0; }
+.repo-case-edit textarea { font-size: 0.72rem; resize: vertical; }
+.repo-upload { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin: 0.35rem 0 0 1.6rem; }
+.repo-upload .btn { font-size: 0.72rem; padding: 0.25rem 0.6rem; }
+.repo-upload .btn:disabled { opacity: 0.6; cursor: wait; }
+.repo-upload .repo-video-note { margin: 0; }

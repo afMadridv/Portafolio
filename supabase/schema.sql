@@ -129,3 +129,34 @@ begin
   end if;
 end;
 $$;
+
+-- ---------- Videos de los proyectos (Storage) ----------
+-- Bucket público: cualquiera ve un video por su URL pública, pero
+-- solo el admin sube, lista, cambia o borra. Máx. 50 MB (plan gratis).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('project-videos', 'project-videos', true, 52428800, array['video/mp4','video/webm','video/ogg'])
+on conflict (id) do update
+  set public = excluded.public,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "project-videos admin lee" on storage.objects;
+create policy "project-videos admin lee" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'project-videos' and public.is_site_admin());
+
+drop policy if exists "project-videos admin sube" on storage.objects;
+create policy "project-videos admin sube" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'project-videos' and public.is_site_admin());
+
+drop policy if exists "project-videos admin cambia" on storage.objects;
+create policy "project-videos admin cambia" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'project-videos' and public.is_site_admin())
+  with check (bucket_id = 'project-videos' and public.is_site_admin());
+
+drop policy if exists "project-videos admin borra" on storage.objects;
+create policy "project-videos admin borra" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'project-videos' and public.is_site_admin());

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Andres Madrid | Desarrollador de Software</title>
+  <title>Andres Madrid | Desarrollador de Software Full-Stack</title>
   <meta
     name="description"
     content="Portafolio de Andres Madrid, desarrollador de software. Un escritorio donde cada icono abre una parte de mi perfil."
@@ -15,7 +15,7 @@
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://andresmadrid.vercel.app/" />
   <meta property="og:site_name" content="Andres Madrid" />
-  <meta property="og:title" content="Andres Madrid · Desarrollador de Software" />
+  <meta property="og:title" content="Andres Madrid · Desarrollador de Software Full-Stack" />
   <meta property="og:description" content="Portafolio con forma de escritorio: proyectos, habilidades y contacto." />
   <meta property="og:image" content="https://andresmadrid.vercel.app/og.png" />
   <meta property="og:image:width" content="1200" />
@@ -24,7 +24,7 @@
   <meta property="og:locale" content="es_CO" />
   <meta property="og:locale:alternate" content="en_US" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Andres Madrid · Desarrollador de Software" />
+  <meta name="twitter:title" content="Andres Madrid · Desarrollador de Software Full-Stack" />
   <meta name="twitter:description" content="Portafolio con forma de escritorio: proyectos, habilidades y contacto." />
   <meta name="twitter:image" content="https://andresmadrid.vercel.app/og.png" />
 
@@ -34,10 +34,10 @@
       "@context": "https://schema.org",
       "@type": "Person",
       "name": "Andres Madrid",
-      "jobTitle": "Desarrollador de Software",
+      "jobTitle": "Desarrollador de Software Full-Stack",
       "url": "https://andresmadrid.vercel.app/",
       "email": "mailto:mvandres08@gmail.com",
-      "address": { "@type": "PostalAddress", "addressLocality": "Santa Marta", "addressCountry": "CO" },
+      "address": { "@type": "PostalAddress", "addressCountry": "CO" },
       "sameAs": [
         "https://github.com/afMadridv",
         "https://www.linkedin.com/in/andr%C3%A9s-felipe-madrid-villar-9987693a8/"
@@ -73,8 +73,8 @@
 
   <!-- El ?v= evita que el navegador sirva la versión vieja en caché.
        Si tocas styles.css o script.js y no ves el cambio, sube el número. -->
-  <link rel="stylesheet" href="styles.css?v=19" />
-  <script src="script.js?v=19"></script>
+  <link rel="stylesheet" href="styles.css?v=22" />
+  <script src="script.js?v=22"></script>
 </head>
 
 <body>
@@ -97,20 +97,25 @@
        La lista de proyectos la refresca script.js con GitHub.
        ========================================================= -->
   <article class="seo-profile" id="seo-profile" lang="es">
-    <h1>Andres Madrid — Desarrollador de Software</h1>
-    <p>Santa Marta, Colombia.</p>
+    <h1>Andres Madrid — Desarrollador de Software Full-Stack</h1>
+    <p>Colombia.</p>
     <p>
-      Diseño sistemas escalables, seguros y eficientes, con experiencia entregando
-      soluciones en entornos altamente regulados: construcción, mantenimiento eléctrico
-      e insolvencia y conciliación. Optimizo el rendimiento de los sistemas y acompaño a
-      los equipos para elevar su nivel técnico.
+      Desarrollador de Software enfocado en la arquitectura y construcción de sistemas
+      escalables, seguros y de alto rendimiento. Cuento con experiencia práctica entregando
+      soluciones a la medida para entornos operativos y normativos complejos, optimizando
+      procesos administrativos, legales y de gestión documental.
+    </p>
+    <p>
+      Combino ingeniería de software sólida, modelado avanzado de bases de datos y
+      desarrollo integral para transformar flujos de trabajo tradicionales en herramientas
+      digitales eficientes y seguras.
     </p>
     <h2>Habilidades</h2>
     <ul>
-      <li>Frontend: JavaScript, HTML/CSS</li>
-      <li>Backend: Java, Python</li>
-      <li>Bases de datos: MySQL, PostgreSQL</li>
-      <li>Herramientas: GitHub, Git, Figma, Claude, VS Code, Vercel</li>
+      <li>Frontend: JavaScript (interfaces dinámicas sin frameworks pesados), HTML/CSS (semántico y adaptable)</li>
+      <li>Backend: Java (aplicaciones de escritorio robustas), Python (automatización y datos)</li>
+      <li>Bases de datos: PostgreSQL (RPC, triggers, RLS), MySQL (optimización, respaldo y recuperación)</li>
+      <li>Herramientas: Git y GitHub, Claude, VS Code, Figma, Vercel</li>
     </ul>
     <h2>Educación</h2>
     <ul>
@@ -138,6 +143,19 @@
     <!-- Iconos del escritorio: los genera renderDesktop() -->
     <div class="icon-grid" id="icon-grid"></div>
 
+    <!-- Tarjeta de presentación: quién soy en los primeros segundos -->
+    <section class="hello" id="hello" aria-labelledby="hello-name">
+      <p class="hello-kicker" data-i18n="hello.kicker">C:\&gt; whoami</p>
+      <h1 class="hello-name" id="hello-name">Andres Madrid</h1>
+      <p class="hello-role" data-i18n="hello.role">Desarrollador de Software Full-Stack · Colombia</p>
+      <p class="hello-pitch" data-i18n="hello.pitch">Sistemas web y de escritorio seguros, con bases de datos bien modeladas y procesos automatizados.</p>
+      <div class="hello-actions">
+        <button type="button" class="btn btn-primary" id="hello-projects" data-i18n="hello.projects">Ver proyectos</button>
+        <button type="button" class="btn" id="hello-contact" data-i18n="hello.contact">Contactar</button>
+        <button type="button" class="btn" id="hello-cv" data-i18n="hello.cv">CV</button>
+      </div>
+    </section>
+
     <!-- Lanzador para el teléfono: los mismos elementos en lista.
          Solo se ve en pantallas estrechas (ver styles.css). -->
     <section class="launcher" id="launcher" aria-labelledby="launcher-title">
@@ -146,7 +164,7 @@
         <span class="win-title" id="launcher-title">Andres Madrid</span>
       </div>
       <div class="launcher-body">
-        <p class="launcher-role" data-i18n="launcher.role">Desarrollador de software · Santa Marta, Colombia</p>
+        <p class="launcher-role" data-i18n="launcher.role">Desarrollador de software Full-Stack · Colombia</p>
         <div class="send-list" id="launcher-list"></div>
       </div>
       <div class="win-status" data-i18n="launcher.hint">Toca un elemento para abrirlo</div>
@@ -225,6 +243,12 @@
       <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.94 5a2 2 0 1 1-4-.002 2 2 0 0 1 4 .002zM7 8.48H3V21h4V8.48zm6.32 0H9.34V21h3.94v-6.57c0-3.66 4.77-4 4.77 0V21H22v-7.93c0-6.17-7.06-5.94-8.72-2.91l.04-1.68z"/></svg>
       <span>Andres Madrid</span>
     </a>
+
+    <!-- Contacto a un clic: abre la ventana del formulario -->
+    <button type="button" class="tb-btn contact-btn" id="contact-btn" data-i18n-title="ui.contact" title="Escríbeme">
+      <span class="contact-ico" id="contact-ico" aria-hidden="true"></span>
+      <span data-i18n="ui.contactBtn">Contacto</span>
+    </button>
 
     <!-- Un botón por ventana abierta -->
     <div class="task-buttons" id="task-buttons"></div>
@@ -393,8 +417,9 @@
           <!-- Qué repos se publican -->
           <section class="tab-panel" id="tab-repos" hidden>
             <p class="admin-hint" data-i18n="admin.repos.hint">
-              Marca los repos que quieres mostrar en la carpeta Proyectos. Sin nada
-              marcado, salen todos.
+              Marca los repos que quieres mostrar en Proyectos (sin nada marcado,
+              salen todos). Para anclar un video, pega su enlace de YouTube, Vimeo
+              o un .mp4 bajo el repo.
             </p>
             <div class="admin-list" id="admin-repos"></div>
           </section>

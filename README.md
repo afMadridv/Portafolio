@@ -39,9 +39,10 @@ Publicado en **https://andresmadrid.vercel.app**.
 
 ## Lo que ve una visita
 
-1. **Pantalla de arranque** tipo BIOS, en cada visita. Unos dos segundos; se
-   salta con cualquier tecla, clic o toque. Dice cuántos repos hay si GitHub
-   responde a tiempo.
+1. **Pantalla de arranque** tipo BIOS. Completa (unos dos segundos) solo la
+   primera visita; en las siguientes, medio segundo (`BOOT_QUICK_MS`,
+   `localStorage['boot-seen']`). Se salta con cualquier tecla, clic o toque.
+   Dice cuántos repos hay si GitHub responde a tiempo.
 2. **Ventana de bienvenida**, solo la primera vez: quién eres y tres atajos
    (Proyectos, Sobre mí, Contacto). Se vuelve a abrir desde **Inicio →
    Bienvenida**. En el teléfono no sale: allí el lanzador ya explica cada cosa.
@@ -83,7 +84,11 @@ esté arriba (panel, menú Inicio o ventana).
 **Sonidos:** el altavoz de la bandeja los enciende. Apagados por defecto; se
 generan con Web Audio, sin archivos.
 
-**Botón de LinkedIn:** en la barra de tareas, junto a Inicio.
+**Botones de LinkedIn y Contacto:** en la barra de tareas, junto a Inicio.
+
+**Tarjeta de presentación:** arriba a la derecha del escritorio (`#hello` en
+`index.html`): nombre, puesto, una frase y los botones Ver proyectos, Contactar
+y CV. Se oculta en pantallas pequeñas (allí está el lanzador).
 
 ## En el teléfono
 
@@ -202,6 +207,39 @@ gastar el límite (60 peticiones/hora sin token).
 Para que un repo se vea bien: ponle **descripción**, **topics** y, si está
 desplegado, la **Website** (aparece como botón *Ver web*).
 
+El repo de perfil (`afMadridv/afMadridv`, solo trae el README de GitHub) no sale.
+
+### Destacados y caso de estudio
+
+En el portal, pestaña **Proyectos**, cada repo tiene:
+
+- **★ Destacado**: sale primero en todas las listas, en el CV y en una pestaña
+  **Destacados** que es la que se ve al abrir Proyectos (`config.projects.featured`).
+- **Caso de estudio**: Mi rol, Problema, Solución y Resultado, en español e
+  inglés (`config.projects.cases`). En la ficha salen como bloques, más un bloque
+  **Stack** con el lenguaje y los topics de GitHub.
+
+### Videos de los proyectos
+
+En el portal, pestaña **Proyectos**, cada repo tiene un campo de video: pega un
+enlace de **YouTube** (watch, youtu.be, shorts), **Vimeo** o un archivo
+`.mp4/.webm/.ogg` y pulsa **Publicar**. El repo sale con el icono de claqueta,
+en una pestaña **Con video**, y su ficha se abre más grande con el reproductor
+arriba. Hasta que el visitante pulsa ▶ solo se ve la imagen del repo: no se
+carga nada de YouTube (que además va por `youtube-nocookie.com`).
+
+Se guardan en `config.projects.videos` (`{ "repo": "url" }`); `videoSource()` en
+`script.js` valida el enlace. La CSP de `vercel.json` permite `frame-src` de
+YouTube y Vimeo y `media-src https:`.
+
+**Subir el archivo desde el PC:** botón **⇪ Subir video desde el PC** bajo cada
+repo. Sube el `.mp4/.webm/.ogg` (máx. **50 MB**, límite del plan gratis de
+Supabase) al bucket `project-videos` de Supabase Storage y rellena el campo con
+su URL pública; luego pulsa **Publicar**. Solo el admin puede subir o borrar
+(políticas en `supabase/schema.sql`). Los archivos reemplazados no se borran
+solos: se limpian desde Supabase → Storage. Para videos largos, mejor YouTube
+"no listado".
+
 > Solo lee repos **públicos**. Al ser un sitio estático, cualquier token que
 > pongas en `script.js` quedaría a la vista de todo el mundo — para ver repos
 > privados haría falta un backend.
@@ -303,7 +341,7 @@ Para traducir algo nuevo: `data-i18n="clave"` en el HTML y la clave en
 
 ## Star Wars
 
-Cada 18-44 s cruza un caza TIE en horizontal disparando rayos, o aparece la
+Cada 45-90 s (el primero a los 20 s; `FX_FIRST_MS`, `FX_GAP_MIN`, `FX_GAP_RANGE`) cruza un caza TIE en horizontal disparando rayos, o aparece la
 Estrella de la Muerte, se queda quieta 6,5 s y explota. Se apaga solo si el
 sistema pide reducir movimiento, y también desde el portal.
 
@@ -402,8 +440,8 @@ sign up*, y activar *Leaked password protection* si tu plan lo incluye.
 
 ## Peso
 
-`script.js` pesa unos 130 KB sin comprimir, pero Vercel lo sirve con Brotli: por
-la red viajan unos 24 KB (y `styles.css`, unos 7 KB). Minificarlo ahorraría poco
+`script.js` pesa unos 215 KB sin comprimir (la mayor parte son los dibujos de
+los iconos en texto), pero Vercel lo sirve con Brotli, que lo reduce mucho. Minificarlo ahorraría poco
 más y obligaría a añadir un paso de compilación, así que el código sigue legible
 y editable a mano.
 
@@ -414,8 +452,8 @@ la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
 en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=19" />
-<script src="script.js?v=19"></script>
+<link rel="stylesheet" href="styles.css?v=22" />
+<script src="script.js?v=22"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:

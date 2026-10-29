@@ -1344,9 +1344,79 @@ const SKILLS = [
   {
     es: "Herramientas",
     en: "Tools",
-    items: ["GitHub", "Git", "Figma", "Claude", "VS Code", "Vercel"],
+    items: ["Git y GitHub", "Claude", "VS Code", "Figma", "Vercel"],
   },
 ];
+
+/* Qué hago con cada tecnología. Sale debajo de su nombre en la
+   ventana Habilidades y en el CV. La clave es el nombre tal cual
+   aparece en SKILLS (o en el portal): si no está aquí, sale solo
+   el nombre. */
+const SKILL_NOTES = {
+  JavaScript: {
+    es: "Interfaces dinámicas, manipulación eficiente del DOM y lógica de cliente optimizada sin frameworks pesados.",
+    en: "Dynamic interfaces, efficient DOM manipulation and optimized client logic without heavy frameworks.",
+  },
+  "HTML/CSS": {
+    es: "Estructura semántica e interfaces adaptables (responsive), limpias y pensadas para una buena experiencia de usuario.",
+    en: "Semantic structure and clean, responsive interfaces built for a good user experience.",
+  },
+  Java: {
+    es: "Aplicaciones nativas y de escritorio robustas, con orientación a objetos y lógica de negocio bien estructurada.",
+    en: "Robust native and desktop applications, object-oriented with well-structured business logic.",
+  },
+  Python: {
+    es: "Automatización de procesos, scripts de soporte y procesamiento eficiente de datos.",
+    en: "Process automation, support scripts and efficient data processing.",
+  },
+  PostgreSQL: {
+    es: "Modelado relacional avanzado, funciones de servidor (RPC), triggers y seguridad por filas (RLS).",
+    en: "Advanced relational modeling, server functions (RPC), triggers and row-level security (RLS).",
+  },
+  MySQL: {
+    es: "Bases de datos locales y corporativas, optimización de consultas complejas, respaldo y recuperación.",
+    en: "Local and corporate databases, complex query tuning, backup and recovery.",
+  },
+  "Git y GitHub": {
+    es: "Control de versiones profesional, flujos colaborativos y repositorios e historiales bien organizados.",
+    en: "Professional version control, collaborative workflows and well-organized repositories and history.",
+  },
+  Claude: {
+    es: "Asistencia de IA usada con criterio para acelerar la construcción, la depuración y la arquitectura.",
+    en: "AI assistance used deliberately to speed up building, debugging and architecture work.",
+  },
+  "VS Code": {
+    es: "Entornos de desarrollo configurados a la medida.",
+    en: "Development environments tailored to each project.",
+  },
+  Figma: {
+    es: "Maquetación y diseño de interfaces antes de programarlas.",
+    en: "Interface layout and design before coding them.",
+  },
+  Vercel: {
+    es: "Despliegue continuo de aplicaciones en la nube.",
+    en: "Continuous deployment of applications to the cloud.",
+  },
+};
+
+/* Perfil profesional del CV (más formal que "Sobre mí") */
+const CV_PROFILE = {
+  es:
+    "Desarrollador de Software Full-Stack con sólida formación en ingeniería y experiencia " +
+    "comprobada en el diseño, desarrollo e implementación de sistemas web y de escritorio " +
+    "robustos, seguros y eficientes. Especializado en la automatización de flujos operativos " +
+    "y la gestión de datos bajo marcos normativos y legales estrictos. Destacado por su " +
+    "autonomía técnica, enfoque en la seguridad de la información y capacidad para " +
+    "transformar procesos complejos en soluciones tecnológicas escalables. Basado en Colombia.",
+  en:
+    "Full-Stack Software Developer with a solid engineering background and proven experience " +
+    "designing, building and deploying robust, secure and efficient web and desktop systems. " +
+    "Specialized in automating operational workflows and managing data under strict regulatory " +
+    "and legal frameworks. Known for technical autonomy, a focus on information security and " +
+    "the ability to turn complex processes into scalable technology solutions. Based in Colombia.",
+};
+
+const skillNote = (name) => (SKILL_NOTES[name] ? L(SKILL_NOTES[name]) : "");
 
 const EDUCATION = [
   {
@@ -1385,7 +1455,7 @@ const SOCIAL = [
    (Colombia, Ley 1581 de 2012). Si cambias algo, actualiza la
    fecha de LEGAL_DATE.
    ========================================================= */
-const LEGAL_DATE = { es: "10 de octubre de 2026", en: "October 10, 2026" };
+const LEGAL_DATE = { es: "26 de octubre de 2026", en: "October 26, 2026" };
 /* Los textos se escriben en líneas cortas para leerlos aquí, pero
    en la ventana cada párrafo debe fluir: una línea que sigue la
    frase anterior (minúscula, paréntesis, número o sangría) se une
@@ -1426,7 +1496,7 @@ const LEGAL_ITEMS = [
         "Última actualización: " + LEGAL_DATE.es,
         "",
         "1. RESPONSABLE",
-        "Andrés Felipe Madrid Villar, persona natural, Santa Marta, Colombia.",
+        "Andrés Felipe Madrid Villar, persona natural, Colombia.",
         "Correo: " + EMAIL,
         "Sitio: andresmadrid.vercel.app",
         "",
@@ -1447,7 +1517,9 @@ const LEGAL_ITEMS = [
         "mensaje llegue.",
         "Otros proveedores del sitio: Vercel (alojamiento), Supabase (configuración",
         "del escritorio, sin datos de visitantes), GitHub (lista pública de",
-        "proyectos), Google Fonts y jsDelivr (tipografías y librerías). Como en",
+        "proyectos), Google Fonts y jsDelivr (tipografías y librerías). Si pulsas",
+        "▶ en el video de un proyecto, se carga el reproductor de YouTube (modo",
+        "sin cookies de rastreo) o Vimeo, con sus propias políticas. Como en",
         "cualquier web, al cargar la página tu navegador se conecta a ellos y pueden",
         "ver tu dirección IP.",
         "",
@@ -1481,7 +1553,7 @@ const LEGAL_ITEMS = [
         "Last updated: " + LEGAL_DATE.en,
         "",
         "1. CONTROLLER",
-        "Andrés Felipe Madrid Villar, private individual, Santa Marta, Colombia.",
+        "Andrés Felipe Madrid Villar, private individual, Colombia.",
         "Email: " + EMAIL,
         "Site: andresmadrid.vercel.app",
         "",
@@ -1501,7 +1573,9 @@ const LEGAL_ITEMS = [
         "inbox. This international transfer is needed for the message to arrive.",
         "Other providers: Vercel (hosting), Supabase (desktop configuration, no",
         "visitor data), GitHub (public project list), Google Fonts and jsDelivr",
-        "(fonts and libraries). As with any website, your browser connects to them",
+        "(fonts and libraries). If you press ▶ on a project video, the YouTube",
+        "(privacy-enhanced mode) or Vimeo player loads, under their own policies.",
+        "As with any website, your browser connects to them",
         "when the page loads and they can see your IP address.",
         "",
         "5. HOW LONG",
@@ -1730,7 +1804,7 @@ const LEGAL_ITEMS = [
 const DEFAULT_DESKTOP = {
   wallpaper: { type: "color", value: "#000000", value2: "#2a0d0d", url: "" },
   showFx: true,
-  projects: { selected: [] },
+  projects: { selected: [], videos: {}, featured: [], cases: {} },
   skills: SKILLS,
   education: EDUCATION,
   // "sub" es la segunda línea en el lanzador del teléfono
@@ -1743,21 +1817,24 @@ const DEFAULT_DESKTOP = {
       sub: { es: "Quién soy y qué hago", en: "Who I am and what I do" },
       text: {
         es:
-          "ANDRES MADRID\nDesarrollador de Software\n\n" +
-          "Diseño sistemas escalables, seguros y eficientes, con experiencia\n" +
-          "entregando soluciones en entornos altamente regulados:\n" +
-          "construcción, mantenimiento eléctrico e insolvencia y conciliación.\n\n" +
-          "Optimizo el rendimiento de los sistemas y acompaño a los equipos\n" +
-          "para elevar su nivel técnico.\n\n" +
-          "Santa Marta, Colombia.",
+          "ANDRES MADRID\nDesarrollador de Software Full-Stack\n\n" +
+          "Desarrollador de Software enfocado en la arquitectura y construcción de sistemas " +
+          "escalables, seguros y de alto rendimiento. Cuento con experiencia práctica entregando " +
+          "soluciones a la medida para entornos operativos y normativos complejos, optimizando " +
+          "procesos administrativos, legales y de gestión documental.\n\n" +
+          "Combino ingeniería de software sólida, modelado avanzado de bases de datos y desarrollo " +
+          "integral para transformar flujos de trabajo tradicionales en herramientas digitales " +
+          "eficientes y seguras.\n\n" +
+          "Ubicado en Colombia.",
         en:
-          "ANDRES MADRID\nSoftware Developer\n\n" +
-          "I design scalable, secure and efficient systems, with experience\n" +
-          "delivering solutions in highly regulated environments:\n" +
-          "construction, electrical maintenance, and insolvency and conciliation.\n\n" +
-          "I optimize system performance and support teams in raising their\n" +
-          "technical level.\n\n" +
-          "Santa Marta, Colombia.",
+          "ANDRES MADRID\nFull-Stack Software Developer\n\n" +
+          "Software developer focused on the architecture and construction of scalable, secure, " +
+          "high-performance systems. I have hands-on experience delivering custom solutions for " +
+          "complex operational and regulatory environments, streamlining administrative, legal " +
+          "and document-management processes.\n\n" +
+          "I combine solid software engineering, advanced database modeling and end-to-end " +
+          "development to turn traditional workflows into efficient, secure digital tools.\n\n" +
+          "Based in Colombia.",
       },
     },
     {
@@ -1828,9 +1905,11 @@ const DEFAULT_DESKTOP = {
    ========================================================= */
 const I18N = {
   es: {
-    "meta.title": "Andres Madrid | Desarrollador de Software",
+    "meta.title": "Andres Madrid | Desarrollador de Software Full-Stack",
     "ui.start": "Inicio",
     "ui.linkedin": "Abrir mi perfil de LinkedIn",
+    "ui.contact": "Escríbeme",
+    "ui.contactBtn": "Contacto",
     "ui.clock": "Hora de Colombia (America/Bogota)",
     "ui.admin": "Panel de administración",
     "ui.openLinkedin": "Abrir LinkedIn",
@@ -1857,6 +1936,22 @@ const I18N = {
 
     "tab.all": "Todo",
     "tab.live": "Con web",
+    "tab.video": "Con video",
+    "tab.featured": "Destacados",
+    "app.projects.featured": "Destacado",
+    "app.projects.case.role": "Mi rol",
+    "app.projects.case.problem": "Problema",
+    "app.projects.case.solution": "Solución",
+    "app.projects.case.result": "Resultado",
+    "app.projects.case.stack": "Stack",
+    "admin.repos.featured": "Destacado (sale primero)",
+    "admin.repos.case": "Caso de estudio",
+    "admin.repos.ph.role": "Ej.: Desarrollador full-stack, único desarrollador",
+    "admin.repos.ph.problem": "Qué problema tenía el cliente o el usuario",
+    "admin.repos.ph.solution": "Qué construiste y cómo",
+    "admin.repos.ph.result": "Qué cambió: tiempo ahorrado, usuarios, procesos…",
+    "app.projects.play": "Reproducir el video de {name}",
+    "app.projects.playHint": "Ver video del proyecto",
     "st.files": "{n} elementos",
     "st.items": "{n} elementos",
     "st.chars": "caracteres",
@@ -1873,7 +1968,7 @@ const I18N = {
     "ui.sound.on": "Sonido: encendido",
     "ui.sound.off": "Sonido: apagado",
 
-    "boot.sub": "Portafolio BIOS v1.4 · Santa Marta, CO",
+    "boot.sub": "Portafolio BIOS v1.4 · Colombia",
     "boot.mem": "Detectando memoria",
     "boot.skills": "Cargando habilidades",
     "boot.repos": "Montando /proyectos",
@@ -1885,7 +1980,7 @@ const I18N = {
 
     "app.welcome.hi": "Hola, soy Andres Madrid",
     "app.welcome.text":
-      "Desarrollador de software en Santa Marta, Colombia. Esto es mi portafolio con forma de escritorio: doble clic en un icono para abrirlo.",
+      "Desarrollador de software Full-Stack en Colombia. Esto es mi portafolio con forma de escritorio: doble clic en un icono para abrirlo.",
     "app.welcome.projects": "Ver proyectos",
     "app.welcome.about": "Sobre mí",
     "app.welcome.contact": "Contactar",
@@ -1894,7 +1989,7 @@ const I18N = {
 
     "app.cv.save": "Guardar como PDF",
     "app.cv.download": "Descargar PDF",
-    "app.cv.role": "Desarrollador de Software",
+    "app.cv.role": "Desarrollador de Software Full-Stack",
     "app.cv.profile": "Perfil",
     "app.cv.skills": "Habilidades",
     "app.cv.education": "Educación",
@@ -2032,7 +2127,7 @@ const I18N = {
     "admin.wp.fx": "Mostrar el caza TIE y la Estrella de la Muerte",
     "admin.wp.hint": "El fondo cambia al instante aquí. Pulsa Publicar abajo para que lo vean todos.",
     "admin.repos.hint":
-      "Marca los repos que quieres mostrar en Proyectos. Sin nada marcado, salen todos.",
+      "Marca los repos que quieres mostrar en Proyectos (sin nada marcado, salen todos). Para anclar un video, pega su enlace de YouTube, Vimeo o un .mp4 bajo el repo.",
     "admin.repos.wait": "Los repos aún no han cargado.",
     "admin.reset": "Restablecer",
     "admin.export": "Copia (desktop.json)",
@@ -2042,7 +2137,17 @@ const I18N = {
     "admin.saveFail": "No se pudo publicar: {msg}",
     "admin.resetAsk":
       "¿Volver al escritorio de fábrica? Se publica para todos al instante.",
-    "admin.count": "{n} elementos · {r} repos marcados",
+    "admin.count": "{n} elementos · {r} repos marcados · {f} destacados · {v} videos",
+    "admin.repos.video": "Video de {name}",
+    "admin.repos.videoPh": "Video: enlace de YouTube o Vimeo, o sube un archivo (opcional)",
+    "admin.repos.videoOk": "Video listo. Pulsa Publicar.",
+    "admin.repos.videoBad": "Enlace no válido: usa YouTube, Vimeo o un archivo .mp4/.webm",
+    "admin.repos.upload": "Subir video desde el PC",
+    "admin.repos.uploading": "Subiendo {mb} MB… no cierres el panel.",
+    "admin.repos.uploaded": "Video subido. Pulsa Publicar para que lo vean todos.",
+    "admin.repos.uploadType": "Formato no válido: usa .mp4, .webm u .ogg.",
+    "admin.repos.uploadBig": "El video pesa {mb} MB; el máximo es 50 MB. Comprímelo o súbelo a YouTube.",
+    "admin.repos.uploadFail": "No se pudo subir: {msg}",
     "admin.exported":
       "Descargado. Es una copia de seguridad: lo publicado vive en Supabase.",
 
@@ -2051,9 +2156,17 @@ const I18N = {
   },
 
   en: {
-    "meta.title": "Andres Madrid | Software Developer",
+    "meta.title": "Andres Madrid | Full-Stack Software Developer",
     "ui.start": "Start",
     "ui.linkedin": "Open my LinkedIn profile",
+    "ui.contact": "Write to me",
+    "ui.contactBtn": "Contact",
+    "hello.kicker": "C:\\> whoami",
+    "hello.role": "Full-Stack Software Developer · Colombia",
+    "hello.pitch": "Secure web and desktop systems, with well-modeled databases and automated processes.",
+    "hello.projects": "View projects",
+    "hello.contact": "Contact",
+    "hello.cv": "Résumé",
     "ui.clock": "Colombia time (America/Bogota)",
     "ui.admin": "Admin panel",
     "ui.openLinkedin": "Open LinkedIn",
@@ -2080,6 +2193,22 @@ const I18N = {
 
     "tab.all": "All",
     "tab.live": "Live",
+    "tab.video": "Video",
+    "tab.featured": "Featured",
+    "app.projects.featured": "Featured",
+    "app.projects.case.role": "My role",
+    "app.projects.case.problem": "Problem",
+    "app.projects.case.solution": "Solution",
+    "app.projects.case.result": "Result",
+    "app.projects.case.stack": "Stack",
+    "admin.repos.featured": "Featured (shows first)",
+    "admin.repos.case": "Case study",
+    "admin.repos.ph.role": "E.g.: Full-stack developer, sole developer",
+    "admin.repos.ph.problem": "What problem the client or user had",
+    "admin.repos.ph.solution": "What you built and how",
+    "admin.repos.ph.result": "What changed: time saved, users, processes…",
+    "app.projects.play": "Play the video of {name}",
+    "app.projects.playHint": "Watch the project video",
     "st.files": "{n} items",
     "st.items": "{n} items",
     "st.chars": "characters",
@@ -2098,7 +2227,7 @@ const I18N = {
     "aria.sound": "Sound",
 
     "boot.skip": "Press any key to skip",
-    "boot.sub": "Portfolio BIOS v1.4 · Santa Marta, CO",
+    "boot.sub": "Portfolio BIOS v1.4 · Colombia",
     "boot.mem": "Detecting memory",
     "boot.skills": "Loading skills",
     "boot.repos": "Mounting /projects",
@@ -2108,12 +2237,12 @@ const I18N = {
     "boot.clock": "Syncing clock",
     "boot.desk": "Starting desktop",
 
-    "launcher.role": "Software developer · Santa Marta, Colombia",
+    "launcher.role": "Full-Stack software developer · Colombia",
     "launcher.hint": "Tap an item to open it",
 
     "app.welcome.hi": "Hi, I'm Andres Madrid",
     "app.welcome.text":
-      "Software developer in Santa Marta, Colombia. This is my portfolio shaped like a desktop: double-click an icon to open it.",
+      "Full-Stack software developer in Colombia. This is my portfolio shaped like a desktop: double-click an icon to open it.",
     "app.welcome.projects": "See projects",
     "app.welcome.about": "About me",
     "app.welcome.contact": "Contact",
@@ -2122,7 +2251,7 @@ const I18N = {
 
     "app.cv.save": "Save as PDF",
     "app.cv.download": "Download PDF",
-    "app.cv.role": "Software Developer",
+    "app.cv.role": "Full-Stack Software Developer",
     "app.cv.profile": "Profile",
     "app.cv.skills": "Skills",
     "app.cv.education": "Education",
@@ -2267,7 +2396,7 @@ const I18N = {
     "admin.wp.fx": "Show the TIE fighter and the Death Star",
     "admin.wp.hint": "The wallpaper changes here right away. Press Publish below so everyone sees it.",
     "admin.repos.hint":
-      "Tick the repos you want inside Projects. With none ticked, all of them show.",
+      "Tick the repos you want inside Projects (with none ticked, all of them show). To pin a video, paste its YouTube, Vimeo or .mp4 link under the repo.",
     "admin.repos.wait": "Repos have not loaded yet.",
     "admin.reset": "Reset",
     "admin.export": "Backup (desktop.json)",
@@ -2277,7 +2406,17 @@ const I18N = {
     "admin.saveFail": "Couldn't publish: {msg}",
     "admin.resetAsk":
       "Go back to the factory desktop? It's published for everyone instantly.",
-    "admin.count": "{n} items · {r} repos ticked",
+    "admin.count": "{n} items · {r} repos ticked · {f} featured · {v} videos",
+    "admin.repos.video": "Video for {name}",
+    "admin.repos.videoPh": "Video: YouTube or Vimeo link, or upload a file (optional)",
+    "admin.repos.videoOk": "Video ready. Press Publish.",
+    "admin.repos.videoBad": "Invalid link: use YouTube, Vimeo or an .mp4/.webm file",
+    "admin.repos.upload": "Upload video from PC",
+    "admin.repos.uploading": "Uploading {mb} MB… keep the panel open.",
+    "admin.repos.uploaded": "Video uploaded. Press Publish so everyone sees it.",
+    "admin.repos.uploadType": "Invalid format: use .mp4, .webm or .ogg.",
+    "admin.repos.uploadBig": "The video is {mb} MB; the limit is 50 MB. Compress it or upload it to YouTube.",
+    "admin.repos.uploadFail": "Upload failed: {msg}",
     "admin.exported":
       "Downloaded. It's a backup: the published desktop lives in Supabase.",
 
@@ -2364,13 +2503,40 @@ function normalizeConfig(raw) {
   const out = {
     wallpaper: Object.assign(base.wallpaper, raw.wallpaper || {}),
     showFx: raw.showFx !== false,
-    projects: { selected: [] },
+    projects: { selected: [], videos: {}, featured: [], cases: {} },
     items: Array.isArray(raw.items) && raw.items.length ? raw.items : base.items,
     skills: base.skills,
     education: base.education,
   };
   if (raw.projects && Array.isArray(raw.projects.selected)) {
     out.projects.selected = raw.projects.selected;
+  }
+  // Video anclado a cada repo: { "nombre-repo": "https://youtu.be/…" }.
+  // Solo se guardan los que videoSource() sabe reproducir.
+  const vids = raw.projects && raw.projects.videos;
+  if (vids && typeof vids === "object") {
+    Object.keys(vids).forEach((name) => {
+      const url = String(vids[name] || "").trim();
+      if (videoSource(url)) out.projects.videos[name] = url;
+    });
+  }
+  // Destacados (salen primero) y caso de estudio de cada repo
+  if (raw.projects && Array.isArray(raw.projects.featured)) {
+    out.projects.featured = raw.projects.featured.map(String).filter(Boolean);
+  }
+  const cases = raw.projects && raw.projects.cases;
+  if (cases && typeof cases === "object") {
+    Object.keys(cases).forEach((name) => {
+      const c = cases[name] || {};
+      const clean = {};
+      CASE_FIELDS.forEach((f) => {
+        const v = c[f] || {};
+        const es = String(v.es || "").trim().slice(0, 1200);
+        const en = String(v.en || "").trim().slice(0, 1200);
+        if (es || en) clean[f] = { es: es, en: en };
+      });
+      if (Object.keys(clean).length) out.projects.cases[name] = clean;
+    });
   }
   const obj = (v) => (v && typeof v === "object" ? v : { es: String(v || "") });
   // Los textos legales siempre están, aunque la config publicada
@@ -3257,7 +3423,7 @@ const APPS = {
     }
 
     const entryOf = (repo) => ({
-      icon: repo.homepage ? "globe" : "github",
+      icon: repoVideo(repo.name) ? "video" : repo.homepage ? "globe" : "github",
       label: repo.name,
       open: () => openRepo(repo),
     });
@@ -3292,6 +3458,30 @@ const APPS = {
         });
       });
 
+    // Destacados: primera pestaña, la que se ve al abrir
+    const featured = list.filter((r) => isFeatured(r.name));
+    if (featured.length) {
+      tabs.unshift({
+        id: "featured",
+        label: "★ " + t("tab.featured"),
+        icon: "folderOpen",
+        fill: (pane) => iconGridInto(pane, featured.map(entryOf)),
+        count: featured.length,
+      });
+    }
+
+    // Una con los que tienen video, justo después de "Todo"
+    const withVideo = list.filter((r) => repoVideo(r.name));
+    if (withVideo.length) {
+      tabs.splice(tabs.findIndex((tb) => tb.id === "all") + 1, 0, {
+        id: "video",
+        label: t("tab.video"),
+        icon: "video",
+        fill: (pane) => iconGridInto(pane, withVideo.map(entryOf)),
+        count: withVideo.length,
+      });
+    }
+
     // Y una con los que tienen web publicada
     const live = list.filter((r) => r.homepage);
     if (live.length) {
@@ -3322,7 +3512,11 @@ const APPS = {
         const mark = el("span", "comp-mark");
         mark.innerHTML = iconSvg("disk");
         row.appendChild(mark);
-        row.appendChild(el("span", "", s));
+        const txt = el("span", "comp-text");
+        txt.appendChild(el("strong", "", s));
+        const note = skillNote(s);
+        if (note) txt.appendChild(el("span", "comp-note", note));
+        row.appendChild(txt);
         list.appendChild(row);
       });
       box.appendChild(list);
@@ -3725,21 +3919,34 @@ const APPS = {
 
     // Imagen que GitHub genera para cada repo. El número cambia con
     // el último push, así la imagen se renueva cuando cambia el repo.
-    const img = document.createElement("img");
-    img.className = "repo-shot";
-    img.loading = "lazy";
-    img.decoding = "async";
-    img.width = 1200;
-    img.height = 600;
-    img.alt = t("app.projects.shotAlt", { name: repo.name });
-    img.src =
+    const shot =
       "https://opengraph.githubassets.com/" +
       (Date.parse(repo.pushed_at) || 1) + "/" +
       repo.full_name;
-    img.addEventListener("error", () => img.remove());
-    body.appendChild(img);
+    const video = repoVideo(repo.name);
 
-    body.appendChild(el("h1", "txt-head", repo.name));
+    if (video) {
+      // Con video anclado: el reproductor arriba, con la imagen de portada
+      body.appendChild(videoPlayer(video, shot, repo.name));
+    } else {
+      const img = document.createElement("img");
+      img.className = "repo-shot";
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.width = 1200;
+      img.height = 600;
+      img.alt = t("app.projects.shotAlt", { name: repo.name });
+      img.src = shot;
+      img.addEventListener("error", () => img.remove());
+      body.appendChild(img);
+    }
+
+    const head = el("div", "repo-head");
+    head.appendChild(el("h1", "txt-head", repo.name));
+    if (isFeatured(repo.name)) head.appendChild(el("span", "repo-badge is-star", "★ " + t("app.projects.featured")));
+    if (video) head.appendChild(el("span", "repo-badge", "▶ " + t("tab.video")));
+    if (repo.homepage) head.appendChild(el("span", "repo-badge is-live", "● " + t("tab.live")));
+    body.appendChild(head);
     body.appendChild(
       el("div", "txt-body", repo.description || t("app.projects.nodesc"))
     );
@@ -3760,6 +3967,30 @@ const APPS = {
       );
     }
     if (repo.topics && repo.topics.length) add("topics", repo.topics.join(", "));
+
+    // Caso de estudio (portal): rol, problema, solución y resultado.
+    // El stack sale solo de GitHub: lenguaje + topics.
+    const cs = repoCase(repo.name);
+    if (cs) {
+      const blocks = el("div", "repo-case");
+      CASE_FIELDS.forEach((f) => {
+        if (!cs[f] || !L(cs[f])) return;
+        const b = el("section", "case-block case-" + f);
+        b.appendChild(el("h2", "case-title", t("app.projects.case." + f)));
+        b.appendChild(el("p", "case-text", L(cs[f])));
+        blocks.appendChild(b);
+      });
+      const stack = [repo.language].concat(repo.topics || []).filter(Boolean);
+      if (stack.length) {
+        const b = el("section", "case-block case-stack");
+        b.appendChild(el("h2", "case-title", t("app.projects.case.stack")));
+        const chips = el("p", "case-chips");
+        stack.forEach((s) => chips.appendChild(el("span", "chip", s)));
+        b.appendChild(chips);
+        blocks.appendChild(b);
+      }
+      body.appendChild(blocks);
+    }
     body.appendChild(facts);
 
     const links = el("div", "repo-links");
@@ -3864,7 +4095,7 @@ const APPS = {
     };
     add(t("app.mypc.os"), "Portafolio OS 1.4");
     add(t("app.mypc.user"), "Andres Madrid");
-    add(t("app.mypc.place"), "Santa Marta, Colombia");
+    add(t("app.mypc.place"), "Colombia");
     add(t("app.mypc.time"), document.getElementById("clock-time").textContent + " (" + TZ + ")");
     add(t("app.mypc.repos"), allRepos.length ? String(visibleRepos().length) : "…");
     add(t("app.mypc.mem"), "640K OK");
@@ -3917,15 +4148,13 @@ const APPS = {
    ========================================================= */
 function buildCv(root) {
   root.innerHTML = "";
-  const about = itemById("about");
-  const aboutLines = about ? L(about.text).split("\n") : [];
 
   const head = el("header", "cv-head");
   head.appendChild(el("h1", "cv-name", "Andres Madrid"));
   head.appendChild(el("p", "cv-role", t("app.cv.role")));
   const contact = el("p", "cv-contact");
   contact.textContent =
-    "Santa Marta, Colombia · " + EMAIL +
+    "Colombia · " + EMAIL +
     " · linkedin.com/in/andrés-felipe-madrid-villar · github.com/" + GITHUB_USER;
   head.appendChild(contact);
   root.appendChild(head);
@@ -3937,19 +4166,23 @@ function buildCv(root) {
     return s;
   };
 
-  // Perfil: el texto de Sobre mí sin las dos líneas de título
-  const profile = aboutLines.slice(2).join("\n").trim().replace(/\n(?!\n)/g, " ");
-  if (profile) {
-    const s = section("app.cv.profile");
-    profile.split(/\n\n+/).forEach((p) => s.appendChild(el("p", "", p.trim())));
-  }
+  // Perfil: el texto formal del CV (CV_PROFILE), no el de Sobre mí
+  section("app.cv.profile").appendChild(el("p", "", L(CV_PROFILE)));
 
   const sk = section("app.cv.skills");
   const skl = el("ul", "cv-skills");
   config.skills.forEach((g) => {
     const li = el("li");
-    li.appendChild(el("strong", "", L(g) + ": "));
-    li.appendChild(document.createTextNode(g.items.join(", ")));
+    li.appendChild(el("strong", "", L(g)));
+    const sub = el("ul", "cv-skill-list");
+    g.items.forEach((name) => {
+      const item = el("li");
+      item.appendChild(el("b", "", name));
+      const note = skillNote(name);
+      if (note) item.appendChild(document.createTextNode(": " + note));
+      sub.appendChild(item);
+    });
+    li.appendChild(sub);
     skl.appendChild(li);
   });
   sk.appendChild(skl);
@@ -3997,17 +4230,111 @@ function printCv() {
   window.print();
 }
 
-/* Abre la ficha de un repo como ventana propia */
+/* Abre la ficha de un repo como ventana propia. Con video, más grande */
 function openRepo(repo) {
+  const hasVideo = !!repoVideo(repo.name);
   openItem({
     id: "repo:" + repo.name,
     type: "app",
     app: "repo",
     repoName: repo.name,
-    icon: repo.homepage ? "globe" : "github",
+    icon: hasVideo ? "video" : repo.homepage ? "globe" : "github",
     name: { es: repo.name, en: repo.name },
     text: {},
+    w: hasVideo ? 760 : undefined,
+    h: hasVideo ? 620 : undefined,
   });
+}
+
+/* ---------------------------------------------------------
+   VIDEOS DE LOS PROYECTOS
+   Se anclan desde el portal (pestaña Proyectos). Valen:
+   YouTube (watch, youtu.be, shorts, embed), Vimeo y archivos
+   .mp4/.webm/.ogg (https o del propio sitio, p. ej. videos/x.mp4).
+   YouTube va por youtube-nocookie.com y el reproductor solo se
+   carga al pulsar ▶: antes se ve la imagen del repo.
+   --------------------------------------------------------- */
+function videoSource(url) {
+  if (!url) return null;
+  let u;
+  try {
+    u = new URL(url, location.href);
+  } catch (e) {
+    return null;
+  }
+  if (!/^https?:$/.test(u.protocol)) return null;
+  const host = u.hostname.replace(/^www\.|^m\./, "");
+  let id = "";
+  if (host === "youtu.be") id = u.pathname.slice(1);
+  else if (host === "youtube.com" || host === "youtube-nocookie.com") {
+    id = u.searchParams.get("v") || (u.pathname.match(/^\/(?:embed|shorts|live)\/([^/?]+)/) || [])[1] || "";
+  }
+  if (id) {
+    return /^[\w-]{6,20}$/.test(id)
+      ? { kind: "frame", src: "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0" }
+      : null;
+  }
+  if (host === "vimeo.com" || host === "player.vimeo.com") {
+    const vid = (u.pathname.match(/(\d{6,})/) || [])[1];
+    return vid ? { kind: "frame", src: "https://player.vimeo.com/video/" + vid + "?autoplay=1" } : null;
+  }
+  if (/\.(mp4|webm|ogg)$/i.test(u.pathname)) return { kind: "file", src: u.href };
+  return null;
+}
+
+/* Subida de videos desde el portal a Supabase Storage. El límite
+   de 50 MB es el del plan gratuito (y el del bucket). */
+const VIDEO_BUCKET = "project-videos";
+const VIDEO_MAX_BYTES = 50 * 1024 * 1024;
+const VIDEO_TYPES = { "video/mp4": "mp4", "video/webm": "webm", "video/ogg": "ogg" };
+
+async function uploadVideo(repoName, f) {
+  const sb = await getSupabase();
+  const slug = repoName.toLowerCase().replace(/[^a-z0-9-]+/g, "-");
+  const path = slug + "/" + Date.now() + "." + VIDEO_TYPES[f.type];
+  const { error } = await sb.storage
+    .from(VIDEO_BUCKET)
+    .upload(path, f, { contentType: f.type, cacheControl: "31536000", upsert: false });
+  if (error) throw error;
+  return sb.storage.from(VIDEO_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+function repoVideo(name) {
+  const vids = config.projects.videos || {};
+  return vids[name] ? videoSource(vids[name]) : null;
+}
+
+/* Reproductor 16:9 con fachada: imagen + botón ▶ hasta que se pulsa */
+function videoPlayer(source, poster, title) {
+  const box = el("div", "video-box");
+  const start = el("button", "video-start");
+  start.type = "button";
+  start.setAttribute("aria-label", t("app.projects.play", { name: title }));
+  if (poster) start.style.backgroundImage = 'url("' + poster.replace(/["\\]/g, encodeURIComponent) + '")';
+  start.appendChild(el("span", "video-play", "▶"));
+  start.appendChild(el("span", "video-hint", t("app.projects.playHint")));
+  start.addEventListener("click", () => {
+    let media;
+    if (source.kind === "frame") {
+      media = document.createElement("iframe");
+      media.src = source.src;
+      media.title = title;
+      media.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+      media.allowFullscreen = true;
+      media.referrerPolicy = "strict-origin-when-cross-origin";
+    } else {
+      media = document.createElement("video");
+      media.src = source.src;
+      media.controls = true;
+      media.autoplay = true;
+      media.playsInline = true;
+    }
+    media.className = "video-media";
+    box.replaceChildren(media);
+    if (media.focus) media.focus();
+  });
+  box.appendChild(start);
+  return box;
 }
 
 
@@ -4016,11 +4343,27 @@ function openRepo(repo) {
    API pública, sin token: 60 peticiones/hora por IP. Nunca
    metas un token aquí, este archivo lo puede leer cualquiera.
    ========================================================= */
+/* Los marcados en el portal (o todos), con los destacados primero */
 function visibleRepos() {
   const sel = config.projects.selected;
-  if (!sel || !sel.length) return allRepos;
-  return sel.map((n) => allRepos.find((r) => r.name === n)).filter(Boolean);
+  const list =
+    !sel || !sel.length
+      ? allRepos.slice()
+      : sel.map((n) => allRepos.find((r) => r.name === n)).filter(Boolean);
+  const feat = config.projects.featured || [];
+  const rank = (r) => (feat.includes(r.name) ? feat.indexOf(r.name) : feat.length);
+  return list.sort((a, b) => rank(a) - rank(b));
 }
+
+const isFeatured = (name) => (config.projects.featured || []).includes(name);
+
+/* El repo de perfil (usuario/usuario) solo trae el README de GitHub:
+   no es un proyecto, no sale en el portafolio */
+const isProfileRepo = (r) => r.name.toLowerCase() === GITHUB_USER.toLowerCase();
+
+/* Caso de estudio de cada proyecto, editable en el portal */
+const CASE_FIELDS = ["role", "problem", "solution", "result"];
+const repoCase = (name) => (config.projects.cases || {})[name] || null;
 
 async function loadRepos() {
   try {
@@ -4030,7 +4373,7 @@ async function loadRepos() {
       cached && cached.user === GITHUB_USER && Array.isArray(cached.trash) &&
       Date.now() - cached.at < GH_CACHE_TTL
     ) {
-      allRepos = cached.data;
+      allRepos = cached.data.filter((r) => !isProfileRepo(r));
       trashRepos = cached.trash;
       return;
     }
@@ -4043,7 +4386,7 @@ async function loadRepos() {
     if (!res.ok) throw new Error("GitHub " + res.status);
     const data = await res.json();
     allRepos = data
-      .filter((r) => !r.fork && !r.archived)
+      .filter((r) => !r.fork && !r.archived && !isProfileRepo(r))
       .sort((a, b) => new Date(b.pushed_at) - new Date(a.pushed_at));
     // Forks y archivados no salen en Proyectos: van a la Papelera
     trashRepos = data.filter((r) => r.fork || r.archived);
@@ -4194,6 +4537,8 @@ function updateAdminCount() {
   document.getElementById("admin-count").textContent = t("admin.count", {
     n: config.items.length,
     r: config.projects.selected.length,
+    f: (config.projects.featured || []).length,
+    v: Object.keys(config.projects.videos || {}).length,
   });
 }
 
@@ -4369,7 +4714,121 @@ function renderAdminRepos() {
 
     row.appendChild(cb);
     row.appendChild(text);
-    box.appendChild(row);
+
+    // Video anclado al proyecto (YouTube, Vimeo o .mp4)
+    const card = el("div", "repo-card");
+    card.appendChild(row);
+    const vid = document.createElement("input");
+    vid.type = "url";
+    vid.className = "input repo-video";
+    vid.placeholder = t("admin.repos.videoPh");
+    vid.setAttribute("aria-label", t("admin.repos.video", { name: repo.name }));
+    vid.value = (config.projects.videos || {})[repo.name] || "";
+    const note = el("span", "repo-video-note");
+    const check = () => {
+      const url = vid.value.trim();
+      const ok = !url || videoSource(url);
+      note.textContent = !url ? "" : ok ? "✓ " + t("admin.repos.videoOk") : "✗ " + t("admin.repos.videoBad");
+      note.classList.toggle("is-bad", !ok);
+      config.projects.videos = config.projects.videos || {};
+      if (url && ok) config.projects.videos[repo.name] = url;
+      else delete config.projects.videos[repo.name];
+      updateAdminCount();
+    };
+    vid.addEventListener("input", check);
+    check();
+    card.appendChild(vid);
+    card.appendChild(note);
+
+    // O subir el archivo desde el PC a Supabase Storage (bucket
+    // project-videos, público para ver, solo el admin sube)
+    const up = el("div", "repo-upload");
+    const file = document.createElement("input");
+    file.type = "file";
+    file.accept = "video/mp4,video/webm,video/ogg";
+    file.hidden = true;
+    const pick = el("button", "btn", "⇪ " + t("admin.repos.upload"));
+    pick.type = "button";
+    const upNote = el("span", "repo-video-note");
+    pick.addEventListener("click", () => file.click());
+    file.addEventListener("change", async () => {
+      const f = file.files[0];
+      file.value = "";
+      if (!f) return;
+      upNote.classList.remove("is-bad");
+      if (!VIDEO_TYPES[f.type]) {
+        upNote.classList.add("is-bad");
+        upNote.textContent = "✗ " + t("admin.repos.uploadType");
+        return;
+      }
+      if (f.size > VIDEO_MAX_BYTES) {
+        upNote.classList.add("is-bad");
+        upNote.textContent = "✗ " + t("admin.repos.uploadBig", { mb: Math.round(f.size / 1048576) });
+        return;
+      }
+      pick.disabled = true;
+      upNote.textContent = t("admin.repos.uploading", { mb: (f.size / 1048576).toFixed(1) });
+      try {
+        vid.value = await uploadVideo(repo.name, f);
+        check();
+        upNote.textContent = "✓ " + t("admin.repos.uploaded");
+      } catch (e) {
+        upNote.classList.add("is-bad");
+        upNote.textContent = "✗ " + t("admin.repos.uploadFail", { msg: (e && e.message) || "?" });
+      } finally {
+        pick.disabled = false;
+      }
+    });
+    up.appendChild(pick);
+    up.appendChild(file);
+    up.appendChild(upNote);
+    card.appendChild(up);
+
+    // Destacado: sale primero y en la pestaña "Destacados"
+    const star = el("label", "repo-star");
+    const sb = document.createElement("input");
+    sb.type = "checkbox";
+    sb.checked = isFeatured(repo.name);
+    sb.addEventListener("change", () => {
+      const feat = (config.projects.featured = config.projects.featured || []);
+      const i = feat.indexOf(repo.name);
+      if (sb.checked && i < 0) feat.push(repo.name);
+      if (!sb.checked && i >= 0) feat.splice(i, 1);
+      updateAdminCount();
+    });
+    star.appendChild(sb);
+    star.appendChild(el("span", "", "★ " + t("admin.repos.featured")));
+    card.appendChild(star);
+
+    // Caso de estudio: rol, problema, solución, resultado (es/en)
+    const det = document.createElement("details");
+    det.className = "repo-case-edit";
+    const cur = repoCase(repo.name) || {};
+    det.appendChild(el("summary", "", t("admin.repos.case") + (Object.keys(cur).length ? " ✓" : "")));
+    CASE_FIELDS.forEach((f) => {
+      ["es", "en"].forEach((lg) => {
+        const lab = el("label", "field");
+        lab.appendChild(el("span", "", t("app.projects.case." + f) + " (" + lg.toUpperCase() + ")"));
+        const ta = document.createElement("textarea");
+        ta.className = "input";
+        ta.rows = f === "role" ? 1 : 2;
+        ta.maxLength = 1200;
+        ta.placeholder = t("admin.repos.ph." + f);
+        ta.value = (cur[f] && cur[f][lg]) || "";
+        ta.addEventListener("input", () => {
+          const all = (config.projects.cases = config.projects.cases || {});
+          const c = (all[repo.name] = all[repo.name] || {});
+          const v = (c[f] = c[f] || { es: "", en: "" });
+          v[lg] = ta.value;
+          if (!v.es.trim() && !v.en.trim()) delete c[f];
+          if (!Object.keys(c).length) delete all[repo.name];
+        });
+        lab.appendChild(ta);
+        det.appendChild(lab);
+      });
+    });
+    card.appendChild(det);
+    box.appendChild(card);
   });
 }
 
@@ -4686,6 +5145,9 @@ const TIE_SIZE = 34;
 const DS_SIZE = 60;
 const TIE_SPEED = 0.4;       // px por milisegundo
 const DS_STATIC_MS = 6500;   // cuánto se queda quieta antes de explotar
+const FX_FIRST_MS = 20000;    // primer efecto tras cargar
+const FX_GAP_MIN = 45000;     // pausa entre efectos: 45 a 90 s, para no distraer al leer
+const FX_GAP_RANGE = 45000;
 
 function initSpaceFx() {
   const stage = document.getElementById("sw-fx");
@@ -4784,10 +5246,10 @@ function initSpaceFx() {
       return;
     }
     const ms = Math.random() < 0.6 ? flyTie() : deathStarRun();
-    setTimeout(next, ms + 18000 + Math.random() * 26000);
+    setTimeout(next, ms + FX_GAP_MIN + Math.random() * FX_GAP_RANGE);
   }
 
-  setTimeout(next, 6000);
+  setTimeout(next, FX_FIRST_MS);
 }
 
 /* =========================================================
@@ -4859,6 +5321,8 @@ function initSound() {
    y dura menos.
    ========================================================= */
 const BOOT_LINE_MS = 230;
+const BOOT_QUICK_MS = 450; // arranque corto de las visitas siguientes
+const BOOT_SEEN_KEY = "boot-seen";
 
 function runBoot() {
   const boot = document.getElementById("boot");
@@ -4926,10 +5390,18 @@ function runBoot() {
     document.addEventListener("keydown", finish, true);
     document.addEventListener("pointerdown", finish, true);
 
-    if (reduce) {
+    // Arranque completo solo la primera visita; después, un vistazo
+    // de medio segundo (quien vuelve no tiene por qué esperar)
+    let seen = false;
+    try {
+      seen = localStorage.getItem(BOOT_SEEN_KEY) === "1";
+      localStorage.setItem(BOOT_SEEN_KEY, "1");
+    } catch (e) {}
+
+    if (reduce || seen) {
       shown = lines.length;
       paint();
-      setTimeout(finish, 700);
+      setTimeout(finish, reduce ? 700 : BOOT_QUICK_MS);
       return;
     }
 
@@ -5115,6 +5587,21 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
     if (top) closeWin(top);
   });
+
+  // Accesos directos: botón Contacto de la barra y tarjeta de presentación.
+  // Buscan el elemento en la config; si lo borraron, usan el de fábrica.
+  const openById = (id, app) => {
+    const item =
+      itemById(id) ||
+      config.items.find((it) => it.app === app) ||
+      DEFAULT_DESKTOP.items.find((it) => it.id === id);
+    if (item) openItem(item);
+  };
+  document.getElementById("contact-ico").innerHTML = iconSvg("mail");
+  document.getElementById("contact-btn").addEventListener("click", () => openById("contact", "contact"));
+  document.getElementById("hello-projects").addEventListener("click", () => openById("projects", "projects"));
+  document.getElementById("hello-contact").addEventListener("click", () => openById("contact", "contact"));
+  document.getElementById("hello-cv").addEventListener("click", () => openById("cv", "cv"));
 
   // Reloj de Colombia
   tickClock();
