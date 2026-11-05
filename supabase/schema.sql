@@ -304,6 +304,12 @@ create table if not exists public.fl_messages (
   read        boolean not null default false,
   created_at  timestamptz not null default now()
 );
+alter table public.fl_messages add column if not exists mail_error text;
+alter table public.fl_messages
+  add column if not exists follow_status text not null default 'nuevo'
+    check (follow_status in ('nuevo','contactado','seguimiento','ganado','descartado')),
+  add column if not exists follow_up_on date,
+  add column if not exists follow_notes text;
 create index if not exists fl_messages_created_idx on public.fl_messages(created_at desc);
 
 do $$

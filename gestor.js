@@ -171,7 +171,8 @@ function paintSide() {
   document.getElementById("count-entregas").textContent = upcomingDeliveries().filter((d) => d.days <= 7).length || "";
   document.getElementById("count-clientes").textContent = G.clients.length || "";
   const unread = G.messages.filter((m) => !m.read).length;
-  document.getElementById("count-bandeja").textContent = unread || "";
+  const dueCount = followDue().filter((m) => m.read).length;
+  document.getElementById("count-bandeja").textContent = unread + dueCount || "";
   const down = G.sites.filter((x) => x.active && x.status === "down");
   const countSites = document.getElementById("count-sitios");
   countSites.textContent = down.length || "";
@@ -1268,6 +1269,17 @@ const EXTRA_LABELS = {
   company: "Empresa",
   link: "Enlace",
 };
+const FOLLOW_STATUS = [
+  ["nuevo", "Nuevo"],
+  ["contactado", "Contactado"],
+  ["seguimiento", "En seguimiento"],
+  ["ganado", "Ganado"],
+  ["descartado", "Descartado"],
+];
+const followLabel = (m) => (FOLLOW_STATUS.find(([k]) => k === (m.follow_status || "nuevo")) || FOLLOW_STATUS[0])[1];
+const followOpen = (m) => !["ganado", "descartado"].includes(m.follow_status);
+/* Pendientes: con fecha de seguimiento de hoy o ya pasada */
+const followDue = () => G.messages.filter((m) => followOpen(m) && m.follow_up_on && daysUntil(m.follow_up_on) <= 0);
 const whenShort = (iso) =>
   iso ? new Date(iso).toLocaleString("es-CO", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "—";
 
@@ -1276,8 +1288,51 @@ function renderInbox() {
   root.innerHTML = "";
   const head = el("div", "view-head");
   head.appendChild(el("h1", "view-title", "Bandeja"));
+  const mailNote = el("span", "q-save-note");
+  head.appendChild(mailNote);
+  const testBtn = button("Probar correo", async () => {
+    testBtn.disabled = true;
+    mailNote.classList.remove("is-bad");
+    mailNote.textContent = "Enviando prueba…";
+    try {
+      const sb = await getSupabase();
+      const { data } = await sb.auth.getSession();
+      const r = await fetch("/api/monitor?test=mail", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + (data.session ? data.session.access_token : "") },
+      });
+      const out = await r.json().catch(() => ({}));
+      if (out.ok) mailNote.textContent = "Brevo la aceptó. Revisa tu correo, también spam.";
+      else {
+        mailNote.classList.add("is-bad");
+        mailNote.textContent = "No salió: " + (out.error || "respuesta " + r.status);
+      }
+    } catch (e) {
+      mailNote.classList.add("is-bad");
+      mailNote.textContent = "No se pudo probar: " + e.message;
+    } finally {
+      testBtn.disabled = false;
+    }
+  });
+  head.appendChild(testBtn);
   root.appendChild(head);
-  root.appendChild(el("p", "view-note", "Cada envío del formulario de Contacto llega aquí y a tu correo."));
+  root.appendChild(el("p", "view-note", "Cada envío del formulario llega aquí y a tu correo. Abre un mensaje para anotar su estado y cuándo volver a escribirle."));
+
+  const due = followDue();
+  if (due.length) {
+    root.appendChild(el("p", "alert-week", due.length + (due.length === 1 ? " seguimiento para hoy: " : " seguimientos para hoy: ") + due.map((m) => m.name).join(", ")));
+  }
+
+  const filters = el("div", "inbox-filters");
+  [["abiertos", "Abiertos"], ["pendientes", "Con seguimiento"], ["todos", "Todos"]].forEach(([k, label]) => {
+    const b = button(label, () => {
+      G.inboxFilter = k;
+      renderInbox();
+    });
+    b.classList.toggle("is-on", (G.inboxFilter || "abiertos") === k);
+    filters.appendChild(b);
+  });
+  root.appendChild(filters);
 
   const wrap = el("div", "table-wrap");
   if (!G.messages.length) {
@@ -1285,16 +1340,35 @@ function renderInbox() {
     return root.appendChild(wrap);
   }
   const table = el("table", "tbl");
-  table.appendChild(tableHead(["Motivo", "De", "Asunto", "Recibido"]));
+  table.appendChild(tableHead(["Motivo", "De", "Asunto", "Estado", "Seguimiento", "Recibido"]));
   const tb = document.createElement("tbody");
-  G.messages.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).forEach((m) => {
+  const filter = G.inboxFilter || "abiertos";
+  const shown = G.messages
+    .filter((m) => filter === "todos" || (filter === "abiertos" ? followOpen(m) : followOpen(m) && m.follow_up_on))
+    .sort((a, b) =>
+      filter === "pendientes"
+        ? String(a.follow_up_on).localeCompare(String(b.follow_up_on))
+        : String(b.created_at).localeCompare(String(a.created_at))
+    );
+  if (!shown.length) {
+    wrap.appendChild(el("p", "empty", "Nada por aquí con este filtro."));
+    return root.appendChild(wrap);
+  }
+  shown.forEach((m) => {
     const tr = el("tr", "is-link" + (m.read ? "" : " is-unread"));
     const info = MOTIVE_INFO[m.motive] || MOTIVE_INFO.otro;
     const td = el("td");
     td.appendChild(el("span", "tag " + info[1], info[0]));
+    if (m.mail_error) td.appendChild(el("span", "tag is-hot mail-tag", "Correo no salió"));
     tr.appendChild(td);
     tr.appendChild(el("td", "", m.name));
     tr.appendChild(el("td", "", m.subject));
+    tr.appendChild(el("td", "", followLabel(m)));
+    const fu = el("td");
+    const fuTag = m.follow_up_on && followOpen(m) ? tagForDay(m.follow_up_on, false) : null;
+    if (fuTag) fu.appendChild(el("span", "tag " + fuTag[1], fuTag[0]));
+    else fu.textContent = "—";
+    tr.appendChild(fu);
     tr.appendChild(el("td", "", whenShort(m.created_at)));
     tr.addEventListener("click", () => openMessage(m));
     tb.appendChild(tr);
@@ -1330,7 +1404,21 @@ function messageDrawer(box) {
   Object.keys(m.extra || {}).forEach((k) => add(EXTRA_LABELS[k] || k, m.extra[k]));
   add("Recibido", whenShort(m.created_at));
   box.appendChild(dl);
+  if (m.mail_error) box.appendChild(el("p", "gestor-warn is-bad", "El correo no salió: " + m.mail_error));
   box.appendChild(el("div", "msg-body", m.message));
+
+  // Seguimiento: estado, próxima fecha y notas
+  box.appendChild(el("h3", "", "Seguimiento"));
+  const saveFollow = (patch) => {
+    Object.assign(m, patch);
+    renderAllViews();
+    safely(dbUpdate("fl_messages", m.id, patch));
+  };
+  const two = el("div", "two");
+  two.appendChild(field("Estado", selectInput(FOLLOW_STATUS, m.follow_status || "nuevo", (v) => saveFollow({ follow_status: v }))));
+  two.appendChild(field("Volver a escribir", textInput(m.follow_up_on, (v) => saveFollow({ follow_up_on: v || null }), "date")));
+  box.appendChild(two);
+  box.appendChild(field("Notas", textArea(m.follow_notes, (v) => saveFollow({ follow_notes: v || null }), 3)));
 
   const acts = el("div", "msg-acts");
   const answer = el("a", "btn btn-primary", "Responder");
@@ -1346,6 +1434,8 @@ function messageDrawer(box) {
       dbInsert("fl_projects", { title: extra.projectType || m.subject, client_id: client.id, status: "pendiente", notes: m.message })
     );
     G.projects.push(project);
+    m.follow_status = "ganado";
+    safely(dbUpdate("fl_messages", m.id, { follow_status: "ganado" }));
     showView("proyectos");
     openDrawer("project", project.id);
   }));
@@ -1604,7 +1694,7 @@ function renderFormats() {
   card(
     "Correo desde la web",
     "El formulario de Contacto pide un motivo. El correo te llega con el motivo en el asunto y su ficha.",
-    ["[Cotización] azul: proyecto, presupuesto y fecha", "[Colaboración] verde: en qué y enlace", "[Empleo] morado: empresa y vacante", "[Contacto] gris: solo el mensaje", "[CAÍDA] rojo y [RESUELTO] verde: avisos del monitor", "Responder le contesta directo a quien escribió"]
+    ["[Cotización] azul: solo el mensaje", "[Colaboración] verde: en qué y enlace", "[Empleo] morado: empresa y vacante", "[Contacto] gris: solo el mensaje", "[CAÍDA] rojo y [RESUELTO] verde: avisos del monitor", "Responder le contesta directo a quien escribió"]
   );
   root.appendChild(grid);
 }

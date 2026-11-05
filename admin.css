@@ -141,7 +141,11 @@ body.admin-page {
 .view-head .view-title { margin: 0; flex: 1 1 auto; }
 .view-head .input { width: min(260px, 100%); }
 .view-note { margin: -0.3rem 0 0.9rem; font-size: 0.84rem; color: var(--p-soft); max-width: 80ch; }
-.q-save-note { font-size: 0.78rem; color: var(--p-soft); }
+.q-save-note { font-size: 0.78rem; color: var(--p-soft); overflow-wrap: anywhere; }
+.q-save-note.is-bad { color: var(--p-red); font-weight: 600; }
+.mail-tag { margin-left: 0.3rem; }
+.inbox-filters { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.7rem; }
+.admin-page .inbox-filters .btn.is-on { background: var(--p-accent-soft); border-color: var(--p-accent); color: var(--p-accent); font-weight: 600; }
 .gestor-warn { margin: 0 0 0.9rem; padding: 0.6rem 0.8rem; font-size: 0.84rem; background: var(--p-amber-soft); color: var(--p-amber); border-radius: 8px; }
 .gestor-warn.is-bad { background: var(--p-red-soft); color: var(--p-red); font-weight: 600; }
 .down-banner { display: block; width: 100%; margin: 0 0 0.9rem; padding: 0.6rem 0.8rem; background: var(--p-red); border: 0; border-radius: 8px; color: #fff; font: 600 0.86rem inherit; font-family: inherit; text-align: left; cursor: pointer; }

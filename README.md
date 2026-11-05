@@ -129,7 +129,7 @@ marca del panel y de los correos es **AM Developer** (constante `BRAND` en
 | Sección | Qué hace |
 |---|---|
 | **Proyectos** | Tablero Pendiente / En marcha / Terminado; se arrastran las tarjetas. Detalle con cliente, valor, fecha, entregables (el % sale solo) y pagos |
-| **Bandeja** | Lo que llega por el formulario de Contacto, sin leer primero. Responder, o crear cliente y proyecto |
+| **Bandeja** | Lo que llega por el formulario de Contacto. Seguimiento de cada mensaje: estado (Nuevo, Contactado, En seguimiento, Ganado, Descartado), fecha para volver a escribir y notas. Responder, o crear cliente y proyecto |
 | **Presupuestos** | Cotizaciones por horas o a precio fijo, con la hoja al lado y **Guardar como PDF** |
 | **Entregas** | Fechas de proyectos y entregables, de la más cercana a la más lejana |
 | **Clientes** | Datos de cada cliente y su saldo |
@@ -382,7 +382,8 @@ El visitante elige un motivo (**Cotizar**, **Colaborar**, **Empleo** u **Otra co
 que pide sus datos extra, pulsa **Enviar mensaje** y no sale del portafolio.
 [`api/contact.js`](api/contact.js) lo guarda en la **Bandeja** del panel y lo envía
 a tu correo con [Brevo](https://www.brevo.com). Si el correo falla, el mensaje sigue
-en la Bandeja. Sin npm ni compilación.
+en la Bandeja con el motivo del fallo; **Probar correo**, en la Bandeja, envía una
+prueba y muestra el error exacto del proveedor. Sin npm ni compilación.
 
 ### El correo que recibes
 
@@ -394,7 +395,7 @@ escribió.
 
 | Motivo | Color | Datos extra |
 |---|---|---|
-| Cotización | Azul | Proyecto, presupuesto, para cuándo |
+| Cotización | Azul | — |
 | Colaboración | Verde | En qué, enlace |
 | Empleo | Morado | Empresa, vacante |
 | Contacto | Gris | — |
@@ -491,7 +492,7 @@ en `index.html`:
 
 ```html
 <link rel="stylesheet" href="styles.css?v=25" />
-<script src="script.js?v=25"></script>
+<script src="script.js?v=26"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:

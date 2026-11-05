@@ -134,6 +134,26 @@ module.exports = async function handler(req, res) {
     }
   }
   if (!allowed) return reply(res, 401, { ok: false, error: "unauthorized" });
+
+  // Botón "Probar correo" del panel: devuelve el error exacto del proveedor
+  if (new URL(req.url, "http://x").searchParams.get("test") === "mail") {
+    if (!canSendMail()) return reply(res, 200, { ok: false, error: "No hay BREVO_API_KEY en Vercel" });
+    try {
+      await sendMail({
+        subject: "[Prueba] Correo del panel",
+        html: brandEmail({
+          tag: "Prueba",
+          title: "El correo funciona",
+          lead: "Este mensaje lo envió el botón Probar correo del panel.",
+          foot: esc(BRAND),
+        }),
+        text: "El correo funciona. Lo envió el botón Probar correo del panel.",
+      });
+      return reply(res, 200, { ok: true });
+    } catch (e) {
+      return reply(res, 200, { ok: false, error: e.message });
+    }
+  }
   if (!canUseDb()) return reply(res, 503, { ok: false, error: "not_configured" });
 
   try {

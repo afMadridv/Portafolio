@@ -8,6 +8,7 @@
    Variables de entorno: ver api/_lib.js. Sin proveedor de correo
    ni base de datos responde 503 y la ventana pasa al plan B.
    ========================================================= */
+const crypto = require("crypto");
 const { BRAND, reply, esc, stamp, canSendMail, sendMail, canUseDb, db, brandEmail } = require("./_lib");
 
 const LIMITS = { name: 80, email: 120, subject: 120, message: 4000 };
@@ -21,7 +22,7 @@ const MOTIVES = {
     tag: "Cotización",
     accent: "#0b4f8a",
     title: "Quieren cotizar un proyecto",
-    rows: [["projectType", "Proyecto"], ["budget", "Presupuesto"], ["deadline", "Para cuándo"]],
+    rows: [],
   },
   colaborar: {
     tag: "Colaboración",
@@ -207,12 +208,14 @@ module.exports = async function handler(req, res) {
   const motive = MOTIVES[d.motive] || MOTIVES.otro;
 
   // Primero a la Bandeja: si el correo falla, el mensaje no se pierde
+  const id = crypto.randomUUID();
   let saved = false;
   if (canUseDb()) {
     try {
       await db("fl_messages", {
         method: "POST",
         body: {
+          id,
           motive: d.motive,
           name: d.name,
           email: d.email,
@@ -228,7 +231,9 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // Si el correo no sale, el motivo queda visible en la Bandeja
   let sent = false;
+  let mailError = canSendMail() ? "" : "No hay proveedor de correo configurado en Vercel";
   if (canSendMail()) {
     try {
       await sendMail({
@@ -240,7 +245,15 @@ module.exports = async function handler(req, res) {
       });
       sent = true;
     } catch (e) {
+      mailError = e.message;
       console.error("Correo sin enviar:", e.message);
+    }
+  }
+  if (saved && mailError) {
+    try {
+      await db("fl_messages?id=eq." + id, { method: "PATCH", body: { mail_error: mailError.slice(0, 500) } });
+    } catch (e) {
+      console.error("Motivo sin guardar:", e.message);
     }
   }
 

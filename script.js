@@ -2051,12 +2051,6 @@ const I18N = {
     "app.contact.motive.colaborar": "Colaborar",
     "app.contact.motive.empleo": "Oferta de empleo",
     "app.contact.motive.otro": "Otra cosa",
-    "app.contact.x.projectType": "Tipo de proyecto",
-    "app.contact.x.projectType.ph": "Web, app, sistema interno…",
-    "app.contact.x.budget": "Presupuesto aproximado",
-    "app.contact.x.budget.ph": "Opcional",
-    "app.contact.x.deadline": "Para cuándo",
-    "app.contact.x.deadline.ph": "Opcional",
     "app.contact.x.collabArea": "En qué quieres colaborar",
     "app.contact.x.collabArea.ph": "Proyecto, rol, idea…",
     "app.contact.x.company": "Empresa",
@@ -2337,12 +2331,6 @@ const I18N = {
     "app.contact.motive.colaborar": "Collaborate",
     "app.contact.motive.empleo": "Job offer",
     "app.contact.motive.otro": "Something else",
-    "app.contact.x.projectType": "Project type",
-    "app.contact.x.projectType.ph": "Website, app, internal system…",
-    "app.contact.x.budget": "Approximate budget",
-    "app.contact.x.budget.ph": "Optional",
-    "app.contact.x.deadline": "By when",
-    "app.contact.x.deadline.ph": "Optional",
     "app.contact.x.collabArea": "What you'd like to collaborate on",
     "app.contact.x.collabArea.ph": "Project, role, idea…",
     "app.contact.x.company": "Company",
@@ -3684,14 +3672,14 @@ const APPS = {
 
     // Datos extra de cada motivo (opcionales)
     const EXTRA_FIELDS = {
-      cotizar: ["projectType", "budget", "deadline"],
+      cotizar: [],
       colaborar: ["collabArea", "link"],
       empleo: ["company", "link"],
       otro: [],
     };
     const extras = el("div", "field-row");
     const extraWraps = {};
-    ["projectType", "budget", "deadline", "collabArea", "company", "link"].forEach((id) => {
+    ["collabArea", "company", "link"].forEach((id) => {
       LIMIT[id] = 160;
       AUTO[id] = "off";
       const wrap = mkField(id, "app.contact.x." + id, "app.contact.x." + id + ".ph");
