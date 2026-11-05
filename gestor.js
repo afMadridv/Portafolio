@@ -178,6 +178,18 @@ function paintSide() {
   countSites.textContent = down.length || "";
   countSites.classList.toggle("is-alert", down.length > 0);
   document.title = (unread + down.length ? "(" + (unread + down.length) + ") " : "") + "Panel · AM Developer";
+  // Globo sobre el icono de la app
+  try {
+    const pending = unread + dueCount + down.length;
+    if (pending && navigator.setAppBadge) navigator.setAppBadge(pending).catch(() => {});
+    else if (!pending && navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+  } catch (e) {}
+  document.querySelectorAll("#tabbar [data-view]").forEach((tab) => {
+    const count = document.getElementById("count-" + tab.dataset.view);
+    const b = tab.querySelector("b");
+    b.textContent = count.textContent;
+    b.classList.toggle("is-alert", count.classList.contains("is-alert"));
+  });
 
   const banner = document.getElementById("down-banner");
   banner.hidden = !down.length;
@@ -800,8 +812,17 @@ function buildQuoteSheet(q, root) {
   sheet.appendChild(table);
 
   b.appendChild(el("p", "qs-kicker", "Cotización de servicios de software"));
-  b.appendChild(el("h1", "qs-name", "Andrés Madrid"));
-  b.appendChild(el("p", "qs-role", "Desarrollador de software · Colombia"));
+  const brand = el("div", "qs-brand");
+  const logo = document.createElement("img");
+  logo.className = "qs-logo";
+  logo.src = "amd.svg";
+  logo.alt = "AMD";
+  brand.appendChild(logo);
+  const who = el("div");
+  who.appendChild(el("h1", "qs-name", "Andrés Madrid"));
+  who.appendChild(el("p", "qs-role", "Desarrollador de software · Colombia"));
+  brand.appendChild(who);
+  b.appendChild(brand);
   const links = el("div", "qs-links");
   ["andresmadrid.vercel.app", EMAIL, "github.com/" + GITHUB_USER, "LinkedIn"].forEach((l) => links.appendChild(el("span", "", l)));
   b.appendChild(links);
@@ -1256,7 +1277,7 @@ function rowEditor(row, keyA, keyB, phA, phB, onRemove, refresh) {
    BANDEJA: lo que llega por el formulario de Contacto
    ========================================================= */
 const MOTIVE_INFO = {
-  cotizar: ["Cotización", "is-blue"],
+  cotizar: ["Cotización", "is-accent"],
   colaborar: ["Colaboración", "is-good"],
   empleo: ["Empleo", "is-violet"],
   otro: ["Contacto", ""],
@@ -1610,30 +1631,165 @@ async function refreshSites() {
 }
 
 /* ---------- Avisos en vivo mientras el panel está abierto ----------
-   Con el panel cerrado avisa el correo. */
+   Con el panel cerrado avisan el push (sw.js y api/_push.js) y el correo. */
 function toast(text, kind) {
   const box = document.getElementById("toasts");
   const t = el("div", "toast " + (kind || ""), text);
   box.appendChild(t);
   setTimeout(() => t.remove(), 7000);
   try {
-    if (window.Notification && Notification.permission === "granted" && document.visibilityState !== "visible") {
-      new Notification("AM Developer", { body: text });
+    // Con push activo el aviso ya llega por el servicio: no se repite
+    if (!G.pushOn && G.swReg && window.Notification && Notification.permission === "granted" && document.visibilityState !== "visible") {
+      G.swReg.showNotification("AM Developer", { body: text, icon: "amd.png", badge: "amd-badge.png" }).catch(() => {});
     }
   } catch (e) {}
 }
 
+/* ---------- App en la pantalla de inicio y avisos push ---------- */
+const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const canPushHere = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const IOS_INSTALL_TIP = "En Safari: botón Compartir, luego Añadir a inicio. Abre la app desde ese icono para activar los avisos.";
+
+function paintInstallButton() {
+  const b = document.getElementById("install-btn");
+  b.hidden = isStandalone() || !(G.installEvent || isIos());
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  G.installEvent = e;
+  paintInstallButton();
+});
+window.addEventListener("appinstalled", () => {
+  G.installEvent = null;
+  paintInstallButton();
+});
+
+function installApp() {
+  if (!G.installEvent) return toast(IOS_INSTALL_TIP);
+  G.installEvent.prompt();
+  G.installEvent.userChoice.finally(() => {
+    G.installEvent = null;
+    paintInstallButton();
+  });
+}
+
 function paintNotifyButton() {
   const b = document.getElementById("notify-btn");
-  if (!window.Notification || Notification.permission !== "default") b.hidden = true;
+  let state = "on";
+  if (!canPushHere()) state = isIos() && !isStandalone() ? "ios" : "";
+  else if (Notification.permission === "denied") state = "blocked";
+  else if (G.pushOn) state = "test";
+  b.hidden = !state;
+  b.dataset.state = state;
+  b.textContent = state === "test" ? "Probar aviso" : state === "blocked" ? "Avisos bloqueados" : "Activar avisos";
+}
+
+async function savePushSub(sub) {
+  const j = sub.toJSON();
+  const sb = await getSupabase();
+  const { error } = await sb
+    .from("fl_push_subs")
+    .upsert({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }, { onConflict: "endpoint" });
+  if (error) throw error;
+}
+
+async function enablePush() {
+  if ((await Notification.requestPermission()) !== "granted") return paintNotifyButton();
+  if (!G.swReg) return toast("No se pudo preparar este dispositivo. Recarga el panel.", "is-bad");
+  const { key } = await (await fetch("/api/push")).json();
+  if (!key) {
+    paintNotifyButton();
+    return toast("Faltan las claves VAPID en Vercel. Por ahora solo hay avisos con el panel abierto.", "is-bad");
+  }
+  // Una suscripción con otra clave no se puede reutilizar
+  const old = await G.swReg.pushManager.getSubscription();
+  if (old) await old.unsubscribe();
+  const raw = atob(key.replace(/-/g, "+").replace(/_/g, "/"));
+  const sub = await G.swReg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: Uint8Array.from(raw, (c) => c.charCodeAt(0)),
+  });
+  await savePushSub(sub);
+  G.pushOn = true;
+  paintNotifyButton();
+  toast("Avisos activos en este dispositivo.", "is-good");
+}
+
+async function testPush() {
+  const sb = await getSupabase();
+  const { data } = await sb.auth.getSession();
+  const r = await fetch("/api/push", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + (data.session ? data.session.access_token : "") },
+  });
+  const out = await r.json().catch(() => ({}));
+  if (out.ok) toast("Aviso enviado a " + out.sent + (out.sent === 1 ? " dispositivo." : " dispositivos."), "is-good");
+  else toast("No salió: " + (out.error || "ningún dispositivo lo aceptó"), "is-bad");
+}
+
+async function onNotifyClick() {
+  const b = document.getElementById("notify-btn");
+  const state = b.dataset.state;
+  if (state === "ios") return toast(IOS_INSTALL_TIP);
+  if (state === "blocked") return toast("Están bloqueados. Actívalos en los ajustes del navegador o del dispositivo para este panel.", "is-bad");
+  b.disabled = true;
+  try {
+    await (state === "test" ? testPush() : enablePush());
+  } catch (e) {
+    toast("No se pudieron activar los avisos: " + e.message, "is-bad");
+  } finally {
+    b.disabled = false;
+  }
+}
+
+/* Registra el service worker y, si ya había permiso, renueva la suscripción */
+async function startDevice() {
+  if ("serviceWorker" in navigator) {
+    G.swReg = await navigator.serviceWorker.register("/sw.js", { scope: "/admin" });
+    if (canPushHere() && Notification.permission === "granted") {
+      const sub = await G.swReg.pushManager.getSubscription();
+      if (sub) {
+        await savePushSub(sub);
+        G.pushOn = true;
+      }
+    }
+  }
+}
+
+/* Al cerrar sesión este dispositivo deja de recibir avisos */
+async function pushOff() {
+  if (!G.swReg) return;
+  const sub = await G.swReg.pushManager.getSubscription();
+  if (!sub) return;
+  const sb = await getSupabase();
+  await sb.from("fl_push_subs").delete().eq("endpoint", sub.endpoint);
+  await sub.unsubscribe();
+  G.pushOn = false;
+  paintNotifyButton();
 }
 
 async function startGestorLive() {
+  paintInstallButton();
   paintNotifyButton();
-  document.getElementById("notify-btn").addEventListener("click", async () => {
-    await Notification.requestPermission();
-    paintNotifyButton();
+  document.getElementById("install-btn").addEventListener("click", installApp);
+  document.getElementById("notify-btn").addEventListener("click", onNotifyClick);
+  startDevice()
+    .catch((e) => console.error("Service worker:", e.message))
+    .finally(paintNotifyButton);
+
+  // En el celular la app pasa horas en segundo plano: al volver, datos frescos
+  let hiddenAt = 0;
+  document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "hidden") {
+      hiddenAt = Date.now();
+    } else if (hiddenAt && Date.now() - hiddenAt > 60000 && !G.drawer && !G.editing) {
+      await gestorLoad();
+      renderAllViews();
+    }
   });
+
   const sb = await getSupabase();
   sb.channel("panel")
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "fl_messages" }, (p) => {
@@ -1694,7 +1850,7 @@ function renderFormats() {
   card(
     "Correo desde la web",
     "El formulario de Contacto pide un motivo. El correo te llega con el motivo en el asunto y su ficha.",
-    ["[Cotización] azul: solo el mensaje", "[Colaboración] verde: en qué y enlace", "[Empleo] morado: empresa y vacante", "[Contacto] gris: solo el mensaje", "[CAÍDA] rojo y [RESUELTO] verde: avisos del monitor", "Responder le contesta directo a quien escribió"]
+    ["[Cotización] rojo: solo el mensaje", "[Colaboración] verde: en qué y enlace", "[Empleo] morado: empresa y vacante", "[Contacto] gris: solo el mensaje", "[CAÍDA] rojo y [RESUELTO] verde: avisos del monitor", "Responder le contesta directo a quien escribió"]
   );
   root.appendChild(grid);
 }
@@ -1702,7 +1858,8 @@ function renderFormats() {
 /* ---------- Estructura ---------- */
 function showView(name) {
   G.view = name;
-  document.querySelectorAll("#side-nav .side-link").forEach((b) => b.classList.toggle("is-active", b.dataset.view === name));
+  document.querySelectorAll("#side-nav .side-link, #tabbar [data-view]").forEach((b) => b.classList.toggle("is-active", b.dataset.view === name));
+  document.getElementById("tab-menu").classList.toggle("is-active", !document.querySelector('#tabbar [data-view="' + name + '"]'));
   document.querySelectorAll(".shell-main > .view").forEach((v) => (v.hidden = v.id !== "view-" + name));
   if (!["proyectos", "clientes", "bandeja"].includes(name)) closeDrawerQuiet();
   try {
@@ -1727,19 +1884,69 @@ function renderAllViews() {
   if (G.view === "sitios" && !typingInSites) renderSites();
 }
 
+const PANEL_VIEWS = ["proyectos", "bandeja", "presupuestos", "entregas", "clientes", "sitios", "formatos", "web"];
+
+function goToView(name) {
+  if (name !== "presupuestos" && G.editing) {
+    G.editing = null;
+    clearQuoteView();
+  }
+  setMenu(false);
+  showView(name);
+}
+
+/* En tablets y celulares la barra lateral es un menú que entra por un lado */
+const compactLayout = window.matchMedia("(max-width: 820px)");
+
+function setMenu(open) {
+  document.getElementById("app-shell").classList.toggle("is-menu-open", open);
+  document.getElementById("side-scrim").hidden = !open;
+  document.getElementById("tab-menu").setAttribute("aria-expanded", String(open));
+  document.querySelector(".side").inert = compactLayout.matches && !open;
+}
+
+/* Las tablas se vuelven tarjetas en el celular: cada dato lleva el título de su columna */
+function labelTables() {
+  document.querySelectorAll(".shell-main .tbl").forEach((table) => {
+    const heads = Array.from(table.querySelectorAll("thead th"), (th) => th.textContent);
+    table.querySelectorAll("tr").forEach((tr) => {
+      Array.from(tr.children).forEach((cell, i) => {
+        if (cell.tagName === "TD" && cell.dataset.label !== (heads[i] || "")) cell.dataset.label = heads[i] || "";
+      });
+    });
+  });
+}
+
 function initShell() {
   document.getElementById("down-banner").addEventListener("click", () => showView("sitios"));
   document.getElementById("side-nav").addEventListener("click", (e) => {
     const b = e.target.closest(".side-link");
-    if (!b) return;
-    if (b.dataset.view !== "presupuestos" && G.editing) {
-      G.editing = null;
-      clearQuoteView();
-    }
-    showView(b.dataset.view);
+    if (b) goToView(b.dataset.view);
+  });
+  // Los iconos son los dibujos fijos de PIXELS, nunca datos de afuera
+  document.querySelectorAll("#tabbar [data-icon]").forEach((tab) => {
+    tab.insertAdjacentHTML("afterbegin", pixelSvg(PIXELS[tab.dataset.icon]));
+  });
+  document.getElementById("tabbar").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-view]");
+    if (b) goToView(b.dataset.view);
+  });
+  document.getElementById("tab-menu").addEventListener("click", () => {
+    setMenu(!document.getElementById("app-shell").classList.contains("is-menu-open"));
+  });
+  document.getElementById("side-scrim").addEventListener("click", () => setMenu(false));
+  compactLayout.addEventListener("change", () => setMenu(false));
+  setMenu(false);
+  new MutationObserver(labelTables).observe(document.querySelector(".shell-main"), { childList: true, subtree: true });
+  // Un aviso tocado con la app abierta solo cambia el #
+  window.addEventListener("hashchange", () => {
+    const wanted = location.hash.slice(1);
+    if (G.started && PANEL_VIEWS.includes(wanted) && wanted !== G.view) goToView(wanted);
   });
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && G.drawer) closeDrawer();
+    if (e.key !== "Escape") return;
+    if (document.getElementById("app-shell").classList.contains("is-menu-open")) setMenu(false);
+    else if (G.drawer) closeDrawer();
   });
 }
 
@@ -1748,8 +1955,7 @@ async function gestorStart() {
   if (G.started) return;
   G.started = true;
   const wanted = location.hash.slice(1);
-  const known = ["proyectos", "bandeja", "presupuestos", "entregas", "clientes", "sitios", "formatos", "web"];
   await gestorLoad();
-  showView(known.includes(wanted) ? wanted : "proyectos");
+  showView(PANEL_VIEWS.includes(wanted) ? wanted : "proyectos");
   startGestorLive().catch(() => {});
 }

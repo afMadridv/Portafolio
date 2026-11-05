@@ -10,6 +10,7 @@
    ========================================================= */
 const crypto = require("crypto");
 const { BRAND, reply, esc, stamp, canSendMail, sendMail, canUseDb, db, brandEmail } = require("./_lib");
+const { pushAll } = require("./_push");
 
 const LIMITS = { name: 80, email: 120, subject: 120, message: 4000 };
 const EMAIL_RE = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[^\s@<>"',;]{2,}$/;
@@ -20,23 +21,23 @@ const EXTRA_MAX = 160;
 const MOTIVES = {
   cotizar: {
     tag: "Cotización",
-    accent: "#0b4f8a",
+    accent: "#fa4040",
     title: "Quieren cotizar un proyecto",
     rows: [],
   },
   colaborar: {
     tag: "Colaboración",
-    accent: "#0f766e",
+    accent: "#5eead4",
     title: "Quieren colaborar contigo",
     rows: [["collabArea", "En qué"], ["link", "Enlace"]],
   },
   empleo: {
     tag: "Empleo",
-    accent: "#6d28d9",
+    accent: "#c3b0ff",
     title: "Tienes una oferta de empleo",
     rows: [["company", "Empresa"], ["link", "Vacante"]],
   },
-  otro: { tag: "Contacto", accent: "#374151", title: "Tienes un mensaje nuevo", rows: [] },
+  otro: { tag: "Contacto", accent: "#c6c6c6", title: "Tienes un mensaje nuevo", rows: [] },
 };
 
 /* Freno contra envíos en ráfaga: 5 mensajes cada 10 minutos por
@@ -257,7 +258,10 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  if (saved || sent) return reply(res, 200, { ok: true });
+  if (saved || sent) {
+    await pushAll({ title: motive.tag + " · " + d.name, body: d.subject, url: "/admin.html#bandeja", tag: "mensaje-" + id });
+    return reply(res, 200, { ok: true });
+  }
   return reply(res, 502, { ok: false, error: "send_failed" });
 };
 

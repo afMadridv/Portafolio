@@ -312,6 +312,24 @@ alter table public.fl_messages
   add column if not exists follow_notes text;
 create index if not exists fl_messages_created_idx on public.fl_messages(created_at desc);
 
+-- Dispositivos que reciben avisos push. Sin Realtime: solo lo lee el servidor.
+create table if not exists public.fl_push_subs (
+  id uuid primary key default gen_random_uuid(),
+  endpoint text not null unique,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.fl_push_subs enable row level security;
+revoke all on public.fl_push_subs from anon;
+revoke truncate, references, trigger on public.fl_push_subs from authenticated;
+grant select, insert, update, delete on public.fl_push_subs to authenticated;
+drop policy if exists "fl_push_subs solo admin" on public.fl_push_subs;
+create policy "fl_push_subs solo admin" on public.fl_push_subs
+  for all to authenticated
+  using (public.is_site_admin())
+  with check (public.is_site_admin());
+
 do $$
 declare
   t text;

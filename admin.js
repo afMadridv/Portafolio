@@ -556,6 +556,7 @@ function initAdmin() {
 
   const logout = async () => {
     try {
+      await pushOff(); // Antes de salir: borrarlo pide la sesión
       await (await getSupabase()).auth.signOut();
     } catch (e) {}
     showAdminGate("");

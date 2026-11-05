@@ -11,7 +11,8 @@
    arriba: el servidor responde.
    ========================================================= */
 const crypto = require("crypto");
-const { BRAND, SITE_URL, SUPABASE_URL, SUPABASE_PUBLIC_KEY, reply, esc, stamp, canSendMail, sendMail, canUseDb, db, brandEmail } = require("./_lib");
+const { BRAND, SITE_URL, reply, esc, stamp, canSendMail, sendMail, canUseDb, db, sessionIsAdmin, brandEmail } = require("./_lib");
+const { pushAll } = require("./_push");
 
 const CHECK_TIMEOUT_MS = 8000;
 const FAILS_TO_ALERT = 2;
@@ -21,17 +22,6 @@ function secretOk(req) {
   const got = String(req.headers["x-monitor-secret"] || "");
   if (!want || want.length !== got.length) return false;
   return crypto.timingSafeEqual(Buffer.from(want), Buffer.from(got));
-}
-
-async function sessionIsAdmin(req) {
-  const auth = String(req.headers.authorization || "");
-  if (!auth.startsWith("Bearer ")) return false;
-  const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/is_site_admin", {
-    method: "POST",
-    headers: { apikey: SUPABASE_PUBLIC_KEY, Authorization: auth, "Content-Type": "application/json" },
-    body: "{}",
-  });
-  return r.ok && (await r.json()) === true;
 }
 
 async function probe(url) {
@@ -64,7 +54,7 @@ function duration(fromIso, to) {
 
 function alertMail(site, kind, now, detail, downFor) {
   const down = kind === "down";
-  const siteLink = '<a href="' + esc(site.url) + '" style="color:#0b4f8a;">' + esc(site.url) + "</a>";
+  const siteLink = '<a href="' + esc(site.url) + '" style="color:#ff9a9a;">' + esc(site.url) + "</a>";
   const rows = [["Web", siteLink], ["Cuándo", esc(stamp(now)) + " (hora de Colombia)"]];
   if (down) rows.push(["Problema", esc(detail)]);
   else rows.push(["Estuvo caída", esc(downFor)]);
@@ -73,7 +63,7 @@ function alertMail(site, kind, now, detail, downFor) {
     subject: (down ? "[CAÍDA] " : "[RESUELTO] ") + site.name,
     html: brandEmail({
       tag: down ? "Web caída" : "Web arriba",
-      accent: down ? "#b91c1c" : "#15803d",
+      accent: down ? "#fa4040" : "#6fdc6f",
       title,
       lead: down ? "Falló en dos revisiones seguidas." : "Ya responde con normalidad.",
       rows,
@@ -117,6 +107,12 @@ async function checkSite(site, now) {
       console.error("Aviso del monitor sin enviar:", e.message);
     }
   }
+  await pushAll({
+    title: event === "down" ? site.name + " está caída" : site.name + " volvió",
+    body: event === "down" ? detail : "Estuvo caída " + downFor,
+    url: "/admin.html#sitios",
+    tag: "sitio-" + site.id,
+  });
   return { name: site.name, status: patch.status, event };
 }
 

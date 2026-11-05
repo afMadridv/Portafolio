@@ -11,6 +11,8 @@
                           Vercel: se salta las reglas RLS. Sirve para
                           guardar mensajes y revisar las webs.
      MONITOR_SECRET       contraseña larga del monitor (la usa el cron)
+     VAPID_PUBLIC_KEY     avisos push: ver api/_push.js
+     VAPID_PRIVATE_KEY    avisos push. SOLO aquí, en Vercel
    ========================================================= */
 const BRAND = "AM Developer";
 const SITE_URL = "https://andresmadrid.vercel.app";
@@ -87,7 +89,7 @@ async function db(path, opts) {
     headers: {
       apikey: process.env.SUPABASE_SECRET_KEY,
       "Content-Type": "application/json",
-      Prefer: "return=minimal",
+      Prefer: o.prefer || "return=minimal",
     },
     body: o.body ? JSON.stringify(o.body) : undefined,
   });
@@ -96,60 +98,80 @@ async function db(path, opts) {
   return txt ? JSON.parse(txt) : null;
 }
 
+/* ¿La petición trae la sesión del admin del panel? */
+async function sessionIsAdmin(req) {
+  const auth = String(req.headers.authorization || "");
+  if (!auth.startsWith("Bearer ")) return false;
+  const r = await fetch(SUPABASE_URL + "/rest/v1/rpc/is_site_admin", {
+    method: "POST",
+    headers: { apikey: SUPABASE_PUBLIC_KEY, Authorization: auth, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  return r.ok && (await r.json()) === true;
+}
+
 /* ---------- Plantilla de correo de la marca ----------
-   Tablas y estilos en línea: es lo único que respetan Gmail,
-   Outlook y el correo del móvil. */
+   Tablas y estilos en línea: es lo único que respetan Gmail, Outlook
+   y el correo del móvil. Ningún correo aplica desenfoque, así que el
+   vidrio se logra con paneles translúcidos sobre negro, como el
+   escritorio del portafolio. Cada color translúcido va después de uno sólido: quien
+   no entiende rgba (Outlook de escritorio) se queda con el sólido.
+   El logo es PNG porque Gmail no muestra SVG. */
 const F = "'Segoe UI',Tahoma,Verdana,Arial,sans-serif";
+const EMAIL_LINE = "1px solid #2a2a2a;border-color:rgba(255,255,255,.14)";
 
 /* opts = { tag, accent, title, lead, rows: [[label, htmlValue]], body (html),
             bodyTitle, actions: [[href, label, primary]], foot, preview } */
 function brandEmail(opts) {
-  const accent = opts.accent || "#0b4f8a";
+  const accent = opts.accent || "#fa4040";
   const rows = (opts.rows || [])
-    .map(
-      ([label, value], i) =>
-        '<tr><td valign="top" style="padding:9px 14px 9px 0;width:112px;font:12px ' + F + ';color:#6b7280;' +
-        (i ? "border-top:1px solid #eef0f3;" : "") + '">' + esc(label) + "</td>" +
-        '<td style="padding:9px 0;font:14px ' + F + ";color:#111827;word-break:break-word;" +
-        (i ? "border-top:1px solid #eef0f3;" : "") + '">' + value + "</td></tr>"
-    )
+    .map(([label, value], i) => {
+      const top = i ? "border-top:" + EMAIL_LINE + ";" : "";
+      return (
+        '<tr><td valign="top" style="padding:9px 14px 9px 0;width:112px;font:12px ' + F + ";color:#bcaeaf;" + top + '">' + esc(label) + "</td>" +
+        '<td style="padding:9px 0;font:14px ' + F + ";color:#f6f0f0;word-break:break-word;" + top + '">' + value + "</td></tr>"
+      );
+    })
     .join("");
   const actions = (opts.actions || [])
     .map(
       ([href, label, primary]) =>
-        '<a href="' + esc(href) + '" style="display:inline-block;margin:0 8px 8px 0;padding:11px 20px;border-radius:8px;font:600 14px ' + F + ";text-decoration:none;" +
-        (primary ? "background:" + accent + ";color:#ffffff;" : "background:#ffffff;color:#111827;border:1px solid #d1d5db;") + '">' + esc(label) + "</a>"
+        '<a href="' + esc(href) + '" style="display:inline-block;margin:0 8px 8px 0;padding:11px 20px;border-radius:10px;font:600 14px ' + F + ";text-decoration:none;color:#ffffff;" +
+        (primary
+          ? "background-color:#b92b2b;background-image:linear-gradient(90deg,#7a0f0f,#d63a3a);border:1px solid #d63a3a;"
+          : "background-color:#222222;background-color:rgba(255,255,255,.1);border:" + "1px solid #444444;border-color:rgba(255,255,255,.28);") +
+        '">' + esc(label) + "</a>"
     )
     .join("");
   return `<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(opts.title)}</title></head>
-<body style="margin:0;padding:0;background:#f3f4f6;">
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"><title>${esc(opts.title)}</title></head>
+<body style="margin:0;padding:0;background-color:#000000;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${esc(opts.preview || opts.lead || "")}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3f4f6;"><tr><td align="center" style="padding:28px 12px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
-<tr><td style="padding:16px 26px;background:#111827;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#000000" style="background-color:#000000;"><tr><td align="center" style="padding:30px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#141414" style="max-width:600px;background-color:#141414;background-color:rgba(255,255,255,.07);border:1px solid #333333;border-color:rgba(255,255,255,.2);border-radius:18px;overflow:hidden;">
+<tr><td style="padding:16px 26px;background-color:#0d0d0d;background-color:rgba(0,0,0,.28);border-bottom:${EMAIL_LINE};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td style="font:700 15px ${F};letter-spacing:.2px;color:#ffffff;">${esc(BRAND)}</td>
-<td align="right"><span style="display:inline-block;padding:4px 11px;border-radius:999px;background:${accent};font:600 12px ${F};color:#ffffff;">${esc(opts.tag)}</span></td>
+<td width="44" valign="middle" style="width:44px;"><img src="${SITE_URL}/amd.png" width="32" height="32" alt="AMD" style="display:block;width:32px;height:32px;border:0;color:#ffffff;font:700 12px ${F};"></td>
+<td valign="middle" style="font:700 15px ${F};letter-spacing:.2px;color:#ffffff;">${esc(BRAND)}</td>
+<td align="right" valign="middle"><span style="display:inline-block;padding:4px 11px;border-radius:999px;background-color:${accent};font:700 12px ${F};color:#000000;">${esc(opts.tag)}</span></td>
 </tr></table></td></tr>
-<tr><td style="height:4px;background:${accent};font-size:0;line-height:0;">&nbsp;</td></tr>
 <tr><td style="padding:26px 26px 6px;">
-<div style="font:700 21px/1.3 ${F};color:#111827;">${esc(opts.title)}</div>
-${opts.lead ? `<div style="padding-top:6px;font:14px/1.55 ${F};color:#4b5563;">${esc(opts.lead)}</div>` : ""}
+<div style="font:700 22px/1.3 ${F};color:#ffffff;">${esc(opts.title)}</div>
+${opts.lead ? `<div style="padding-top:6px;font:14px/1.55 ${F};color:#d8cbcc;">${esc(opts.lead)}</div>` : ""}
 </td></tr>
 ${rows ? `<tr><td style="padding:14px 26px 4px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${rows}</table></td></tr>` : ""}
 ${opts.body ? `<tr><td style="padding:14px 26px 6px;">
-${opts.bodyTitle ? `<div style="padding-bottom:7px;font:600 12px ${F};color:#6b7280;">${esc(opts.bodyTitle)}</div>` : ""}
-<div style="padding:16px 18px;background:#f9fafb;border-left:3px solid ${accent};border-radius:0 8px 8px 0;font:15px/1.65 ${F};color:#111827;word-break:break-word;">${opts.body}</div>
+${opts.bodyTitle ? `<div style="padding-bottom:7px;font:600 12px ${F};color:#bcaeaf;">${esc(opts.bodyTitle)}</div>` : ""}
+<div style="padding:16px 18px;background-color:#0d0d0d;background-color:rgba(0,0,0,.3);border-left:3px solid ${accent};border-radius:0 10px 10px 0;font:15px/1.65 ${F};color:#f6f0f0;word-break:break-word;">${opts.body}</div>
 </td></tr>` : ""}
 ${actions ? `<tr><td style="padding:18px 26px 12px;">${actions}</td></tr>` : ""}
-<tr><td style="padding:14px 26px 20px;border-top:1px solid #eef0f3;font:12px/1.5 ${F};color:#9ca3af;">${opts.foot || esc(BRAND)}</td></tr>
+<tr><td style="padding:14px 26px 20px;border-top:${EMAIL_LINE};font:12px/1.5 ${F};color:#a89a9b;">${opts.foot || esc(BRAND)}</td></tr>
 </table>
 </td></tr></table>
 </body></html>`;
 }
 
 module.exports = {
-  BRAND, SITE_URL, TZ, SUPABASE_URL, SUPABASE_PUBLIC_KEY,
-  reply, esc, stamp, canSendMail, sendMail, canUseDb, db, brandEmail,
+  BRAND, SITE_URL, TZ, TO, SUPABASE_URL, SUPABASE_PUBLIC_KEY,
+  reply, esc, stamp, canSendMail, sendMail, canUseDb, db, sessionIsAdmin, brandEmail,
 };

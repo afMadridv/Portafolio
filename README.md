@@ -23,6 +23,8 @@ Publicado en **https://andresmadrid.vercel.app**.
 | [`supabase/monitor-cron.sql`](supabase/monitor-cron.sql) | Cron de 5 minutos del monitor de webs |
 | [`desktop.json`](desktop.json) | Respaldo si Supabase no responde. Vacío = valores de fábrica |
 | [`og.png`](og.png) | Imagen de 1200×630 para la vista previa al compartir el enlace |
+| [`amd.svg`](amd.svg), `amd*.png` | Logo AMD en píxeles: pestaña, panel, cotización, correo (Gmail no muestra SVG) e iconos de la app |
+| [`admin.webmanifest`](admin.webmanifest), [`sw.js`](sw.js) | El panel como app en la pantalla de inicio y sus avisos push |
 | [`api/contact.js`](api/contact.js) | Recibe el formulario: lo guarda en la Bandeja y lo envía a tu correo |
 | [`api/monitor.js`](api/monitor.js) | Revisa las webs y avisa por correo si se caen o vuelven |
 | [`api/_lib.js`](api/_lib.js) | Correo (Brevo), base de datos y plantilla de correo compartidos |
@@ -395,7 +397,7 @@ escribió.
 
 | Motivo | Color | Datos extra |
 |---|---|---|
-| Cotización | Azul | — |
+| Cotización | Rojo | — |
 | Colaboración | Verde | En qué, enlace |
 | Empleo | Morado | Empresa, vacante |
 | Contacto | Gris | — |
@@ -497,6 +499,21 @@ en `index.html`:
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:
 `Ctrl+F5`, o DevTools (`Ctrl+Shift+J`) → Network → *Disable cache*.
+
+## Panel como app y avisos push
+
+El panel se instala en la pantalla de inicio (`admin.webmanifest`) y avisa con la app
+cerrada de cada mensaje del formulario y de cada web caída o recuperada (`sw.js`,
+`api/_push.js`). No usa dependencias: el cifrado y la firma salen del módulo `crypto`.
+
+Necesita en Vercel `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY`. Genera el par en tu equipo:
+
+```bash
+node -e "const c=require('crypto').createECDH('prime256v1');c.generateKeys();console.log('VAPID_PUBLIC_KEY='+c.getPublicKey('base64url'));console.log('VAPID_PRIVATE_KEY='+c.getPrivateKey('base64url'))"
+```
+
+La privada nunca va al repositorio. En iPhone y iPad los avisos solo funcionan con el
+panel añadido a la pantalla de inicio desde Safari (iOS 16.4 o superior).
 
 ## Diseño anterior
 
