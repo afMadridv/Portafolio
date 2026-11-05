@@ -12,14 +12,20 @@ Publicado en **https://andresmadrid.vercel.app**.
 
 | Archivo | Qué contiene |
 |---|---|
-| [`index.html`](index.html) | Arranque, escritorio, lanzador móvil, barra de tareas, portal y perfil en texto |
+| [`index.html`](index.html) | Arranque, escritorio, lanzador móvil, barra de tareas y perfil en texto |
+| [`admin.html`](admin.html) | Panel privado: gestor freelance, bandeja, monitor de webs y administración de la web |
+| [`admin.css`](admin.css) | Estilos del panel y de la hoja de cotización |
+| [`admin.js`](admin.js) | Administración de la web y arranque del panel |
+| [`gestor.js`](gestor.js) | Tablero, proyectos, cotizaciones, entregas, clientes, bandeja y sitios |
 | [`styles.css`](styles.css) | Los estilos (chrome biselado, ventanas, iconos, impresión del CV) |
-| [`script.js`](script.js) | La lógica (ventanas, idiomas, reloj, GitHub, portal, arranque, sonidos) |
-| [`supabase/schema.sql`](supabase/schema.sql) | Tablas, reglas de seguridad y tiempo real del servidor (Supabase) |
+| [`script.js`](script.js) | La lógica (ventanas, idiomas, reloj, GitHub, config, arranque, sonidos). También la carga el panel |
+| [`supabase/schema.sql`](supabase/schema.sql) | Tablas, reglas de seguridad y tiempo real (Supabase). Se puede volver a ejecutar |
+| [`supabase/monitor-cron.sql`](supabase/monitor-cron.sql) | Cron de 5 minutos del monitor de webs |
 | [`desktop.json`](desktop.json) | Respaldo si Supabase no responde. Vacío = valores de fábrica |
 | [`og.png`](og.png) | Imagen de 1200×630 para la vista previa al compartir el enlace |
-| [`api/contact.js`](api/contact.js) | Función de Vercel que envía el formulario de contacto a tu correo |
-| [`img/mail.png`](img/mail.png) | Icono del sobre que sale en el correo de contacto |
+| [`api/contact.js`](api/contact.js) | Recibe el formulario: lo guarda en la Bandeja y lo envía a tu correo |
+| [`api/monitor.js`](api/monitor.js) | Revisa las webs y avisa por correo si se caen o vuelven |
+| [`api/_lib.js`](api/_lib.js) | Correo (Brevo), base de datos y plantilla de correo compartidos |
 
 > Deben quedar **en la misma carpeta**. El archivo se llama `index.html` a
 > propósito: es el nombre que buscan Vercel, GitHub Pages y Netlify en la raíz.
@@ -34,8 +40,8 @@ Publicado en **https://andresmadrid.vercel.app**.
 - **Publicar:** sube los archivos a cualquier hosting estático. El envío
   directo del formulario necesita Vercel (por `api/`); en otro hosting el
   formulario usa el plan B.
-- **En local** la ruta `/api/contact` no tiene clave de Resend: el formulario
-  pasa al plan B, como debe.
+- **En local** la ruta `/api/contact` no tiene claves: el formulario pasa al
+  plan B, como debe.
 
 ## Lo que ve una visita
 
@@ -113,12 +119,37 @@ página no se imprime) y propone el nombre "CV - Andres Madrid".
 Si prefieres un PDF hecho a mano: súbelo junto a `index.html` y pon su nombre en
 la constante `CV_URL` de `script.js`. La ventana ofrecerá también descargarlo.
 
-## Portal de administración
+## Panel (admin.html)
 
-Se abre desde **Inicio → Panel de administración** y se entra con una cuenta de
-**Supabase** (correo y contraseña). Lo que publicas se guarda en Supabase y
-**llega en vivo** a todas las visitas que tengan la página abierta, sin
-recargar. Ver [Servidor (Supabase)](#servidor-supabase).
+Se abre desde **Inicio → Panel de administración**, en otra pestaña, y se entra
+con una cuenta de **Supabase**. Solo los correos de `site_admins` entran. La
+marca del panel y de los correos es **AM Developer** (constante `BRAND` en
+`api/_lib.js` y texto en `admin.html`/`gestor.js`).
+
+| Sección | Qué hace |
+|---|---|
+| **Proyectos** | Tablero Pendiente / En marcha / Terminado; se arrastran las tarjetas. Detalle con cliente, valor, fecha, entregables (el % sale solo) y pagos |
+| **Bandeja** | Lo que llega por el formulario de Contacto, sin leer primero. Responder, o crear cliente y proyecto |
+| **Presupuestos** | Cotizaciones por horas o a precio fijo, con la hoja al lado y **Guardar como PDF** |
+| **Entregas** | Fechas de proyectos y entregables, de la más cercana a la más lejana |
+| **Clientes** | Datos de cada cliente y su saldo |
+| **Sitios** | Monitor de tus webs: estado, tiempo de respuesta e historial de caídas |
+| **Formatos** | Guía de los formatos de cotización y de correo |
+| **Web del portafolio** | Lo de abajo: iconos, fondo, proyectos, habilidades y educación |
+
+**Facturado** es lo cobrado este mes (pagos registrados). **Por cobrar** es el
+saldo de lo que está en marcha o terminado. Con el panel abierto llegan avisos en
+vivo (mensajes y caídas); con **Activar avisos** también como notificación del
+navegador. Con el panel cerrado avisa el correo.
+
+### Monitor de webs
+
+`api/monitor.js` revisa las webs de **Sitios** cada 5 minutos, llamado por un cron
+de Supabase. Una web está caída si no responde en 8 s o da error 5xx **dos veces
+seguidas**; entonces llega un correo `[CAÍDA]`, y otro `[RESUELTO]` cuando vuelve
+con el tiempo que estuvo caída. **Revisar ahora** lo lanza a mano.
+
+### Web del portafolio
 
 Cinco pestañas:
 
@@ -347,40 +378,47 @@ sistema pide reducir movimiento, y también desde el portal.
 
 ## Formulario de contacto
 
-El visitante escribe, pulsa **Enviar mensaje** y el correo te llega solo: no
-sale del portafolio ni abre su correo. Mientras se envía, un sobre cruza de
-"Tú" a "Andrés" con una barra de progreso; al terminar sale **¡Mensaje
-enviado!**.
-
-Lo envía [`api/contact.js`](api/contact.js), una función de Vercel que reenvía
-el formulario con [Resend](https://resend.com). No necesita npm ni compilación:
-Vercel convierte cada archivo de `api/` en una función.
+El visitante elige un motivo (**Cotizar**, **Colaborar**, **Empleo** u **Otra cosa**),
+que pide sus datos extra, pulsa **Enviar mensaje** y no sale del portafolio.
+[`api/contact.js`](api/contact.js) lo guarda en la **Bandeja** del panel y lo envía
+a tu correo con [Brevo](https://www.brevo.com). Si el correo falla, el mensaje sigue
+en la Bandeja. Sin npm ni compilación.
 
 ### El correo que recibes
 
-Una ventana del escritorio en pequeño: barra de título roja, ficha con nombre,
-correo, asunto, fecha (hora de Colombia) e idioma del visitante, el mensaje en
-un panel hundido y los botones **Responder** y **Abrir portafolio**. Va con
-`reply_to` del visitante: pulsar *Responder* en Gmail le contesta a él.
+Formato exclusivo de la marca (`brandEmail()` en `api/_lib.js`): tarjeta blanca con
+cabecera oscura, etiqueta y color según el motivo, ficha de datos, el mensaje
+resaltado y los botones **Responder** y **Abrir bandeja**. El asunto lleva el motivo
+(`[Cotización] Tienda en línea — Laura Pérez`) y *Responder* le contesta a quien
+escribió.
 
-Está hecho con tablas y estilos en línea, lo único que respetan Gmail, Outlook y
-el correo del móvil. El icono del sobre es [`img/mail.png`](img/mail.png).
+| Motivo | Color | Datos extra |
+|---|---|---|
+| Cotización | Azul | Proyecto, presupuesto, para cuándo |
+| Colaboración | Verde | En qué, enlace |
+| Empleo | Morado | Empresa, vacante |
+| Contacto | Gris | — |
 
 ### Activarlo (una vez)
 
-1. Crea una cuenta gratis en **resend.com con el correo que recibe los
-   mensajes** (`mvandres08@gmail.com`). Sin dominio propio, Resend solo deja
-   enviar a ese correo.
-2. Resend → **API Keys** → *Create API Key*, permiso *Sending access*.
-3. vercel.com → proyecto → **Settings → Environment Variables**: añade
-   `RESEND_API_KEY` con esa clave (Production y Preview).
-4. **Deployments → Redeploy** para que la función la lea.
+En Vercel → **Settings → Environment Variables** (Production y Preview), y luego **Redeploy**:
 
-> La clave va **solo** en Vercel, nunca en `script.js` ni en el repo: es
-> pública y con ella cualquiera mandaría correos desde tu cuenta.
+| Variable | Valor |
+|---|---|
+| `BREVO_API_KEY` | Brevo → SMTP & API → API Keys |
+| `BREVO_SENDER` | Correo remitente verificado en Brevo → Senders |
+| `CONTACT_TO` | Correo que recibe (opcional) |
+| `SUPABASE_SECRET_KEY` | Supabase → Settings → API Keys → secret. Guarda mensajes y revisa webs |
+| `MONITOR_SECRET` | Contraseña larga inventada, la misma de `monitor-cron.sql` |
 
-Opcionales: `CONTACT_TO` (otro destinatario) y `CONTACT_FROM` (remitente, si
-verificas un dominio propio en Resend).
+> Estas claves van **solo** en Vercel. La secreta de Supabase se salta todas las
+> reglas: nunca en `script.js`, ni en el repo, ni en un chat.
+
+En Brevo, desactiva **Authorized IPs** si está activa: Vercel cambia de IP.
+`RESEND_API_KEY` sigue de respaldo si no hay clave de Brevo.
+
+Después pega `supabase/schema.sql` en el SQL Editor, y
+`supabase/monitor-cron.sql` con tu `MONITOR_SECRET` en lugar del marcador.
 
 ### Plan B
 
@@ -401,8 +439,8 @@ visitante, ya escrito:
   ventana y enviar: si un bot cae, recibe "ok" y no se manda nada.
 - **Mismo origen:** la función solo acepta envíos desde el propio sitio.
 - **Freno:** 5 mensajes cada 10 minutos por IP (aproximado: va en memoria).
-- **Sin cookies.** Ni el formulario ni la función guardan nada; no hace falta
-  aviso de cookies. Lo que el sitio guarda en `localStorage` (idioma, sonido,
+- **Sin cookies.** No hace falta aviso de cookies. Los mensajes quedan en la
+  Bandeja privada (solo el admin los lee). Lo que el sitio guarda en `localStorage` (idioma, sonido,
   posición de ventanas, última copia del escritorio y, solo para ti, la sesión
   del portal) es funcional, no rastreo.
 
@@ -452,8 +490,8 @@ la página pero no siempre vuelve a pedir esos archivos. Por eso llevan un `?v=`
 en `index.html`:
 
 ```html
-<link rel="stylesheet" href="styles.css?v=22" />
-<script src="script.js?v=22"></script>
+<link rel="stylesheet" href="styles.css?v=25" />
+<script src="script.js?v=25"></script>
 ```
 
 **Sube ese número** cuando cambies CSS o JS y no veas el cambio. Alternativa:

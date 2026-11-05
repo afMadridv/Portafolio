@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es" data-page="admin">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Panel · AM Developer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23FA4040'/><text x='50' y='71' font-size='62' font-weight='bold' text-anchor='middle' fill='white' font-family='monospace'>A</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- IBM Plex: la letra del panel y de la cotización -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="styles.css?v=25" />
+  <link rel="stylesheet" href="admin.css?v=25" />
+  <script src="script.js?v=25"></script>
+  <script src="gestor.js?v=25"></script>
+  <script src="admin.js?v=24"></script>
+</head>
+
+<body class="admin-page">
+  <!-- Entrada: cuenta de Supabase -->
+  <main class="gate-screen" id="admin-gate">
+    <div class="gate-win">
+      <div class="gate-head"><strong>AM Developer</strong><span data-i18n="admin.title">Panel de administración</span></div>
+      <div class="gate-body">
+        <p class="admin-hint" data-i18n="admin.gate">Entra con tu cuenta de Supabase. Lo que publiques lo ven todos al instante.</p>
+        <div class="field">
+          <label for="admin-email" data-i18n="admin.email">Correo</label>
+          <input class="input" id="admin-email" type="email" autocomplete="username" />
+        </div>
+        <div class="field">
+          <label for="admin-pass" data-i18n="admin.pass">Contraseña</label>
+          <input class="input" id="admin-pass" type="password" autocomplete="current-password" />
+        </div>
+        <p class="admin-error" id="admin-error"></p>
+        <button type="button" class="btn" id="admin-submit" data-i18n="admin.enter">Entrar</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Panel: gestor freelance + administración de la web -->
+  <div class="shell" id="app-shell" hidden>
+    <aside class="side" aria-label="Secciones">
+      <p class="side-brand">AM Developer</p>
+      <p class="side-sub">Gestor de proyectos</p>
+      <nav class="side-nav" id="side-nav">
+        <button type="button" class="side-link is-active" data-view="proyectos"><span>Proyectos</span><b id="count-proyectos"></b></button>
+        <button type="button" class="side-link" data-view="bandeja"><span>Bandeja</span><b id="count-bandeja"></b></button>
+        <button type="button" class="side-link" data-view="presupuestos"><span>Presupuestos</span><b id="count-presupuestos"></b></button>
+        <button type="button" class="side-link" data-view="entregas"><span>Entregas</span><b id="count-entregas"></b></button>
+        <button type="button" class="side-link" data-view="clientes"><span>Clientes</span><b id="count-clientes"></b></button>
+        <button type="button" class="side-link" data-view="sitios"><span>Sitios</span><b id="count-sitios"></b></button>
+        <button type="button" class="side-link" data-view="formatos"><span>Formatos</span></button>
+        <button type="button" class="side-link" data-view="web"><span>Web del portafolio</span></button>
+      </nav>
+      <div class="side-money">
+        <p class="side-month" id="side-month"></p>
+        <div class="money-row"><span>Facturado</span><strong id="money-billed">—</strong></div>
+        <div class="money-row"><span>Por cobrar</span><strong id="money-due">—</strong></div>
+      </div>
+      <div class="side-foot">
+        <button type="button" class="btn" id="notify-btn">Activar avisos</button>
+        <a class="btn" href="index.html" target="_blank" rel="noopener">Ver portafolio</a>
+        <button type="button" class="btn" id="shell-logout">Salir</button>
+      </div>
+    </aside>
+
+    <main class="shell-main">
+      <p class="gestor-warn" id="gestor-warn" hidden></p>
+      <button type="button" class="down-banner" id="down-banner" hidden></button>
+      <section class="view" id="view-proyectos"></section>
+      <section class="view" id="view-bandeja" hidden></section>
+      <section class="view" id="view-presupuestos" hidden></section>
+      <section class="view" id="view-entregas" hidden></section>
+      <section class="view" id="view-clientes" hidden></section>
+      <section class="view" id="view-sitios" hidden></section>
+      <section class="view" id="view-formatos" hidden></section>
+      <section class="view view-web" id="view-web" hidden>
+        <h1 class="view-title">Web del portafolio</h1>
+        <div id="admin-panel-body">
+          <div class="admin-legacy" id="admin-legacy" hidden>
+            <p data-i18n="admin.legacy">Este navegador tiene un escritorio guardado de antes, que solo veías tú.</p>
+            <button type="button" class="btn" id="legacy-load" data-i18n="admin.legacy.load">Cargarlo</button>
+            <button type="button" class="btn" id="legacy-drop" data-i18n="admin.legacy.drop">Descartar</button>
+          </div>
+          <div class="tabs" id="admin-tabs">
+            <button type="button" class="tab is-active" data-tab="items" data-i18n="admin.tab.items">Iconos</button>
+            <button type="button" class="tab" data-tab="look" data-i18n="admin.tab.look">Fondo</button>
+            <button type="button" class="tab" data-tab="repos" data-i18n="admin.tab.repos">Proyectos</button>
+            <button type="button" class="tab" data-tab="skills" data-i18n="admin.tab.skills">Habilidades</button>
+            <button type="button" class="tab" data-tab="edu" data-i18n="admin.tab.edu">Educación</button>
+          </div>
+
+          <!-- Iconos, carpetas y archivos -->
+          <section class="tab-panel" id="tab-items">
+            <p class="admin-hint" data-i18n="admin.items.hint">
+              Ordena con ▲ y ▼. Los elementos con carpeta padre salen dentro de esa
+              carpeta, no en el escritorio.
+            </p>
+            <div class="admin-list" id="admin-items"></div>
+            <button type="button" class="btn" id="item-add" data-i18n="admin.items.add">+ Nuevo elemento</button>
+
+            <form class="item-form" id="item-form" hidden>
+              <div class="form-grid">
+                <div class="field">
+                  <label for="f-name-es" data-i18n="admin.f.name.es">Nombre (español)</label>
+                  <input class="input" id="f-name-es" required />
+                </div>
+                <div class="field">
+                  <label for="f-name-en" data-i18n="admin.f.name.en">Nombre (inglés)</label>
+                  <input class="input" id="f-name-en" />
+                </div>
+                <div class="field">
+                  <label for="f-type" data-i18n="admin.f.type">Tipo</label>
+                  <select class="input" id="f-type">
+                    <option value="txt">Archivo de texto (.txt)</option>
+                    <option value="folder">Carpeta</option>
+                    <option value="link">Enlace externo</option>
+                    <option value="app">Ventana especial</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="f-icon" data-i18n="admin.f.icon">Icono</label>
+                  <select class="input" id="f-icon"></select>
+                </div>
+                <div class="field">
+                  <label for="f-parent" data-i18n="admin.f.parent">Dentro de</label>
+                  <select class="input" id="f-parent"></select>
+                </div>
+                <div class="field" id="field-app">
+                  <label for="f-app" data-i18n="admin.f.app">Contenido especial</label>
+                  <select class="input" id="f-app">
+                    <option value="projects">Proyectos de GitHub</option>
+                    <option value="skills">Habilidades</option>
+                    <option value="education">Educación</option>
+                    <option value="contact">Contacto</option>
+                    <option value="social">Redes</option>
+                    <option value="cv">Currículum</option>
+                    <option value="mypc">Mi PC</option>
+                    <option value="trash">Papelera</option>
+                  </select>
+                </div>
+                <div class="field" id="field-url">
+                  <label for="f-url" data-i18n="admin.f.url">Dirección (URL)</label>
+                  <input class="input" id="f-url" type="url" placeholder="https://…" />
+                </div>
+              </div>
+
+              <div class="field" id="field-text-es">
+                <label for="f-text-es" data-i18n="admin.f.text.es">Texto (español)</label>
+                <textarea class="input" id="f-text-es" rows="5"></textarea>
+              </div>
+              <div class="field" id="field-text-en">
+                <label for="f-text-en" data-i18n="admin.f.text.en">Texto (inglés)</label>
+                <textarea class="input" id="f-text-en" rows="5"></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary" data-i18n="admin.f.save">Guardar elemento</button>
+                <button type="button" class="btn" id="item-cancel" data-i18n="admin.f.cancel">Cancelar</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Fondo del escritorio -->
+          <section class="tab-panel" id="tab-look" hidden>
+            <div class="field">
+              <label for="wp-type" data-i18n="admin.wp.type">Tipo de fondo</label>
+              <select class="input" id="wp-type">
+                <option value="color">Color liso</option>
+                <option value="gradient">Degradado</option>
+                <option value="image">Imagen (URL)</option>
+              </select>
+            </div>
+            <div class="field" id="wp-field-color">
+              <label for="wp-color" data-i18n="admin.wp.color">Color</label>
+              <input class="input color" id="wp-color" type="color" value="#000000" />
+            </div>
+            <div class="field" id="wp-field-color2" hidden>
+              <label for="wp-color2" data-i18n="admin.wp.color2">Segundo color</label>
+              <input class="input color" id="wp-color2" type="color" value="#2a0d0d" />
+            </div>
+            <div class="field" id="wp-field-url" hidden>
+              <label for="wp-url" data-i18n="admin.wp.url">Dirección de la imagen</label>
+              <input class="input" id="wp-url" type="url" placeholder="https://…" />
+            </div>
+            <label class="check">
+              <input type="checkbox" id="wp-fx" />
+              <span data-i18n="admin.wp.fx">Mostrar el caza TIE y la Estrella de la Muerte</span>
+            </label>
+            <p class="admin-hint" data-i18n="admin.wp.hint">
+              Pulsa Publicar abajo: el fondo cambia en el portafolio al instante, para todos.
+            </p>
+          </section>
+
+          <!-- Qué repos se publican -->
+          <section class="tab-panel" id="tab-repos" hidden>
+            <p class="admin-hint" data-i18n="admin.repos.hint">
+              Marca los repos que quieres mostrar en Proyectos (sin nada marcado,
+              salen todos). Para anclar un video, pega su enlace de YouTube, Vimeo
+              o un .mp4 bajo el repo.
+            </p>
+            <div class="admin-list" id="admin-repos"></div>
+          </section>
+
+          <!-- Habilidades: grupos con sus tecnologías -->
+          <section class="tab-panel" id="tab-skills" hidden>
+            <p class="admin-hint" data-i18n="admin.sk.hint">
+              Cada grupo sale como un bloque en la ventana Habilidades, en el CV y en el
+              arranque. Las tecnologías van separadas por coma.
+            </p>
+            <div id="admin-skills"></div>
+            <button type="button" class="btn" id="skill-add" data-i18n="admin.sk.add">+ Grupo</button>
+          </section>
+
+          <!-- Educación: un bloque por estudio -->
+          <section class="tab-panel" id="tab-edu" hidden>
+            <p class="admin-hint" data-i18n="admin.ed.hint">
+              Cada estudio sale como una fila en la ventana Educación y en el CV.
+            </p>
+            <div id="admin-edu"></div>
+            <button type="button" class="btn" id="edu-add" data-i18n="admin.ed.add">+ Estudio</button>
+          </section>
+
+          <div class="admin-foot">
+            <span class="admin-count" id="admin-count"></span>
+            <button type="button" class="btn" id="admin-logout" data-i18n="admin.logout">Cerrar sesión</button>
+            <button type="button" class="btn" id="admin-reset" data-i18n="admin.reset">Restablecer</button>
+            <button type="button" class="btn" id="admin-export" data-i18n="admin.export">Copia (desktop.json)</button>
+            <button type="button" class="btn btn-primary" id="admin-save" data-i18n="admin.save">Publicar</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Detalle a la derecha: proyecto o cliente -->
+    <aside class="drawer" id="drawer" hidden aria-label="Detalle"></aside>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <!-- Hoja de cotización para imprimir o guardar como PDF -->
+  <div class="quote-print" id="quote-print" aria-hidden="true"></div>
+</body>
+</html>

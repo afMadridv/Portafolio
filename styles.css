@@ -107,7 +107,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border: 2px solid #3a3a3a;
   box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #000, 6px 6px 0 rgba(0, 0, 0, 0.6);
 }
-.hello-kicker { margin: 0 0 0.5rem; font-size: 0.72rem; color: #6fdc6f; }
+.hello-kicker { margin: 0 0 0.5rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6fdc6f; }
 .hello-name {
   margin: 0;
   font: 400 1.35rem/1.2 var(--font-display);

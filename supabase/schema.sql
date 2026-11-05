@@ -160,3 +160,172 @@ drop policy if exists "project-videos admin borra" on storage.objects;
 create policy "project-videos admin borra" on storage.objects
   for delete to authenticated
   using (bucket_id = 'project-videos' and public.is_site_admin());
+
+-- ---------- Gestor de proyectos freelance (admin.html) ----------
+-- Datos privados de clientes: solo el admin lee y escribe. Anónimo, nada.
+create table if not exists public.fl_clients (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  contact     text,
+  email       text,
+  phone       text,
+  tax_id      text,
+  city        text,
+  notes       text,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.fl_projects (
+  id          uuid primary key default gen_random_uuid(),
+  client_id   uuid references public.fl_clients(id) on delete set null,
+  title       text not null,
+  status      text not null default 'pendiente' check (status in ('pendiente','en_marcha','terminado')),
+  label       text,
+  amount      numeric(14,2) not null default 0 check (amount >= 0),
+  due_date    date,
+  notes       text,
+  position    integer not null default 0,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create table if not exists public.fl_tasks (
+  id          uuid primary key default gen_random_uuid(),
+  project_id  uuid not null references public.fl_projects(id) on delete cascade,
+  title       text not null,
+  done        boolean not null default false,
+  due_date    date,
+  position    integer not null default 0,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.fl_payments (
+  id          uuid primary key default gen_random_uuid(),
+  project_id  uuid not null references public.fl_projects(id) on delete cascade,
+  amount      numeric(14,2) not null check (amount > 0),
+  paid_on     date not null default current_date,
+  note        text,
+  created_at  timestamptz not null default now()
+);
+
+create table if not exists public.fl_quotes (
+  id          uuid primary key default gen_random_uuid(),
+  number      text not null unique,
+  kind        text not null default 'horas' check (kind in ('horas','fijo')),
+  status      text not null default 'borrador' check (status in ('borrador','enviada','aceptada','rechazada')),
+  client_id   uuid references public.fl_clients(id) on delete set null,
+  project_id  uuid references public.fl_projects(id) on delete set null,
+  issue_date  date not null default current_date,
+  subject     text,
+  content     jsonb not null default '{}'::jsonb check (jsonb_typeof(content) = 'object'),
+  total       numeric(14,2) not null default 0 check (total >= 0),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+create index if not exists fl_projects_client_idx on public.fl_projects(client_id);
+create index if not exists fl_tasks_project_idx on public.fl_tasks(project_id);
+create index if not exists fl_payments_project_idx on public.fl_payments(project_id);
+create index if not exists fl_quotes_client_idx on public.fl_quotes(client_id);
+create index if not exists fl_quotes_project_idx on public.fl_quotes(project_id);
+
+create or replace function public.fl_touch()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists fl_projects_touch on public.fl_projects;
+create trigger fl_projects_touch before update on public.fl_projects
+  for each row execute function public.fl_touch();
+drop trigger if exists fl_quotes_touch on public.fl_quotes;
+create trigger fl_quotes_touch before update on public.fl_quotes
+  for each row execute function public.fl_touch();
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['fl_clients','fl_projects','fl_tasks','fl_payments','fl_quotes'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('revoke all on public.%I from anon', t);
+    execute format('revoke truncate, references, trigger on public.%I from authenticated', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    execute format('drop policy if exists "%s solo admin" on public.%I', t, t);
+    execute format(
+      'create policy "%s solo admin" on public.%I for all to authenticated using (public.is_site_admin()) with check (public.is_site_admin())',
+      t, t
+    );
+  end loop;
+end;
+$$;
+
+-- ---------- Monitor de webs y Bandeja de mensajes (admin.html) ----------
+-- Las funciones de /api escriben con la clave secreta; el panel lee con
+-- la sesión del admin. Anónimo, nada.
+create table if not exists public.fl_sites (
+  id               uuid primary key default gen_random_uuid(),
+  name             text not null,
+  url              text not null check (url ~* '^https?://'),
+  active           boolean not null default true,
+  status           text not null default 'unknown' check (status in ('unknown','up','down')),
+  fail_count       integer not null default 0,
+  last_checked_at  timestamptz,
+  last_change_at   timestamptz,
+  last_ms          integer,
+  last_http        integer,
+  last_error       text,
+  created_at       timestamptz not null default now()
+);
+
+create table if not exists public.fl_site_events (
+  id        uuid primary key default gen_random_uuid(),
+  site_id   uuid not null references public.fl_sites(id) on delete cascade,
+  kind      text not null check (kind in ('down','up')),
+  at        timestamptz not null default now(),
+  detail    text
+);
+create index if not exists fl_site_events_site_idx on public.fl_site_events(site_id, at desc);
+
+create table if not exists public.fl_messages (
+  id          uuid primary key default gen_random_uuid(),
+  motive      text not null default 'otro',
+  name        text not null,
+  email       text not null,
+  subject     text not null,
+  message     text not null,
+  extra       jsonb not null default '{}'::jsonb,
+  lang        text not null default 'es',
+  read        boolean not null default false,
+  created_at  timestamptz not null default now()
+);
+create index if not exists fl_messages_created_idx on public.fl_messages(created_at desc);
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['fl_sites','fl_site_events','fl_messages'] loop
+    execute format('alter table public.%I enable row level security', t);
+    execute format('revoke all on public.%I from anon', t);
+    execute format('revoke truncate, references, trigger on public.%I from authenticated', t);
+    execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+    execute format('drop policy if exists "%s solo admin" on public.%I', t, t);
+    execute format(
+      'create policy "%s solo admin" on public.%I for all to authenticated using (public.is_site_admin()) with check (public.is_site_admin())',
+      t, t
+    );
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end;
+$$;
