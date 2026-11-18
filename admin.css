@@ -194,6 +194,7 @@ body.admin-page {
 .gestor-warn { margin: 0 0 0.9rem; padding: 0.6rem 0.8rem; font-size: 0.84rem; background: var(--p-amber-soft); color: var(--p-amber); border: 1px solid rgba(245, 196, 107, 0.3); border-radius: 10px; }
 .gestor-warn.is-bad { background: var(--p-red-soft); color: var(--p-red); border-color: rgba(255, 138, 138, 0.35); font-weight: 600; }
 .down-banner { display: block; width: 100%; margin: 0 0 0.9rem; padding: 0.6rem 0.8rem; background: rgba(185, 28, 28, 0.82); border: 1px solid rgba(255, 138, 138, 0.5); border-radius: 10px; color: #fff; font: 600 0.86rem inherit; font-family: inherit; text-align: left; cursor: pointer; }
+.pay-banner { background: rgba(138, 90, 0, 0.55); border-color: rgba(245, 196, 107, 0.55); color: #ffe2a8; }
 .alert-week { margin: 0 0 0.9rem; padding: 0.55rem 0.8rem; font-size: 0.84rem; font-weight: 500; background: var(--p-amber-soft); color: var(--p-amber); border: 1px solid rgba(245, 196, 107, 0.3); border-radius: 10px; }
 
 /* ----- Tablero ----- */

@@ -218,6 +218,23 @@ function paintSide() {
   countLic.textContent = licAlert || "";
   countLic.classList.toggle("is-alert", licAlert > 0);
 
+  // Aviso de cobro: vencidas o que vencen en 5 días. Bloquear es decisión tuya.
+  const toCharge = G.licenses
+    .filter((l) => l.status === "activa" && !l.blocked)
+    .map((l) => [l, maintState(l)])
+    .filter(([l, m]) => m.cls === "is-hot" || (m.cls === "is-warn" && m.days != null && m.days <= 5));
+  const payBanner = document.getElementById("pay-banner");
+  payBanner.hidden = !toCharge.length;
+  if (toCharge.length) {
+    const late = toCharge.filter(([, m]) => m.cls === "is-hot").length;
+    const names = toCharge.map(([l]) => clientName(l.client_id));
+    payBanner.textContent =
+      (late ? late + (late === 1 ? " vencida" : " vencidas") : "") +
+      (late && toCharge.length > late ? " y " : "") +
+      (toCharge.length > late ? toCharge.length - late + " por vencer" : "") +
+      ": " + names.slice(0, 3).join(", ") + (names.length > 3 ? " y " + (names.length - 3) + " más" : "") + " · cobrar";
+  }
+
   // Facturado = lo cobrado este mes, en proyectos y licencias.
   // Por cobrar = saldo de proyectos en marcha o terminados + lo vencido de licencias.
   const month = todayStr().slice(0, 7);
@@ -3222,6 +3239,10 @@ function labelTables() {
 
 function initShell() {
   document.getElementById("down-banner").addEventListener("click", () => showView("sitios"));
+  document.getElementById("pay-banner").addEventListener("click", () => {
+    G.licFilter = "";
+    goToView("licencias");
+  });
   document.getElementById("side-nav").addEventListener("click", (e) => {
     const b = e.target.closest(".side-link");
     if (b) goToView(b.dataset.view);
