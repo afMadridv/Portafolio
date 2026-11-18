@@ -14,10 +14,10 @@ self.addEventListener("push", (e) => {
   } catch (err) {}
   const jobs = [
     // Siempre se muestra: iOS retira el permiso a los push silenciosos
-    self.registration.showNotification(d.title || "AM Developer", {
+    self.registration.showNotification(d.title || "Madrixdev", {
       body: d.body || "",
-      icon: "/amd.png",
-      badge: "/amd-badge.png",
+      icon: "/mdx.png",
+      badge: "/mdx-badge.png",
       tag: d.tag || undefined,
       renotify: !!d.tag,
       data: { url: d.url || "/admin.html" },

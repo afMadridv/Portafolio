@@ -191,7 +191,7 @@ function paintSide() {
   const countSites = document.getElementById("count-sitios");
   countSites.textContent = down.length || "";
   countSites.classList.toggle("is-alert", down.length > 0);
-  document.title = (unread + down.length ? "(" + (unread + down.length) + ") " : "") + "Panel · AM Developer";
+  document.title = (unread + down.length ? "(" + (unread + down.length) + ") " : "") + "Panel · Madrixdev";
   // Globo sobre el icono de la app
   try {
     const pending = unread + dueCount + down.length;
@@ -883,8 +883,8 @@ function buildQuoteSheet(q, root) {
   const brand = el("div", "qs-brand");
   const logo = document.createElement("img");
   logo.className = "qs-logo";
-  logo.src = "amd.svg";
-  logo.alt = "AMD";
+  logo.src = "mdx.svg";
+  logo.alt = "MDX";
   brand.appendChild(logo);
   const who = el("div");
   who.appendChild(el("h1", "qs-name", "Andrés Madrid"));
@@ -2218,7 +2218,7 @@ function reminderHref(l, client) {
   else if (m.cls === "is-warn" && l.maint_until) lines.push("- " + what + ": vence el " + longDate(l.maint_until) + ". Valor: " + money(l.maint_fee));
   if (sup) lines.push("- Soporte y arreglos: " + money(sup));
   const total = licenseDue(l) || (m.cls === "is-warn" ? Number(l.maint_fee) || 0 : 0);
-  lines.push("", "Total: " + money(total), "", "Quedo atento a cualquier duda.", "", "Andrés Madrid · AM Developer");
+  lines.push("", "Total: " + money(total), "", "Quedo atento a cualquier duda.", "", "Andrés Madrid · Madrixdev");
   return "mailto:" + client.email + "?subject=" + encodeURIComponent((l.product || "Licencia") + " · " + client.name + " · estado de pagos") + "&body=" + encodeURIComponent(lines.join("\n"));
 }
 
@@ -2340,7 +2340,7 @@ const PORTAL_BLOCKED_ROLES = ["monitor", "admin"];
 const PORTAL_WARN_ONLY = ["admin_am"];
 
 function portalSnippet(l) {
-  return `// Suscripción de Legajo · AM Developer
+  return `// Suscripción de Legajo · Madrixdev
 // Pega esto una vez en el portal y llama, después de iniciar sesión:
 //   amRevisarSuscripcion({ rol: usuario.rol, usuario: usuario.nombre });
 // y al cerrar sesión: amRevisarSuscripcion(null);
@@ -2943,7 +2943,7 @@ function toast(text, kind) {
   try {
     // Con push activo el aviso ya llega por el servicio: no se repite
     if (!G.pushOn && G.swReg && window.Notification && Notification.permission === "granted" && document.visibilityState !== "visible") {
-      G.swReg.showNotification("AM Developer", { body: text, icon: "amd.png", badge: "amd-badge.png" }).catch(() => {});
+      G.swReg.showNotification("Madrixdev", { body: text, icon: "mdx.png", badge: "mdx-badge.png" }).catch(() => {});
     }
   } catch (e) {}
 }

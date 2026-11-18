@@ -669,7 +669,7 @@ function initAdmin() {
    Arranque de la página
    --------------------------------------------------------- */
 function onAdminLang() {
-  document.title = "Panel · AM Developer";
+  document.title = "Panel · Madrixdev";
 }
 
 function adminWebRefresh() {

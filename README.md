@@ -23,7 +23,7 @@ Publicado en **https://andresmadrid.vercel.app**.
 | [`supabase/monitor-cron.sql`](supabase/monitor-cron.sql) | Cron de 5 minutos del monitor de webs |
 | [`desktop.json`](desktop.json) | Respaldo si Supabase no responde. Vacío = valores de fábrica |
 | [`og.png`](og.png) | Imagen de 1200×630 para la vista previa al compartir el enlace |
-| [`amd.svg`](amd.svg), `amd*.png` | Logo AMD en píxeles: pestaña, panel, cotización, correo (Gmail no muestra SVG) e iconos de la app |
+| [`mdx.svg`](mdx.svg), `mdx*.png` | Logo MDX en píxeles: pestaña, panel, cotización, correo (Gmail no muestra SVG) e iconos de la app |
 | [`admin.webmanifest`](admin.webmanifest), [`sw.js`](sw.js) | El panel como app en la pantalla de inicio y sus avisos push |
 | [`api/contact.js`](api/contact.js) | Recibe el formulario: lo guarda en la Bandeja y lo envía a tu correo |
 | [`api/monitor.js`](api/monitor.js) | Revisa las webs y avisa por correo si se caen o vuelven |
@@ -125,7 +125,7 @@ la constante `CV_URL` de `script.js`. La ventana ofrecerá también descargarlo.
 
 Se abre desde **Inicio → Panel de administración**, en otra pestaña, y se entra
 con una cuenta de **Supabase**. Solo los correos de `site_admins` entran. La
-marca del panel y de los correos es **AM Developer** (constante `BRAND` en
+marca del panel y de los correos es **Madrixdev** (constante `BRAND` en
 `api/_lib.js` y texto en `admin.html`/`gestor.js`).
 
 | Sección | Qué hace |

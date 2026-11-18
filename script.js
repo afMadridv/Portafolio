@@ -2173,7 +2173,7 @@ const I18N = {
     "ui.linkedin": "Open my LinkedIn profile",
     "ui.contact": "Write to me",
     "ui.contactBtn": "Contact",
-    "hello.kicker": "AM Developer",
+    "hello.kicker": "Madrixdev",
     "hello.role": "Full-Stack Software Developer · Colombia",
     "hello.pitch": "Secure web and desktop systems, with well-modeled databases and automated processes.",
     "hello.projects": "View projects",

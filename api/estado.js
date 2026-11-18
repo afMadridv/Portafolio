@@ -12,7 +12,7 @@
 const { canUseDb, db } = require("./_lib");
 
 const KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const DEFAULT_NOTE = "La suscripción de Legajo tiene un pago pendiente. Comunícate con AM Developer para reactivar el acceso.";
+const DEFAULT_NOTE = "La suscripción de Legajo tiene un pago pendiente. Comunícate con Madrixdev para reactivar el acceso.";
 
 function send(res, status, data, cache) {
   res.statusCode = status;

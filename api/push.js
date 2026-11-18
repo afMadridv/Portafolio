@@ -21,6 +21,6 @@ module.exports = async function handler(req, res) {
   if (!allowed) return reply(res, 401, { ok: false, error: "unauthorized" });
   if (!canPush()) return reply(res, 200, { ok: false, error: "Faltan las claves VAPID en Vercel" });
 
-  const out = await pushAll({ title: "AM Developer", body: "Los avisos funcionan en este dispositivo.", url: "/admin.html", tag: "prueba" });
+  const out = await pushAll({ title: "Madrixdev", body: "Los avisos funcionan en este dispositivo.", url: "/admin.html", tag: "prueba" });
   return reply(res, 200, { ok: out.sent > 0, sent: out.sent, failed: out.failed });
 };

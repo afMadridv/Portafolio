@@ -91,7 +91,7 @@ async function probe(url) {
     const r = await fetch(url, {
       redirect: "follow",
       signal: ctrl.signal,
-      headers: { "User-Agent": "AMDeveloper-Monitor/1.0" },
+      headers: { "User-Agent": "Madrixdev-Monitor/1.0" },
     });
     const ms = Date.now() - t0;
     if (r.body) r.body.cancel().catch(() => {});

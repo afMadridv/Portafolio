@@ -14,7 +14,7 @@
      VAPID_PUBLIC_KEY     avisos push: ver api/_push.js
      VAPID_PRIVATE_KEY    avisos push. SOLO aquí, en Vercel
    ========================================================= */
-const BRAND = "AM Developer";
+const BRAND = "Madrixdev";
 const SITE_URL = "https://andresmadrid.vercel.app";
 const TZ = "America/Bogota";
 const TO = process.env.CONTACT_TO || "mvandres08@gmail.com";
@@ -151,7 +151,7 @@ function brandEmail(opts) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#141414" style="max-width:600px;background-color:#141414;background-color:rgba(255,255,255,.07);border:1px solid #333333;border-color:rgba(255,255,255,.2);border-radius:18px;overflow:hidden;">
 <tr><td style="padding:16px 26px;background-color:#0d0d0d;background-color:rgba(0,0,0,.28);border-bottom:${EMAIL_LINE};">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-<td width="44" valign="middle" style="width:44px;"><img src="${SITE_URL}/amd.png" width="32" height="32" alt="AMD" style="display:block;width:32px;height:32px;border:0;color:#ffffff;font:700 12px ${F};"></td>
+<td width="44" valign="middle" style="width:44px;"><img src="${SITE_URL}/mdx.png" width="32" height="32" alt="MDX" style="display:block;width:32px;height:32px;border:0;color:#ffffff;font:700 12px ${F};"></td>
 <td valign="middle" style="font:700 15px ${F};letter-spacing:.2px;color:#ffffff;">${esc(BRAND)}</td>
 <td align="right" valign="middle"><span style="display:inline-block;padding:4px 11px;border-radius:999px;background-color:${accent};font:700 12px ${F};color:#000000;">${esc(opts.tag)}</span></td>
 </tr></table></td></tr>
