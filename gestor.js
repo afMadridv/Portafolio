@@ -1,7 +1,8 @@
 /* =========================================================
    GESTOR DE PROYECTOS FREELANCE (admin.html)
    Tablero Pendiente / En marcha / Terminado, detalle con
-   checklist y pagos, cotizaciones, entregas y clientes.
+   checklist y pagos, cotizaciones, entregas, clientes,
+   licencias (CRM de Legajo) y monitor de sitios.
 
    Los datos viven en tablas fl_* de Supabase. Son privados:
    las reglas RLS de supabase/schema.sql solo dejan entrar a
@@ -19,9 +20,17 @@ const G = {
   sites: [],
   events: [],
   messages: [],
+  licenses: [],
+  licPayments: [],
+  support: [],
+  settingsRows: [],
+  settings: {},
+  licProduct: "", // filtro de producto en Licencias
+  siteFolder: null, // carpeta abierta en Sitios
+  siteMode: null, // "carpetas" o "todo"
   view: "proyectos",
   search: "",
-  drawer: null, // { type: "project" | "client" | "message", id }
+  drawer: null, // { type: "project" | "client" | "message" | "license" | "site", id }
   started: false,
   editing: null, // cotización abierta en el editor
 };
@@ -111,6 +120,10 @@ async function gestorLoad() {
     sites: "fl_sites",
     events: "fl_site_events",
     messages: "fl_messages",
+    licenses: "fl_licenses",
+    licPayments: "fl_license_payments",
+    support: "fl_support",
+    settingsRows: "fl_settings",
   };
   const keys = Object.keys(names);
   const results = await Promise.all(keys.map((k) => sb.from(names[k]).select("*")));
@@ -123,9 +136,10 @@ async function gestorLoad() {
     }
     // Una tabla que falta no tumba las demás
     warn = /PGRST205|42P01/.test(r.error.code || "")
-      ? "Faltan tablas del panel. Corre supabase/schema.sql en Supabase → SQL Editor y recarga esta página."
+      ? "Faltan tablas del panel. Corre supabase/licencias.sql (o schema.sql) en Supabase → SQL Editor y recarga esta página."
       : "No se pudieron cargar los datos: " + r.error.message;
   });
+  G.settings = Object.fromEntries(G.settingsRows.map((r) => [r.key, r.value]));
   gestorWarn(warn, !!warn);
   return !warn;
 }
@@ -197,10 +211,18 @@ function paintSide() {
     ? (down.length === 1 ? down[0].name + " está caída" : down.length + " webs caídas: " + down.map((x) => x.name).join(", ")) + " · ver Sitios"
     : "";
 
-  // Facturado = lo cobrado este mes. Por cobrar = saldo de lo que ya está en marcha o terminado.
+  // Licencias con algo por cobrar hoy
+  const licDue = G.licenses.map(licenseDue);
+  const licAlert = licDue.filter((n) => n > 0).length;
+  const countLic = document.getElementById("count-licencias");
+  countLic.textContent = licAlert || "";
+  countLic.classList.toggle("is-alert", licAlert > 0);
+
+  // Facturado = lo cobrado este mes, en proyectos y licencias.
+  // Por cobrar = saldo de proyectos en marcha o terminados + lo vencido de licencias.
   const month = todayStr().slice(0, 7);
-  const billed = G.payments.filter((p) => String(p.paid_on).startsWith(month)).reduce((n, p) => n + Number(p.amount), 0);
-  const due = G.projects.filter((p) => p.status !== "pendiente").reduce((n, p) => n + dueOf(p), 0);
+  const billed = G.payments.concat(G.licPayments).filter((p) => String(p.paid_on).startsWith(month)).reduce((n, p) => n + Number(p.amount), 0);
+  const due = G.projects.filter((p) => p.status !== "pendiente").reduce((n, p) => n + dueOf(p), 0) + licDue.reduce((n, x) => n + x, 0);
   document.getElementById("side-month").textContent = new Date().toLocaleDateString("es-CO", { month: "long", year: "numeric" });
   document.getElementById("money-billed").textContent = money(billed);
   document.getElementById("money-due").textContent = money(due);
@@ -386,6 +408,8 @@ function renderDrawer() {
   box.hidden = false;
   if (G.drawer.type === "project") projectDrawer(box);
   else if (G.drawer.type === "message") messageDrawer(box);
+  else if (G.drawer.type === "license") licenseDrawer(box);
+  else if (G.drawer.type === "site") siteDrawer(box);
   else clientDrawer(box);
 }
 
@@ -635,17 +659,19 @@ function renderClients() {
     return root.appendChild(wrap);
   }
   const table = el("table", "tbl");
-  table.appendChild(tableHead(["Cliente", "Contacto", "Correo", "Teléfono", "Proyectos", "Saldo"]));
+  table.appendChild(tableHead(["Cliente", "Tipo", "Contacto", "Correo", "Teléfono", "Proyectos", "Saldo"]));
   const tb = document.createElement("tbody");
   G.clients.slice().sort((a, b) => a.name.localeCompare(b.name)).forEach((c) => {
     const own = G.projects.filter((p) => p.client_id === c.id);
     const tr = el("tr", "is-link");
     tr.appendChild(el("td", "", c.name));
+    tr.appendChild(el("td", "", c.kind || "—"));
     tr.appendChild(el("td", "", c.contact || "—"));
     tr.appendChild(el("td", "", c.email || "—"));
     tr.appendChild(el("td", "", c.phone || "—"));
     tr.appendChild(el("td", "num", String(own.length)));
-    tr.appendChild(el("td", "num", money(own.filter((p) => p.status !== "pendiente").reduce((n, p) => n + dueOf(p), 0))));
+    const licSaldo = G.licenses.filter((l) => l.client_id === c.id).reduce((n, l) => n + licenseDue(l), 0);
+    tr.appendChild(el("td", "num", money(own.filter((p) => p.status !== "pendiente").reduce((n, p) => n + dueOf(p), 0) + licSaldo)));
     tr.addEventListener("click", () => openDrawer("client", c.id));
     tb.appendChild(tr);
   });
@@ -664,6 +690,10 @@ function clientDrawer(box) {
     safely(dbUpdate("fl_clients", c.id, patch));
   };
   box.appendChild(field("Nombre o empresa", textInput(c.name, (v) => save({ name: v.trim() || "Sin nombre" }))));
+  const kind = textInput(c.kind, (v) => save({ kind: v.trim() || null }));
+  const kindField = field("Tipo", kind);
+  kindField.appendChild(attachList(kind, CLIENT_KINDS));
+  box.appendChild(kindField);
   box.appendChild(field("Persona de contacto", textInput(c.contact, (v) => save({ contact: v || null }))));
   const two = el("div", "two");
   two.appendChild(field("Correo", textInput(c.email, (v) => save({ email: v || null }), "email")));
@@ -672,12 +702,33 @@ function clientDrawer(box) {
   two.appendChild(field("Ciudad", textInput(c.city, (v) => save({ city: v || null }))));
   box.appendChild(two);
   box.appendChild(field("Notas", textArea(c.notes, (v) => save({ notes: v || null }), 3)));
+
+  box.appendChild(el("h3", "", "Suscripciones"));
+  const lics = G.licenses.filter((l) => l.client_id === c.id);
+  if (lics.length) {
+    const ul = el("ul", "check-list");
+    lics.forEach((l) => {
+      const li = document.createElement("li");
+      const m = maintState(l);
+      li.appendChild(el("span", "tx", (l.product || "Legajo") + " · " + planText(l)));
+      li.appendChild(el("span", "tag " + m.cls, m.label));
+      li.appendChild(button("Abrir", () => {
+        goToView("licencias");
+        openDrawer("license", l.id);
+      }));
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  }
+  box.appendChild(button("+ Suscripción para este cliente", () => newLicense({ client_id: c.id })));
+
   const danger = el("div", "drawer-danger");
   danger.appendChild(button("Borrar cliente", async () => {
     if (!window.confirm('¿Borrar "' + c.name + '"? Sus proyectos y cotizaciones se quedan, sin cliente.')) return;
     G.clients = G.clients.filter((o) => o.id !== c.id);
     G.projects.forEach((p) => { if (p.client_id === c.id) p.client_id = null; });
     G.quotes.forEach((q) => { if (q.client_id === c.id) q.client_id = null; });
+    G.licenses.forEach((l) => { if (l.client_id === c.id) l.client_id = null; });
     closeDrawer();
     renderAllViews();
     await safely(dbDelete("fl_clients", c.id));
@@ -1480,6 +1531,292 @@ const SITE_STATUS = {
   unknown: ["Sin revisar", ""],
 };
 
+/* ---------- Carpetas, disponibilidad y causas de caída ---------- */
+const SITE_VIEW_KEY = "panel-sitios-vista";
+
+function siteMode() {
+  if (!G.siteMode) {
+    try {
+      G.siteMode = localStorage.getItem(SITE_VIEW_KEY) || "carpetas";
+    } catch (e) {
+      G.siteMode = "carpetas";
+    }
+  }
+  return G.siteMode;
+}
+
+function setSiteMode(mode) {
+  G.siteMode = mode;
+  try {
+    localStorage.setItem(SITE_VIEW_KEY, mode);
+  } catch (e) {}
+  renderSites();
+}
+
+const siteGroups = () =>
+  [...new Set(G.sites.map((x) => x.grp).concat(G.settings.carpetas || []).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+const licenseOfSite = (id) => G.licenses.find((l) => l.site_id === id) || null;
+const hostOf = (url) => {
+  try {
+    return new URL(url).host.replace(/^www\./, "");
+  } catch (e) {
+    return String(url || "");
+  }
+};
+
+/* Certificado SSL: avisa desde 21 días antes */
+function sslState(x) {
+  if (!x.ssl_expires_on) return null;
+  const d = daysUntil(x.ssl_expires_on);
+  if (d < 0) return ["SSL vencido", "is-hot"];
+  if (d <= 7) return ["SSL vence en " + d + " d", "is-hot"];
+  if (d <= 21) return ["SSL vence en " + d + " d", "is-warn"];
+  return null;
+}
+
+function siteRank(x) {
+  if (x.active && x.status === "down") return 0;
+  const ssl = sslState(x);
+  if (ssl) return ssl[1] === "is-hot" ? 1 : 2;
+  return x.active ? 3 : 4;
+}
+const siteOrder = (a, b) => (b.is_main ? 1 : 0) - (a.is_main ? 1 : 0) || siteRank(a) - siteRank(b) || a.name.localeCompare(b.name);
+
+/* Tiempo caído en la ventana de días, a partir del historial de caídas */
+function uptimeOf(site, days) {
+  const now = Date.now();
+  const from = Math.max(now - days * 86400000, new Date(site.created_at || now).getTime());
+  const evs = G.events
+    .filter((e) => e.site_id === site.id)
+    .map((e) => ({ kind: e.kind, t: new Date(e.at).getTime() }))
+    .sort((a, b) => a.t - b.t);
+  const before = evs.filter((e) => e.t < from).pop();
+  let downSince = before && before.kind === "down" ? from : null;
+  let downMs = 0;
+  let outages = 0;
+  evs.filter((e) => e.t >= from).forEach((e) => {
+    if (e.kind === "down") {
+      if (downSince === null) {
+        downSince = e.t;
+        outages++;
+      }
+    } else if (downSince !== null) {
+      downMs += e.t - downSince;
+      downSince = null;
+    }
+  });
+  if (downSince !== null) downMs += now - downSince;
+  return { pct: Math.max(0, 100 - (downMs / Math.max(1, now - from)) * 100), outages, downMs, known: !!site.last_checked_at };
+}
+
+const pctText = (p) => (p >= 99.995 ? "100" : p.toFixed(2).replace(".", ",")) + " %";
+
+function durationText(ms) {
+  const min = Math.max(1, Math.round(ms / 60000));
+  if (min < 60) return min + " min";
+  const h = Math.floor(min / 60);
+  if (h < 48) return h + " h" + (min % 60 ? " " + (min % 60) + " min" : "");
+  return Math.floor(h / 24) + " d " + (h % 24) + " h";
+}
+
+/* El monitor (api/monitor.js) escribe el problema; aquí, qué suele significar */
+function outageCause(err) {
+  const e = String(err || "");
+  if (!e) return "";
+  if (/^HTTP 5/.test(e)) return "el servidor responde con error: falla de la aplicación, de la base de datos o del hosting.";
+  if (/Sin respuesta/.test(e)) return "el servidor no contesta a tiempo: apagado, saturado o sin memoria.";
+  if (/DNS|[Dd]ominio/.test(e)) return "el dominio no resuelve: venció el dominio o cambiaron los DNS.";
+  if (/rechaz/.test(e)) return "el equipo está encendido pero el servicio web no corre.";
+  if (/[Cc]ertificado/.test(e)) return "el certificado SSL venció o no es válido: los navegadores bloquean la web.";
+  if (/cort|inalcanzable/.test(e)) return "la conexión se cae: red inestable o servidor reiniciándose.";
+  return "no hay conexión con el servidor: hosting caído o problema de red.";
+}
+
+function attachList(input, values) {
+  const dl = document.createElement("datalist");
+  dl.id = "dl" + Math.random().toString(36).slice(2, 9);
+  values.forEach((v) => {
+    const o = document.createElement("option");
+    o.value = v;
+    dl.appendChild(o);
+  });
+  input.setAttribute("list", dl.id);
+  return dl;
+}
+
+function checkField(label, checked, onChange) {
+  const wrap = el("label", "check-inline");
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = !!checked;
+  cb.addEventListener("change", () => onChange(cb.checked));
+  wrap.appendChild(cb);
+  wrap.appendChild(el("span", "", label));
+  return wrap;
+}
+
+/* ---------- Cuadros ---------- */
+function siteCard(x) {
+  const st = SITE_STATUS[x.status] || SITE_STATUS.unknown;
+  const down = x.active && x.status === "down";
+  const card = el("button", "site-card" + (down ? " is-down" : "") + (x.active ? "" : " is-off") + (x.is_main ? " is-main" : ""));
+  card.type = "button";
+  const top = el("span", "sc-top");
+  top.appendChild(el("span", "tag " + (x.active ? st[1] : ""), x.active ? st[0] : "Sin vigilar"));
+  if (x.last_ms != null && x.status === "up") top.appendChild(el("span", "sc-ms", x.last_ms + " ms"));
+  card.appendChild(top);
+  if (x.is_main) card.appendChild(el("span", "sc-main", "Sitio principal"));
+  card.appendChild(el("span", "sc-name", x.name));
+  card.appendChild(el("span", "sc-url", hostOf(x.url)));
+  const lic = licenseOfSite(x.id);
+  if (lic) {
+    const row = el("span", "sc-lic");
+    row.appendChild(el("span", "", clientName(lic.client_id)));
+    if (lic.blocked) row.appendChild(el("span", "tag is-hot", "Bloqueado"));
+    const m = maintState(lic);
+    if (m.cls === "is-hot" && !lic.blocked) row.appendChild(el("span", "tag is-hot", isSub(lic) ? "Pago vencido" : "Mant. vencido"));
+    else if (m.cls === "is-warn") row.appendChild(el("span", "tag is-warn", m.label));
+    card.appendChild(row);
+  }
+  if (down && x.last_error) card.appendChild(el("span", "site-err", x.last_error));
+  const ssl = sslState(x);
+  if (ssl) card.appendChild(el("span", "tag sc-ssl " + ssl[1], ssl[0]));
+  const up = uptimeOf(x, 30);
+  card.appendChild(
+    el("span", "sc-meta", up.known ? pctText(up.pct) + " en 30 días" + (up.outages ? " · " + up.outages + (up.outages === 1 ? " caída" : " caídas") : "") : "Sin datos todavía")
+  );
+  card.addEventListener("click", () => openDrawer("site", x.id));
+  return card;
+}
+
+function folderCard(name) {
+  const list = G.sites.filter((x) => x.grp === name);
+  const active = list.filter((x) => x.active);
+  const down = active.filter((x) => x.status === "down").length;
+  const up = active.filter((x) => x.status === "up").length;
+  const card = el("button", "folder-card" + (down ? " is-down" : ""));
+  card.type = "button";
+  const icon = el("span", "fc-icon");
+  icon.innerHTML = pixelSvg(PIXELS.folder); // dibujo fijo de PIXELS, nunca datos de afuera
+  card.appendChild(icon);
+  const body = el("span", "fc-body");
+  body.appendChild(el("span", "sc-name", name));
+  const main = list.find((x) => x.is_main);
+  if (main) body.appendChild(el("span", "sc-url", hostOf(main.url)));
+  const others = list.length - (main ? 1 : 0);
+  body.appendChild(el("span", "sc-meta", list.length ? (main ? "Principal + " : "") + others + (others === 1 ? " sitio" : " sitios") : "Vacía"));
+  const tags = el("span", "fc-tags");
+  if (down) tags.appendChild(el("span", "tag is-hot", down + (down === 1 ? " caída" : " caídas")));
+  else if (active.length && up === active.length) tags.appendChild(el("span", "tag is-good", "Todo arriba"));
+  else if (active.length) tags.appendChild(el("span", "tag", up + " arriba"));
+  const ssl = list.filter(sslState).length;
+  if (ssl) tags.appendChild(el("span", "tag is-warn", "SSL: " + ssl));
+  const lics = G.licenses.filter((l) => l.product === name);
+  if (lics.length) tags.appendChild(el("span", "tag", lics.length + (lics.length === 1 ? " suscripción" : " suscripciones")));
+  const locked = lics.filter((l) => l.blocked).length;
+  if (locked) tags.appendChild(el("span", "tag is-hot", locked + (locked === 1 ? " bloqueado" : " bloqueados")));
+  body.appendChild(tags);
+  card.appendChild(body);
+  card.addEventListener("click", () => {
+    G.siteFolder = name;
+    renderSites();
+    window.scrollTo(0, 0);
+  });
+  return card;
+}
+
+const SITE_PAGE = 16; // 4 columnas × 4 filas
+
+function pagedGrid(nodes, key) {
+  G.sitePages = G.sitePages || {};
+  const pages = Math.max(1, Math.ceil(nodes.length / SITE_PAGE));
+  const page = Math.min(G.sitePages[key] || 0, pages - 1);
+  const wrap = el("div", "site-paged");
+  const grid = el("div", "site-grid");
+  nodes.slice(page * SITE_PAGE, (page + 1) * SITE_PAGE).forEach((n) => grid.appendChild(n));
+  wrap.appendChild(grid);
+  if (pages > 1) {
+    const go = (n) => () => {
+      G.sitePages[key] = n;
+      renderSites();
+      wrap.scrollIntoView({ block: "start" });
+    };
+    const pager = el("div", "site-pager");
+    const prev = button("← Anterior", go(page - 1));
+    prev.disabled = page === 0;
+    const next = button("Siguiente →", go(page + 1));
+    next.disabled = page >= pages - 1;
+    pager.appendChild(prev);
+    pager.appendChild(el("span", "", "Página " + (page + 1) + " de " + pages + " · " + nodes.length + " cuadros"));
+    pager.appendChild(next);
+    wrap.appendChild(pager);
+  }
+  return wrap;
+}
+
+function siteGrid(list, key) {
+  return pagedGrid(list.map(siteCard), key || "lista");
+}
+
+/* Carpeta nueva: un nombre y, si quieres, su sitio principal */
+async function newFolder() {
+  const name = (window.prompt("Nombre de la carpeta (por ejemplo, Legajo):") || "").trim();
+  if (!name) return;
+  const url = (window.prompt("Dirección del sitio principal de " + name + " (opcional, https://…):") || "").trim();
+  if (url) {
+    const link = /^https?:\/\//i.test(url) ? safeUrl(url) : "";
+    if (!link) toast("La dirección debe empezar por https://. Creé la carpeta sin sitio principal.", "is-bad");
+    else G.sites.push(await safely(dbInsert("fl_sites", { name, url: link, grp: name, is_main: true })));
+  }
+  const list = G.settings.carpetas || [];
+  if (!list.includes(name)) await saveSetting("carpetas", list.concat(name));
+  G.siteMode = "carpetas";
+  G.siteFolder = name;
+  renderAllViews();
+}
+
+async function dropFolder(name) {
+  if (G.sites.some((x) => x.grp === name)) return toast("La carpeta tiene sitios: muévelos o quítalos primero.", "is-bad");
+  await saveSetting("carpetas", (G.settings.carpetas || []).filter((n) => n !== name));
+  G.siteFolder = null;
+  renderAllViews();
+}
+
+function siteAddForm() {
+  const form = el("form", "inline-add site-add");
+  const name = textInput("", () => {});
+  name.placeholder = "Nombre";
+  name.setAttribute("aria-label", "Nombre de la web");
+  const url = textInput("", () => {}, "url");
+  url.placeholder = "https://…";
+  url.setAttribute("aria-label", "Dirección de la web");
+  const grp = textInput(G.siteFolder || "", () => {});
+  grp.placeholder = "Carpeta (opcional)";
+  grp.setAttribute("aria-label", "Carpeta");
+  const addBtn = el("button", "btn", "Añadir web");
+  addBtn.type = "submit";
+  form.appendChild(name);
+  form.appendChild(url);
+  form.appendChild(grp);
+  form.appendChild(attachList(grp, siteGroups()));
+  form.appendChild(addBtn);
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const link = /^https?:\/\//i.test(url.value.trim()) ? safeUrl(url.value.trim()) : "";
+    if (!name.value.trim()) return name.focus();
+    if (!link) return url.focus();
+    const folder = grp.value.trim();
+    // El primer sitio de una carpeta sin principal queda como principal
+    const main = !!folder && !G.sites.some((s) => s.grp === folder && s.is_main);
+    const row = await safely(
+      dbInsert("fl_sites", Object.assign({ name: name.value.trim(), url: link }, folder ? { grp: folder } : {}, main ? { is_main: true } : {}))
+    );
+    G.sites.push(row);
+    renderAllViews();
+  });
+  return form;
+}
+
 function renderSites() {
   const root = document.getElementById("view-sitios");
   root.innerHTML = "";
@@ -1487,6 +1824,7 @@ function renderSites() {
   head.appendChild(el("h1", "view-title", "Sitios"));
   const note = el("span", "q-save-note");
   head.appendChild(note);
+  head.appendChild(button("+ Carpeta", newFolder));
   head.appendChild(button("Importar de mis proyectos", importSites));
   const check = button("Revisar ahora", async () => {
     check.disabled = true;
@@ -1510,84 +1848,76 @@ function renderSites() {
   }, "btn-primary");
   head.appendChild(check);
   root.appendChild(head);
-  root.appendChild(el("p", "view-note", "Se revisan cada 5 minutos. Si una web falla dos veces seguidas te llega un correo, y otro cuando vuelve."));
+  root.appendChild(
+    el("p", "view-note", "Se revisan cada 5 minutos. Si una web falla dos veces seguidas te llega un aviso, y otro cuando vuelve. Agrupa en carpetas las webs de un producto, como Legajo y las notarías que lo usan.")
+  );
 
-  const form = el("form", "inline-add site-add");
-  const name = textInput("", () => {});
-  name.placeholder = "Nombre";
-  name.setAttribute("aria-label", "Nombre de la web");
-  const url = textInput("", () => {}, "url");
-  url.placeholder = "https://…";
-  url.setAttribute("aria-label", "Dirección de la web");
-  const addBtn = el("button", "btn", "Añadir web");
-  addBtn.type = "submit";
-  form.appendChild(name);
-  form.appendChild(url);
-  form.appendChild(addBtn);
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const link = /^https?:\/\//i.test(url.value.trim()) ? safeUrl(url.value.trim()) : "";
-    if (!name.value.trim()) return name.focus();
-    if (!link) return url.focus();
-    const row = await safely(dbInsert("fl_sites", { name: name.value.trim(), url: link }));
-    G.sites.push(row);
-    renderAllViews();
+  const active = G.sites.filter((x) => x.active);
+  const sum = el("div", "site-sum");
+  const chip = (text, cls) => sum.appendChild(el("span", "tag " + (cls || ""), text));
+  chip(G.sites.length + (G.sites.length === 1 ? " web" : " webs"));
+  chip(active.filter((x) => x.status === "up").length + " arriba", "is-good");
+  const downN = active.filter((x) => x.status === "down").length;
+  if (downN) chip(downN + (downN === 1 ? " caída" : " caídas"), "is-hot");
+  const sslN = G.sites.filter(sslState).length;
+  if (sslN) chip(sslN + " con SSL por vencer", "is-warn");
+  root.appendChild(sum);
+
+  const tools = el("div", "site-tools");
+  const modes = el("div", "inbox-filters");
+  [["carpetas", "Carpetas"], ["todo", "Todo"]].forEach(([k, label]) => {
+    const b = button(label, () => setSiteMode(k));
+    b.classList.toggle("is-on", siteMode() === k);
+    modes.appendChild(b);
   });
-  root.appendChild(form);
+  tools.appendChild(modes);
+  tools.appendChild(siteAddForm());
+  root.appendChild(tools);
 
-  const wrap = el("div", "table-wrap");
-  if (!G.sites.length) {
-    wrap.appendChild(el("p", "empty", "Todavía no vigilas ninguna web. Añade una o impórtalas de tus proyectos."));
-    return root.appendChild(wrap);
+  if (!G.sites.length && !siteGroups().length) {
+    root.appendChild(el("p", "empty", "Todavía no vigilas ninguna web. Crea una carpeta, añade una web o impórtalas de tus proyectos."));
+    return;
   }
-  const table = el("table", "tbl");
-  table.appendChild(tableHead(["Estado", "Web", "Última revisión", "Respuesta", "Vigilar", ""]));
-  const tb = document.createElement("tbody");
-  G.sites.slice().sort((a, b) => (a.status === "down" ? -1 : b.status === "down" ? 1 : a.name.localeCompare(b.name))).forEach((x) => {
-    const tr = el("tr", x.status === "down" ? "is-down" : "");
-    const st = SITE_STATUS[x.status] || SITE_STATUS.unknown;
-    const c1 = el("td");
-    c1.appendChild(el("span", "tag " + st[1], st[0]));
-    tr.appendChild(c1);
-    const c2 = el("td");
-    c2.appendChild(el("strong", "", x.name));
-    const a = el("a", "site-url", x.url);
-    a.href = safeUrl(x.url) || "#";
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    c2.appendChild(a);
-    if (x.status === "down" && x.last_error) c2.appendChild(el("span", "site-err", x.last_error));
-    tr.appendChild(c2);
-    tr.appendChild(el("td", "", whenShort(x.last_checked_at)));
-    tr.appendChild(el("td", "", x.last_ms != null ? x.last_ms + " ms" : "—"));
-    const c5 = el("td");
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = x.active;
-    cb.setAttribute("aria-label", "Vigilar " + x.name);
-    cb.addEventListener("change", async () => {
-      x.active = cb.checked;
-      paintSide();
-      await safely(dbUpdate("fl_sites", x.id, { active: x.active }));
-    });
-    c5.appendChild(cb);
-    tr.appendChild(c5);
-    const c6 = el("td", "num");
-    c6.appendChild(button("Quitar", async () => {
-      if (!window.confirm('¿Dejar de vigilar "' + x.name + '" y borrar su historial?')) return;
-      G.sites = G.sites.filter((o) => o.id !== x.id);
-      G.events = G.events.filter((o) => o.site_id !== x.id);
-      renderAllViews();
-      await safely(dbDelete("fl_sites", x.id));
-    }));
-    tr.appendChild(c6);
-    tb.appendChild(tr);
-  });
-  table.appendChild(tb);
-  wrap.appendChild(table);
-  root.appendChild(wrap);
 
-  const recent = G.events.slice().sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 15);
+  const groups = siteGroups();
+  if (G.siteFolder && !groups.includes(G.siteFolder)) G.siteFolder = null;
+  let scope = G.sites;
+  if (siteMode() === "carpetas" && G.siteFolder) {
+    scope = G.sites.filter((x) => x.grp === G.siteFolder);
+    const crumb = el("div", "site-crumb");
+    crumb.appendChild(button("← Todas", () => {
+      G.siteFolder = null;
+      renderSites();
+    }));
+    crumb.appendChild(el("h2", "view-sub", G.siteFolder));
+    const folder = G.siteFolder;
+    const lics = G.licenses.filter((l) => l.product === folder).length;
+    if (lics) {
+      crumb.appendChild(button("Ver suscripciones (" + lics + ")", () => {
+        G.licProduct = folder;
+        G.licFilter = "";
+        goToView("licencias");
+      }));
+    }
+    if (!scope.length) crumb.appendChild(button("Borrar carpeta", () => dropFolder(folder)));
+    root.appendChild(crumb);
+    if (!scope.length) root.appendChild(el("p", "empty", "Carpeta vacía. Añade arriba el sitio principal y luego los demás: el formulario ya trae el nombre de la carpeta."));
+    else root.appendChild(siteGrid(scope.slice().sort(siteOrder), "carpeta:" + folder));
+  } else if (siteMode() === "carpetas") {
+    root.appendChild(pagedGrid(groups.map(folderCard).concat(G.sites.filter((x) => !x.grp).sort(siteOrder).map(siteCard)), "raiz"));
+  } else {
+    groups.concat(G.sites.some((x) => !x.grp) ? [""] : []).forEach((g) => {
+      const list = G.sites.filter((x) => (x.grp || "") === g).sort(siteOrder);
+      const down = list.filter((x) => x.active && x.status === "down").length;
+      root.appendChild(
+        el("h2", "view-sub site-group-title", (g || "Sin carpeta") + " · " + list.length + (list.length === 1 ? " web" : " webs") + (down ? " · " + down + (down === 1 ? " caída" : " caídas") : ""))
+      );
+      root.appendChild(list.length ? siteGrid(list, "todo:" + g) : el("p", "empty", "Carpeta vacía."));
+    });
+  }
+
+  const ids = new Set(scope.map((x) => x.id));
+  const recent = G.events.filter((ev) => ids.has(ev.site_id)).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 15);
   if (recent.length) {
     root.appendChild(el("h2", "view-sub", "Historial"));
     const w2 = el("div", "table-wrap");
@@ -1595,7 +1925,7 @@ function renderSites() {
     t2.appendChild(tableHead(["Cuándo", "Web", "Qué pasó", "Detalle"]));
     const b2 = document.createElement("tbody");
     recent.forEach((ev) => {
-      const tr = document.createElement("tr");
+      const tr = el("tr", "is-link");
       const site = G.sites.find((o) => o.id === ev.site_id);
       tr.appendChild(el("td", "", whenShort(ev.at)));
       tr.appendChild(el("td", "", site ? site.name : "—"));
@@ -1603,12 +1933,968 @@ function renderSites() {
       td.appendChild(el("span", "tag " + (ev.kind === "down" ? "is-hot" : "is-good"), ev.kind === "down" ? "Se cayó" : "Volvió"));
       tr.appendChild(td);
       tr.appendChild(el("td", "", ev.detail || "—"));
+      if (site) tr.addEventListener("click", () => openDrawer("site", site.id));
       b2.appendChild(tr);
     });
     t2.appendChild(b2);
     w2.appendChild(t2);
     root.appendChild(w2);
   }
+}
+
+/* ---------- Detalle de un sitio ---------- */
+function siteDrawer(box) {
+  const x = G.sites.find((o) => o.id === G.drawer.id);
+  if (!x) return closeDrawer();
+  drawerTop(box, x.grp ? "Carpeta " + x.grp : "Sitio");
+  const save = (patch) => {
+    Object.assign(x, patch);
+    renderAllViews();
+    safely(dbUpdate("fl_sites", x.id, patch));
+  };
+
+  box.appendChild(el("h3", "msg-subject", x.name));
+  const st = SITE_STATUS[x.status] || SITE_STATUS.unknown;
+  const line = el("p", "site-line");
+  line.appendChild(el("span", "tag " + (x.active ? st[1] : ""), x.active ? st[0] : "Sin vigilar"));
+  line.appendChild(
+    el("span", "", [x.last_http ? "HTTP " + x.last_http : "", x.last_ms != null ? x.last_ms + " ms" : "", x.last_checked_at ? "revisada " + whenShort(x.last_checked_at) : "sin revisar"].filter(Boolean).join(" · "))
+  );
+  box.appendChild(line);
+  if (x.status === "down" && x.last_error) {
+    box.appendChild(el("p", "gestor-warn is-bad", x.last_error));
+    box.appendChild(el("p", "site-cause", "Causa probable: " + outageCause(x.last_error)));
+  }
+  const a = el("a", "site-url", x.url);
+  a.href = safeUrl(x.url) || "#";
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  box.appendChild(a);
+
+  const u7 = uptimeOf(x, 7);
+  const u30 = uptimeOf(x, 30);
+  const dl = el("dl", "msg-facts");
+  const fact = (k, v) => {
+    dl.appendChild(el("dt", "", k));
+    dl.appendChild(el("dd", "", v));
+  };
+  fact("Disponible 7 días", u7.known ? pctText(u7.pct) : "Sin datos");
+  fact("Disponible 30 días", u30.known ? pctText(u30.pct) : "Sin datos");
+  fact("Caídas en 30 días", String(u30.outages) + (u30.downMs ? " · " + durationText(u30.downMs) + " en total" : ""));
+  const lastDown = G.events.filter((e) => e.site_id === x.id && e.kind === "down").sort((p, q) => String(q.at).localeCompare(String(p.at)))[0];
+  fact("Última caída", lastDown ? whenShort(lastDown.at) + (lastDown.detail ? " · " + lastDown.detail : "") : "Ninguna registrada");
+  const ssl = sslState(x);
+  fact(
+    "Certificado SSL",
+    x.ssl_expires_on ? (ssl ? ssl[0] : "Vigente") + " · " + longDate(x.ssl_expires_on) : /^https:/i.test(x.url) ? "Sin revisar todavía" : "La web no usa HTTPS"
+  );
+  box.appendChild(dl);
+
+  box.appendChild(el("h3", "", "Datos"));
+  box.appendChild(field("Nombre", textInput(x.name, (v) => save({ name: v.trim() || x.name }))));
+  box.appendChild(field("Dirección", textInput(x.url, (v) => {
+    const link = /^https?:\/\//i.test(v.trim()) ? safeUrl(v.trim()) : "";
+    if (!link) return toast("La dirección debe empezar por https://", "is-bad");
+    save({ url: link });
+  }, "url")));
+  const grp = textInput(x.grp, (v) => save({ grp: v.trim() || null }));
+  const grpField = field("Carpeta", grp);
+  grpField.appendChild(attachList(grp, siteGroups()));
+  box.appendChild(grpField);
+  box.appendChild(checkField("Vigilar esta web", x.active, (v) => save({ active: v })));
+  if (x.grp) {
+    box.appendChild(checkField("Sitio principal de " + x.grp, x.is_main, (v) => {
+      if (v) {
+        G.sites
+          .filter((s) => s.grp === x.grp && s.id !== x.id && s.is_main)
+          .forEach((s) => {
+            s.is_main = false;
+            safely(dbUpdate("fl_sites", s.id, { is_main: false }));
+          });
+      }
+      save({ is_main: v });
+    }));
+  }
+
+  const lic = licenseOfSite(x.id);
+  const licOpts = [["", "Sin suscripción"]].concat(G.licenses.map((l) => [l.id, (l.product || "Legajo") + " · " + clientName(l.client_id)]));
+  box.appendChild(field("Suscripción o licencia", selectInput(licOpts, lic ? lic.id : "", (v) => {
+    const before = licenseOfSite(x.id);
+    if (before) {
+      before.site_id = null;
+      safely(dbUpdate("fl_licenses", before.id, { site_id: null }));
+    }
+    const next = G.licenses.find((l) => l.id === v);
+    if (next) {
+      next.site_id = x.id;
+      safely(dbUpdate("fl_licenses", next.id, { site_id: x.id }));
+    }
+    renderAllViews();
+    renderDrawer();
+  })));
+  if (lic) {
+    const acts = el("div", "msg-acts");
+    if (lic.status !== "cancelada") acts.appendChild(button(lic.blocked ? "Desbloquear portal" : "Bloquear portal", () => setBlocked(lic, !lic.blocked), lic.blocked ? "btn-primary" : ""));
+    acts.appendChild(button("Abrir suscripción", () => {
+      goToView("licencias");
+      openDrawer("license", lic.id);
+    }));
+    box.appendChild(acts);
+  }
+
+  const evs = G.events.filter((e) => e.site_id === x.id).sort((p, q) => String(q.at).localeCompare(String(p.at))).slice(0, 20);
+  if (evs.length) {
+    box.appendChild(el("h3", "", "Historial"));
+    const ul = el("ul", "check-list");
+    evs.forEach((ev) => {
+      const li = document.createElement("li");
+      li.appendChild(el("span", "tag " + (ev.kind === "down" ? "is-hot" : "is-good"), ev.kind === "down" ? "Se cayó" : "Volvió"));
+      li.appendChild(el("span", "tx", whenShort(ev.at) + (ev.detail ? " · " + ev.detail : "")));
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  }
+
+  const danger = el("div", "drawer-danger");
+  danger.appendChild(button("Quitar web", async () => {
+    if (!window.confirm('¿Dejar de vigilar "' + x.name + '" y borrar su historial?')) return;
+    G.sites = G.sites.filter((o) => o.id !== x.id);
+    G.events = G.events.filter((o) => o.site_id !== x.id);
+    G.licenses.forEach((l) => {
+      if (l.site_id === x.id) l.site_id = null;
+    });
+    closeDrawer();
+    renderAllViews();
+    await safely(dbDelete("fl_sites", x.id));
+  }));
+  box.appendChild(danger);
+}
+
+/* =========================================================
+   LICENCIAS (CRM): licencias de uso de mis productos (Legajo)
+   para notarías, centros de conciliación y otros clientes.
+   Cada una lleva su forma de pago (contado o cuotas), su
+   mantenimiento con vencimiento y el soporte por horas.
+   ========================================================= */
+const LIC_STATUS = [
+  ["activa", "Activa"],
+  ["suspendida", "Suspendida"],
+  ["cancelada", "Cancelada"],
+];
+const MAINT_PERIODS = [
+  ["mensual", "Mensual"],
+  ["trimestral", "Trimestral"],
+  ["anual", "Anual"],
+];
+const PERIOD_MONTHS = { mensual: 1, trimestral: 3, anual: 12 };
+const PAY_CONCEPTS = [
+  ["licencia", "Licencia"],
+  ["mantenimiento", "Mantenimiento"],
+  ["soporte", "Soporte"],
+];
+const CLIENT_KINDS = ["Notaría", "Centro de conciliación", "Empresa", "Entidad pública", "Persona"];
+/* Tarifa sugerida: la hora de desarrollo de las cotizaciones (35.000 a
+   37.000 COP); urgente o fuera de horario, 50 % más; mínimo una hora. */
+const SUPPORT_DEFAULTS = { rate: 37000, urgentPct: 50, minHours: 1 };
+
+const supportRates = () => Object.assign({}, SUPPORT_DEFAULTS, G.settings.soporte || {});
+const dayStr = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+const dayYear = (s) => (s ? parseDay(s).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }) : "—");
+const licenseProducts = () => [...new Set(["Legajo"].concat(G.licenses.map((l) => l.product)).concat(siteGroups()).filter(Boolean))];
+
+function addMonths(day, n) {
+  const d = parseDay(day);
+  const target = new Date(d.getFullYear(), d.getMonth() + n, 1);
+  const last = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  target.setDate(Math.min(d.getDate(), last));
+  return dayStr(target);
+}
+
+/* Meses completos de a hasta b */
+function monthsBetween(a, b) {
+  const x = parseDay(a);
+  const y = parseDay(b);
+  return (y.getFullYear() - x.getFullYear()) * 12 + (y.getMonth() - x.getMonth()) - (y.getDate() < x.getDate() ? 1 : 0);
+}
+
+const licPaid = (l, concept) =>
+  G.licPayments.filter((p) => p.license_id === l.id && (!concept || p.concept === concept)).reduce((n, p) => n + Number(p.amount), 0);
+
+/* Licencia de uso: de contado o en cuotas mensuales desde la fecha de inicio */
+function licenseFeeState(l) {
+  if (isSub(l)) return { label: "Suscripción", cls: "", due: 0, balance: 0, paid: 0 };
+  const price = Number(l.price) || 0;
+  const paid = licPaid(l, "licencia");
+  if (price <= 0) return { label: "Sin valor", cls: "", due: 0, balance: 0, paid };
+  const balance = Math.max(0, price - paid);
+  if (balance < 1) return { label: "Pagada", cls: "is-good", due: 0, balance: 0, paid };
+  const n = Math.max(1, Number(l.installments) || 1);
+  const cuota = price / n;
+  const started = daysUntil(l.start_date) <= 0;
+  const dueCount = started ? Math.min(n, monthsBetween(l.start_date, todayStr()) + 1) : 0;
+  const due = Math.max(0, Math.min(balance, cuota * dueCount - paid));
+  const paidCount = Math.min(n, Math.floor(paid / cuota + 1e-6));
+  const next = paidCount < n ? addMonths(l.start_date, paidCount) : null;
+  const base = { due: due < 1 ? 0 : due, balance, paid, cuota, n, paidCount, next };
+  if (due >= 1) return Object.assign(base, { label: n === 1 ? "Por pagar" : "Cuota vencida", cls: "is-hot" });
+  if (n === 1) return Object.assign(base, { label: "Pago el " + shortDate(l.start_date), cls: "is-warn" });
+  return Object.assign(base, { label: "Al día · " + paidCount + " de " + n, cls: "is-violet" });
+}
+
+/* Mantenimiento: maint_until es la fecha hasta la que está pagado */
+function maintState(l) {
+  const fee = Number(l.maint_fee) || 0;
+  if (fee <= 0) return { label: isSub(l) ? "Sin valor" : "Sin mantenimiento", cls: "", due: 0 };
+  if (!l.maint_until) return { label: "Sin fecha", cls: "is-warn", due: 0 };
+  const d = daysUntil(l.maint_until);
+  if (d < 0) {
+    const months = PERIOD_MONTHS[l.maint_period] || 12;
+    const owed = Math.floor(monthsBetween(l.maint_until, todayStr()) / months) + 1;
+    return { label: (isSub(l) ? "Vencida hace " : "Vencido hace ") + -d + " d", cls: "is-hot", due: owed * fee, owed, days: d };
+  }
+  if (d <= 30) return { label: d === 0 ? "Vence hoy" : "Vence en " + d + " d", cls: "is-warn", due: 0, days: d };
+  return { label: "Hasta " + dayYear(l.maint_until), cls: "is-good", due: 0, days: d };
+}
+
+const supportDue = (l) => G.support.filter((s) => s.license_id === l.id && !s.covered && !s.paid_on).reduce((n, s) => n + Number(s.charge), 0);
+
+/* Lo que se puede cobrar hoy. Una licencia cancelada ya no genera mantenimiento. */
+function licenseDue(l) {
+  const maint = l.status === "cancelada" ? 0 : maintState(l).due;
+  return licenseFeeState(l).due + maint + supportDue(l);
+}
+
+const coveredOn = (l, day) => Number(l.maint_fee) > 0 && !!l.maint_until && day <= l.maint_until && l.status !== "cancelada";
+
+function supportCharge(hours, urgent, covered) {
+  if (covered) return 0;
+  const r = supportRates();
+  return Math.round(Math.max(Number(hours) || 0, r.minHours) * r.rate * (urgent ? 1 + r.urgentPct / 100 : 1));
+}
+
+function feeDetail(l, f) {
+  if (!(Number(l.price) > 0)) return "Pon el valor de la licencia";
+  if (!f.balance) return money(l.price) + " pagados";
+  const parts = [];
+  if (f.due) parts.push("Debe " + money(f.due));
+  else if (f.next && f.n > 1) parts.push("Próxima " + shortDate(f.next) + ": " + money(Math.min(f.cuota, f.balance)));
+  parts.push("Saldo " + money(f.balance));
+  return parts.join(" · ");
+}
+
+function maintDetail(l, m) {
+  if (!(Number(l.maint_fee) > 0)) return "Pon el valor por periodo";
+  if (!l.maint_until) return "Pon hasta cuándo está pagado";
+  if (m.due) return "Debe " + (m.owed > 1 ? m.owed + " periodos: " : "") + money(m.due);
+  return "Pagado hasta " + longDate(l.maint_until);
+}
+
+/* Correo de cobro con lo pendiente, para revisar y enviar desde tu correo */
+function reminderHref(l, client) {
+  const f = licenseFeeState(l);
+  const m = maintState(l);
+  const sup = supportDue(l);
+  const lines = ["Hola" + (client.contact ? " " + client.contact : "") + ",", "", "Te comparto el estado de " + (l.product || "la licencia") + " para " + client.name + ":", ""];
+  if (f.due) lines.push("- Licencia de uso" + (f.n > 1 ? " (cuotas vencidas)" : "") + ": " + money(f.due));
+  const what = isSub(l) ? "Suscripción (" + modulesText(l) + ")" : "Mantenimiento";
+  if (m.due) lines.push("- " + what + ": venció el " + longDate(l.maint_until) + ". Valor: " + money(m.due));
+  else if (m.cls === "is-warn" && l.maint_until) lines.push("- " + what + ": vence el " + longDate(l.maint_until) + ". Valor: " + money(l.maint_fee));
+  if (sup) lines.push("- Soporte y arreglos: " + money(sup));
+  const total = licenseDue(l) || (m.cls === "is-warn" ? Number(l.maint_fee) || 0 : 0);
+  lines.push("", "Total: " + money(total), "", "Quedo atento a cualquier duda.", "", "Andrés Madrid · AM Developer");
+  return "mailto:" + client.email + "?subject=" + encodeURIComponent((l.product || "Licencia") + " · " + client.name + " · estado de pagos") + "&body=" + encodeURIComponent(lines.join("\n"));
+}
+
+async function saveSetting(key, value) {
+  G.settings[key] = value;
+  const sb = await getSupabase();
+  await safely(
+    sb
+      .from("fl_settings")
+      .upsert({ key, value, updated_at: new Date().toISOString() })
+      .then(({ error }) => {
+        if (error) throw error;
+      })
+  );
+}
+
+async function newLicense(preset) {
+  let clientId = preset && preset.client_id;
+  if (!clientId) {
+    const name = window.prompt("¿Para qué cliente? Escribe el nombre de la notaría, fundación o centro. Puedes dejarlo vacío y elegirlo después.");
+    if (name === null) return;
+    if (name.trim()) {
+      let client = G.clients.find((c) => c.name.toLowerCase() === name.trim().toLowerCase());
+      if (!client) {
+        client = await safely(dbInsert("fl_clients", { name: name.trim() }));
+        G.clients.push(client);
+      }
+      clientId = client.id;
+    }
+  }
+  const row = await safely(dbInsert("fl_licenses", { client_id: clientId || null, product: G.licProduct || "Legajo" }));
+  G.licenses.push(row);
+  if (G.view !== "licencias") goToView("licencias");
+  renderAllViews();
+  openDrawer("license", row.id);
+}
+
+function ratesBox() {
+  const r = supportRates();
+  // Plegado una vez guardada la tarifa: abierta solo la primera vez
+  const box = el("details", "rates-box");
+  box.open = !G.settings.soporte;
+  const summary = el("summary", "");
+  summary.appendChild(el("h2", "", "Tarifa de soporte"));
+  const current = el("span", "rates-now");
+  summary.appendChild(current);
+  box.appendChild(summary);
+  box.appendChild(
+    el("p", "", "Lo que cobras por hora para arreglar una falla del sistema. Con la suscripción o el mantenimiento al día el arreglo queda cubierto; si venció o no lo tiene, se cobra con esta tarifa.")
+  );
+  const row = el("div", "rates-row");
+  const example = el("p", "rates-example");
+  const paint = () => {
+    const v = supportRates();
+    current.textContent = money(v.rate) + " por hora · urgente +" + v.urgentPct + " %";
+    example.textContent =
+      "Ejemplo: 2 h normales = " + money(2 * v.rate) + " · 2 h urgentes = " + money(2 * v.rate * (1 + v.urgentPct / 100)) + " · mínimo " + v.minHours + " h por arreglo.";
+  };
+  const put = (patch) => {
+    saveSetting("soporte", Object.assign(supportRates(), patch));
+    paint();
+  };
+  row.appendChild(field("Hora normal (COP)", textInput(r.rate, (v) => put({ rate: Math.max(0, Number(v) || 0) }), "number")));
+  row.appendChild(field("Recargo urgente (%)", textInput(r.urgentPct, (v) => put({ urgentPct: Math.max(0, Number(v) || 0) }), "number")));
+  row.appendChild(field("Mínimo de horas", textInput(r.minHours, (v) => put({ minHours: Math.max(0, Number(v) || 0) }), "number")));
+  box.appendChild(row);
+  paint();
+  box.appendChild(example);
+  return box;
+}
+
+/* ---------- Suscripciones: módulos, bloqueo del portal ---------- */
+const MODULES = [
+  ["conciliacion", "Conciliación"],
+  ["insolvencia", "Insolvencia"],
+];
+const BILLING = [
+  ["suscripcion", "Suscripción"],
+  ["licencia", "Licencia de uso"],
+];
+const PERIOD_SHORT = { mensual: "mes", trimestral: "trimestre", anual: "año" };
+const isSub = (l) => (l.billing || "suscripcion") === "suscripcion";
+const modulesText = (l) => (l.modules || []).map((k) => (MODULES.find(([m]) => m === k) || [k, k])[1]).join(" + ") || "Sin módulos";
+const payConcepts = (l) => (isSub(l) ? [["mantenimiento", "Suscripción"], ["soporte", "Soporte"]] : PAY_CONCEPTS);
+
+function planText(l) {
+  const fee = Number(l.maint_fee) || 0;
+  const per = fee ? money(fee) + " / " + (PERIOD_SHORT[l.maint_period] || "periodo") : "sin valor";
+  return isSub(l) ? modulesText(l) + " · " + per : "Licencia de uso" + (fee ? " · mant. " + per : "");
+}
+
+/* El portal del cliente consulta /api/estado con su clave: bloqueado, muestra el aviso */
+async function setBlocked(l, blocked) {
+  const who = clientName(l.client_id);
+  const ask = blocked
+    ? "¿Bloquear el portal de " + who + "?\n\nMonitor y admin verán Falta de pago a pantalla completa, sin poder cerrarlo. admin_am verá solo una advertencia. Los procesos y los demás usuarios siguen funcionando."
+    : "¿Desbloquear el portal de " + who + "?";
+  if (!window.confirm(ask)) return;
+  const patch = { blocked, blocked_at: blocked ? new Date().toISOString() : null };
+  Object.assign(l, patch);
+  renderAllViews();
+  if (G.drawer) renderDrawer();
+  await safely(dbUpdate("fl_licenses", l.id, patch));
+  toast(blocked ? "Portal de " + who + " bloqueado." : "Portal de " + who + " desbloqueado.", blocked ? "is-bad" : "is-good");
+}
+
+function portalTag(l) {
+  if (l.status === "cancelada") return ["Cancelada", ""];
+  if (l.blocked) return ["Bloqueado", "is-hot"];
+  return ["Activo", "is-good"];
+}
+
+/* Código que va en el portal del cliente (Legajo), una vez. Bloqueado:
+   monitor y admin ven "Falta de pago" a pantalla completa, sin poder
+   cerrarlo; admin_am ve una advertencia que sí se cierra. Los demás
+   usuarios y los procesos del portal siguen funcionando. Si este
+   servidor no responde, no pasa nada. */
+const PORTAL_BLOCKED_ROLES = ["monitor", "admin"];
+const PORTAL_WARN_ONLY = ["admin_am"];
+
+function portalSnippet(l) {
+  return `// Suscripción de Legajo · AM Developer
+// Pega esto una vez en el portal y llama, después de iniciar sesión:
+//   amRevisarSuscripcion({ rol: usuario.rol, usuario: usuario.nombre });
+// y al cerrar sesión: amRevisarSuscripcion(null);
+// Bloqueado: monitor y admin ven "Falta de pago" a pantalla completa y no pueden cerrarlo.
+// admin_am solo ve una advertencia. Los demás usuarios y los procesos siguen funcionando.
+(function () {
+  var URL_ESTADO = "${location.origin}/api/estado?key=${l.access_key}";
+  var BLOQUEA = ${JSON.stringify(PORTAL_BLOCKED_ROLES)};
+  var SOLO_AVISO = ${JSON.stringify(PORTAL_WARN_ONLY)};
+  var NOTA = "Los procesos del portal y los demás usuarios siguen funcionando.";
+  var sesion = null, capa = null, bloqueo = false, vigia = null, reloj = null, avisoCerrado = false;
+
+  function quitar() {
+    bloqueo = false;
+    if (vigia) vigia.disconnect();
+    vigia = null;
+    if (capa) capa.remove();
+    capa = null;
+  }
+
+  function texto(tag, txt, css) {
+    var n = document.createElement(tag);
+    n.textContent = txt;
+    if (css) n.style.cssText = css;
+    return n;
+  }
+
+  // Monitor y admin: pantalla completa, sin botón de cerrar
+  function bloquear(s) {
+    quitar();
+    bloqueo = true;
+    capa = document.createElement("div");
+    capa.setAttribute("role", "alertdialog");
+    capa.setAttribute("aria-modal", "true");
+    capa.setAttribute("aria-label", "Falta de pago");
+    capa.style.cssText = "position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;background:#0b0b0b;color:#fff;font:16px/1.5 system-ui,sans-serif;text-align:center";
+    capa.appendChild(texto("strong", "Falta de pago", "font-size:30px;color:#ff6b6b"));
+    capa.appendChild(texto("p", s.message, "max-width:560px;margin:0"));
+    capa.appendChild(texto("p", NOTA, "max-width:560px;margin:0;font-size:14px;opacity:.7"));
+    document.body.appendChild(capa);
+    // Si alguien lo quita de la página, vuelve a aparecer
+    vigia = new MutationObserver(function () {
+      if (bloqueo && capa && !capa.isConnected) document.body.appendChild(capa);
+    });
+    vigia.observe(document.body, { childList: true });
+  }
+
+  // admin_am: advertencia arriba, se puede cerrar
+  function advertir(s) {
+    quitar();
+    if (avisoCerrado) return;
+    capa = document.createElement("div");
+    capa.setAttribute("role", "alert");
+    capa.style.cssText = "position:fixed;top:0;left:0;right:0;z-index:2147483647;display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 16px;background:#7a0f0f;color:#fff;font:14px/1.4 system-ui,sans-serif";
+    capa.appendChild(texto("span", "Advertencia: falta de pago. Monitor y admin ven el portal bloqueado. " + NOTA, "flex:1 1 280px"));
+    var cerrar = texto("button", "Entendido", "padding:6px 12px;border:1px solid #fff;border-radius:6px;background:transparent;color:#fff;cursor:pointer");
+    cerrar.type = "button";
+    cerrar.onclick = function () {
+      avisoCerrado = true;
+      quitar();
+    };
+    capa.appendChild(cerrar);
+    document.body.appendChild(capa);
+  }
+
+  // Con el bloqueo puesto, el teclado no llega al portal (Escape, Tab, atajos)
+  document.addEventListener("keydown", function (e) {
+    if (!bloqueo) return;
+    e.preventDefault();
+    e.stopPropagation();
+  }, true);
+
+  function revisar() {
+    if (!sesion) return quitar();
+    fetch(URL_ESTADO)
+      .then(function (r) { return r.json(); })
+      .then(function (s) {
+        if (!s.ok || s.active) return quitar();
+        var rol = String(sesion.rol || "").toLowerCase();
+        var usuario = String(sesion.usuario || "").toLowerCase();
+        if (SOLO_AVISO.indexOf(rol) >= 0 || SOLO_AVISO.indexOf(usuario) >= 0) return advertir(s);
+        if (BLOQUEA.indexOf(rol) >= 0) return bloquear(s);
+        quitar();
+      })
+      .catch(function () {});
+  }
+
+  window.amRevisarSuscripcion = function (datos) {
+    sesion = datos || null;
+    avisoCerrado = false;
+    clearInterval(reloj);
+    revisar();
+    // Cada 5 minutos: si pagan y lo desbloqueas, el aviso se va solo
+    if (sesion) reloj = setInterval(revisar, 300000);
+  };
+})();`;
+}
+
+async function copyText(text, done) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(done, "is-good");
+  } catch (e) {
+    window.prompt("Copia el texto:", text);
+  }
+}
+
+function renderLicenses() {
+  const root = document.getElementById("view-licencias");
+  root.innerHTML = "";
+  const head = el("div", "view-head");
+  head.appendChild(el("h1", "view-title", "Suscripciones"));
+  head.appendChild(button("+ Suscripción", () => newLicense(), "btn-primary"));
+  root.appendChild(head);
+  root.appendChild(
+    el(
+      "p",
+      "view-note",
+      "Legajo por suscripción en Conciliación e Insolvencia, y licencias de uso. Por cobrar suma periodos vencidos, cuotas vencidas y arreglos sin pagar. Desde aquí bloqueas o desbloqueas el portal de cada cliente."
+    )
+  );
+
+  const products = [...new Set(G.licenses.map((l) => l.product || "Legajo"))].sort((a, b) => a.localeCompare(b));
+  if (G.licProduct && !products.includes(G.licProduct)) G.licProduct = "";
+  const filters = el("div", "inbox-filters");
+  const chip = (key, label, onPick, on) => {
+    const b = button(label, onPick);
+    b.classList.toggle("is-on", on);
+    filters.appendChild(b);
+  };
+  const pick = (k) => () => {
+    G.licFilter = k;
+    renderLicenses();
+  };
+  const f = G.licFilter || "";
+  chip("", "Todas", pick(""), !f);
+  MODULES.forEach(([k, label]) => chip(k, label, pick(k), f === k));
+  chip("vencidas", "Vencidas", pick("vencidas"), f === "vencidas");
+  chip("bloqueadas", "Bloqueadas", pick("bloqueadas"), f === "bloqueadas");
+  if (products.length > 1) {
+    products.forEach((p) =>
+      chip(p, p, () => {
+        G.licProduct = G.licProduct === p ? "" : p;
+        renderLicenses();
+      }, G.licProduct === p)
+    );
+  }
+  root.appendChild(filters);
+
+  const all = G.licenses.filter((l) => !G.licProduct || (l.product || "Legajo") === G.licProduct);
+  const list = all.filter((l) => {
+    if (!f) return true;
+    if (f === "vencidas") return maintState(l).cls === "is-hot" || licenseFeeState(l).cls === "is-hot";
+    if (f === "bloqueadas") return !!l.blocked;
+    return (l.modules || []).includes(f);
+  });
+
+  const due = all.reduce((n, l) => n + licenseDue(l), 0);
+  const late = all.filter((l) => l.status !== "cancelada" && maintState(l).cls === "is-hot").length;
+  const blocked = all.filter((l) => l.blocked).length;
+  const stats = el("div", "stat-row");
+  const stat = (label, value, cls) => {
+    const s = el("div", "stat" + (cls ? " " + cls : ""));
+    s.appendChild(el("span", "", label));
+    s.appendChild(el("strong", "", value));
+    stats.appendChild(s);
+  };
+  stat("Activas", String(all.filter((l) => l.status === "activa" && !l.blocked).length));
+  stat("Por cobrar hoy", money(due), due ? "is-hot" : "");
+  stat("Vencidas", String(late), late ? "is-hot" : "");
+  stat("Portales bloqueados", String(blocked), blocked ? "is-warn" : "");
+  root.appendChild(stats);
+  root.appendChild(ratesBox());
+
+  const wrap = el("div", "table-wrap");
+  if (!list.length) {
+    wrap.appendChild(el("p", "empty", all.length ? "Nada con este filtro." : "Todavía no hay suscripciones. Crea una por cada notaría, fundación o centro que use Legajo."));
+    return root.appendChild(wrap);
+  }
+  const table = el("table", "tbl");
+  table.appendChild(tableHead(["Cliente", "Plan", "Pago", "Portal", "Sitio", "Por cobrar", ""]));
+  const tb = document.createElement("tbody");
+  list
+    .slice()
+    .sort((a, b) => licenseDue(b) - licenseDue(a) || (maintState(a).days ?? 9999) - (maintState(b).days ?? 9999) || clientName(a.client_id).localeCompare(clientName(b.client_id)))
+    .forEach((l) => {
+      const tr = el("tr", "is-link" + (l.status === "cancelada" ? " is-off" : "") + (l.blocked ? " is-blocked" : ""));
+      const c1 = el("td");
+      c1.appendChild(el("strong", "", clientName(l.client_id)));
+      const client = clientOf(l.client_id);
+      if (client && client.kind) c1.appendChild(el("span", "lic-client", client.kind));
+      tr.appendChild(c1);
+      tr.appendChild(el("td", "", planText(l)));
+      const c3 = el("td");
+      const m = maintState(l);
+      if (!isSub(l)) {
+        const fee = licenseFeeState(l);
+        c3.appendChild(el("span", "tag " + fee.cls, fee.label));
+        c3.appendChild(document.createTextNode(" "));
+      }
+      c3.appendChild(el("span", "tag " + m.cls, m.label));
+      tr.appendChild(c3);
+      const pt = portalTag(l);
+      const c4 = el("td");
+      c4.appendChild(el("span", "tag " + pt[1], pt[0]));
+      tr.appendChild(c4);
+      const site = G.sites.find((s) => s.id === l.site_id);
+      const c5 = el("td");
+      if (site) {
+        const st = SITE_STATUS[site.status] || SITE_STATUS.unknown;
+        c5.appendChild(el("span", "tag " + st[1], st[0]));
+      } else c5.textContent = "—";
+      tr.appendChild(c5);
+      const d = licenseDue(l);
+      tr.appendChild(el("td", "num" + (d ? " is-due" : ""), d ? money(d) : "—"));
+      const c7 = el("td", "num");
+      if (l.status !== "cancelada") {
+        const b = button(l.blocked ? "Desbloquear" : "Bloquear", (e) => {
+          e.stopPropagation();
+          setBlocked(l, !l.blocked);
+        }, l.blocked ? "btn-primary" : "");
+        c7.appendChild(b);
+      }
+      tr.appendChild(c7);
+      tr.addEventListener("click", () => openDrawer("license", l.id));
+      tb.appendChild(tr);
+    });
+  table.appendChild(tb);
+  wrap.appendChild(table);
+  root.appendChild(wrap);
+}
+
+async function addLicPayment(l, concept, amount, day) {
+  amount = Math.round(Number(amount) || 0);
+  if (amount <= 0) return toast("Pon un valor mayor que cero.", "is-bad");
+  const row = await safely(dbInsert("fl_license_payments", { license_id: l.id, concept, amount, paid_on: day || todayStr() }));
+  G.licPayments.push(row);
+  // Cada periodo pagado corre la fecha de vencimiento del mantenimiento
+  if (concept === "mantenimiento" && Number(l.maint_fee) > 0) {
+    const periods = Math.floor(amount / Number(l.maint_fee) + 1e-6);
+    if (periods > 0) {
+      const until = addMonths(l.maint_until || l.start_date || day, periods * (PERIOD_MONTHS[l.maint_period] || 12));
+      l.maint_until = until;
+      await safely(dbUpdate("fl_licenses", l.id, { maint_until: until }));
+      toast("Mantenimiento pagado hasta el " + longDate(until) + ".", "is-good");
+    } else toast("El valor no completa un periodo: la fecha de mantenimiento no cambió.", "is-info");
+  }
+  // Un pago de soporte salda los arreglos pendientes, del más viejo al más nuevo
+  if (concept === "soporte") {
+    let left = amount;
+    const pending = G.support
+      .filter((s) => s.license_id === l.id && !s.covered && !s.paid_on)
+      .sort((a, b) => String(a.happened_on).localeCompare(String(b.happened_on)));
+    for (const s of pending) {
+      if (Number(s.charge) > left + 0.5) break;
+      left -= Number(s.charge);
+      s.paid_on = row.paid_on;
+      await safely(dbUpdate("fl_support", s.id, { paid_on: row.paid_on }));
+    }
+  }
+  renderAllViews();
+  renderDrawer();
+}
+
+function defaultPayAmount(l, concept) {
+  if (concept === "mantenimiento") return (Number(l.maint_fee) || 0) * Math.max(1, maintState(l).owed || 1);
+  if (concept === "soporte") return supportDue(l);
+  const f = licenseFeeState(l);
+  return f.due || Math.min(f.cuota || 0, f.balance || 0);
+}
+
+async function markSupportPaid(l, s) {
+  const day = todayStr();
+  if (Number(s.charge) > 0) {
+    const pay = await safely(dbInsert("fl_license_payments", { license_id: l.id, concept: "soporte", amount: s.charge, paid_on: day, note: String(s.description).slice(0, 120) }));
+    G.licPayments.push(pay);
+  }
+  s.paid_on = day;
+  await safely(dbUpdate("fl_support", s.id, { paid_on: day }));
+  renderAllViews();
+  renderDrawer();
+}
+
+function licenseDrawer(box) {
+  const l = G.licenses.find((x) => x.id === G.drawer.id);
+  if (!l) return closeDrawer();
+  const sub = isSub(l);
+  drawerTop(box, (l.product || "Legajo") + " · " + (sub ? "suscripción" : "licencia de uso"));
+  const sum = el("div", "lic-sum");
+  // Los campos de texto solo repintan el resumen: repintar todo movería el foco
+  const save = (patch, redraw) => {
+    Object.assign(l, patch);
+    renderAllViews();
+    if (redraw) renderDrawer();
+    else paintSum();
+    safely(dbUpdate("fl_licenses", l.id, patch));
+  };
+  const paintSum = () => {
+    sum.innerHTML = "";
+    const line = (label, tagText, cls, detail) => {
+      const r = el("div", "lic-line");
+      r.appendChild(el("span", "lic-k", label));
+      const v = el("span", "lic-v");
+      if (tagText) v.appendChild(el("span", "tag " + (cls || ""), tagText));
+      if (detail) v.appendChild(el("span", "lic-d", detail));
+      r.appendChild(v);
+      sum.appendChild(r);
+    };
+    const m = maintState(l);
+    const sup = supportDue(l);
+    if (!sub) {
+      const f = licenseFeeState(l);
+      line("Licencia", f.label, f.cls, feeDetail(l, f));
+    }
+    line(sub ? "Suscripción" : "Mantenimiento", m.label, m.cls, maintDetail(l, m));
+    line("Soporte", sup ? "Por cobrar" : "Al día", sup ? "is-hot" : "is-good", sup ? money(sup) : "");
+    const site = G.sites.find((s) => s.id === l.site_id);
+    if (site) {
+      const st = SITE_STATUS[site.status] || SITE_STATUS.unknown;
+      line("Sitio", st[0], st[1], hostOf(site.url));
+    }
+    const due = licenseDue(l);
+    const total = el("div", "lic-total" + (due ? " is-due" : ""));
+    total.appendChild(el("span", "", "Por cobrar hoy"));
+    total.appendChild(el("strong", "", money(due)));
+    sum.appendChild(total);
+  };
+
+  box.appendChild(el("h3", "msg-subject", clientName(l.client_id)));
+
+  // Bloqueo del portal, arriba: es lo que se usa cuando no pagan
+  const pt = portalTag(l);
+  const bar = el("div", "lic-block" + (l.blocked ? " is-blocked" : ""));
+  const info = el("span", "lic-block-text");
+  info.appendChild(el("span", "tag " + pt[1], "Portal " + pt[0].toLowerCase()));
+  if (l.blocked && l.blocked_at) info.appendChild(el("span", "", "desde " + whenShort(l.blocked_at)));
+  bar.appendChild(info);
+  if (l.status !== "cancelada") bar.appendChild(button(l.blocked ? "Desbloquear portal" : "Bloquear portal", () => setBlocked(l, !l.blocked), l.blocked ? "btn-primary" : ""));
+  box.appendChild(bar);
+  if (l.blocked) {
+    box.appendChild(field("Mensaje que ve el cliente", textArea(l.block_note, (v) => save({ block_note: v.trim() || null }), 2)));
+  }
+
+  paintSum();
+  box.appendChild(sum);
+
+  box.appendChild(field("Cliente", selectInput(clientOptions(), l.client_id, (v) => save({ client_id: v || null }, true))));
+  const two = el("div", "two");
+  two.appendChild(field("Modelo", selectInput(BILLING, l.billing || "suscripcion", (v) => save({ billing: v }, true))));
+  two.appendChild(field("Estado", selectInput(LIC_STATUS, l.status, (v) => save({ status: v }, true))));
+  box.appendChild(two);
+  if (sub) {
+    const mods = el("div", "lic-mods");
+    mods.appendChild(el("span", "lic-k", "Módulos"));
+    MODULES.forEach(([k, label]) => {
+      mods.appendChild(checkField(label, (l.modules || []).includes(k), (on) => {
+        const next = MODULES.map(([m]) => m).filter((m) => (m === k ? on : (l.modules || []).includes(m)));
+        save({ modules: next });
+      }));
+    });
+    box.appendChild(mods);
+  }
+  const two2 = el("div", "two");
+  const prod = textInput(l.product, (v) => save({ product: v.trim() || "Legajo" }));
+  const prodField = field("Producto", prod);
+  prodField.appendChild(attachList(prod, licenseProducts()));
+  two2.appendChild(prodField);
+  const siteOpts = [["", "Sin sitio"]].concat(
+    G.sites
+      .slice()
+      .sort((a, b) => String(a.grp || "").localeCompare(String(b.grp || "")) || a.name.localeCompare(b.name))
+      .map((s) => [s.id, (s.grp ? s.grp + " / " : "") + s.name])
+  );
+  two2.appendChild(field("Sitio vigilado", selectInput(siteOpts, l.site_id, (v) => save({ site_id: v || null }, true))));
+  box.appendChild(two2);
+
+  if (!sub) {
+    box.appendChild(el("h3", "", "Licencia de uso"));
+    const t1 = el("div", "two");
+    t1.appendChild(field("Valor total (COP)", textInput(l.price, (v) => save({ price: Math.max(0, Number(v) || 0) }), "number")));
+    t1.appendChild(field("Cuotas mensuales", textInput(l.installments, (v) => save({ installments: Math.min(60, Math.max(1, Math.round(Number(v) || 1))) }), "number")));
+    t1.appendChild(field("Fecha de inicio", textInput(l.start_date, (v) => v && save({ start_date: v }), "date")));
+    box.appendChild(t1);
+    box.appendChild(el("p", "pay-sum", "1 cuota es de contado. Con más, la primera se paga en la fecha de inicio y las demás cada mes."));
+  }
+
+  box.appendChild(el("h3", "", sub ? "Suscripción" : "Mantenimiento"));
+  const t2 = el("div", "two");
+  t2.appendChild(field("Valor por periodo (COP)", textInput(l.maint_fee, (v) => save({ maint_fee: Math.max(0, Number(v) || 0) }), "number")));
+  t2.appendChild(field("Periodo", selectInput(MAINT_PERIODS, l.maint_period, (v) => save({ maint_period: v }))));
+  if (sub) t2.appendChild(field("Inicio", textInput(l.start_date, (v) => v && save({ start_date: v }), "date")));
+  t2.appendChild(field("Pagado hasta", textInput(l.maint_until, (v) => save({ maint_until: v || null }), "date")));
+  box.appendChild(t2);
+  box.appendChild(button("Registrar pago de un periodo", () => {
+    if (!(Number(l.maint_fee) > 0)) return toast("Primero pon el valor por periodo.", "is-bad");
+    addLicPayment(l, "mantenimiento", Number(l.maint_fee), todayStr());
+  }));
+
+  // ----- Soporte -----
+  box.appendChild(el("h3", "", "Soporte y arreglos"));
+  const incidents = G.support.filter((s) => s.license_id === l.id).sort((a, b) => String(b.happened_on).localeCompare(String(a.happened_on)));
+  if (incidents.length) {
+    const ul = el("ul", "check-list");
+    incidents.forEach((s) => {
+      const li = document.createElement("li");
+      const hrs = String(Number(s.hours)).replace(".", ",") + " h" + (s.urgent ? " urgente" : "");
+      li.appendChild(el("span", "tx", shortDate(s.happened_on) + " · " + s.description + " · " + hrs));
+      const tag = s.covered ? ["Cubierto", "is-good"] : s.paid_on ? ["Cobrado", "is-violet"] : ["Por cobrar " + money(s.charge), "is-hot"];
+      li.appendChild(el("span", "tag " + tag[1], tag[0]));
+      if (!s.covered && !s.paid_on) li.appendChild(button("Cobrado", () => markSupportPaid(l, s)));
+      const x = el("button", "x", "×");
+      x.type = "button";
+      x.setAttribute("aria-label", "Borrar arreglo");
+      x.addEventListener("click", async () => {
+        if (!window.confirm("¿Borrar este arreglo?")) return;
+        G.support = G.support.filter((o) => o.id !== s.id);
+        renderAllViews();
+        renderDrawer();
+        await safely(dbDelete("fl_support", s.id));
+      });
+      li.appendChild(x);
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  }
+  const supBox = el("div", "mini-add");
+  const desc = textInput("", () => {});
+  desc.placeholder = "Qué se arregló";
+  desc.setAttribute("aria-label", "Qué se arregló");
+  const hours = textInput("", () => {}, "number");
+  hours.placeholder = "Horas";
+  hours.step = "0.5";
+  hours.min = "0";
+  hours.setAttribute("aria-label", "Horas");
+  const day = textInput(todayStr(), () => {}, "date");
+  day.setAttribute("aria-label", "Fecha del arreglo");
+  let urgent = false;
+  let covered = coveredOn(l, todayStr());
+  const preview = el("span", "note");
+  const paintPreview = () => {
+    preview.textContent = covered ? "Cubierto: no se cobra." : "Valor: " + money(supportCharge(hours.value, urgent, false));
+  };
+  const coveredBox = checkField(sub ? "Cubierto por la suscripción" : "Cubierto por el mantenimiento", covered, (v) => {
+    covered = v;
+    paintPreview();
+  });
+  hours.addEventListener("input", paintPreview);
+  day.addEventListener("change", () => {
+    covered = coveredOn(l, day.value);
+    coveredBox.querySelector("input").checked = covered;
+    paintPreview();
+  });
+  const r1 = el("div", "row");
+  r1.appendChild(desc);
+  supBox.appendChild(r1);
+  const r2 = el("div", "row");
+  r2.appendChild(hours);
+  r2.appendChild(day);
+  supBox.appendChild(r2);
+  supBox.appendChild(checkField("Urgente o fuera de horario", false, (v) => {
+    urgent = v;
+    paintPreview();
+  }));
+  supBox.appendChild(coveredBox);
+  paintPreview();
+  supBox.appendChild(preview);
+  supBox.appendChild(button("Agregar arreglo", async () => {
+    const h = Number(hours.value);
+    if (!desc.value.trim()) return desc.focus();
+    if (!(h > 0)) return hours.focus();
+    const r = supportRates();
+    const row = await safely(
+      dbInsert("fl_support", {
+        license_id: l.id,
+        happened_on: day.value || todayStr(),
+        description: desc.value.trim(),
+        hours: h,
+        rate: Math.round(r.rate * (urgent ? 1 + r.urgentPct / 100 : 1)),
+        urgent,
+        covered,
+        charge: supportCharge(h, urgent, covered),
+      })
+    );
+    G.support.push(row);
+    renderAllViews();
+    renderDrawer();
+  }));
+  box.appendChild(supBox);
+
+  // ----- Pagos -----
+  const concepts = payConcepts(l);
+  box.appendChild(el("h3", "", "Pagos"));
+  box.appendChild(el("p", "pay-sum", "Cobrado en total: " + money(licPaid(l))));
+  const pays = G.licPayments.filter((p) => p.license_id === l.id).sort((a, b) => String(b.paid_on).localeCompare(String(a.paid_on)));
+  if (pays.length) {
+    const ul = el("ul", "check-list");
+    pays.forEach((p) => {
+      const li = document.createElement("li");
+      li.appendChild(el("span", "tx", dayYear(p.paid_on) + " · " + money(p.amount) + (p.note ? " · " + p.note : "")));
+      li.appendChild(el("span", "tag", (concepts.find(([k]) => k === p.concept) || PAY_CONCEPTS.find(([k]) => k === p.concept) || ["", p.concept])[1]));
+      const x = el("button", "x", "×");
+      x.type = "button";
+      x.setAttribute("aria-label", "Borrar pago");
+      x.addEventListener("click", async () => {
+        if (!window.confirm("¿Borrar este pago? Si era de un periodo, revisa a mano la fecha Pagado hasta.")) return;
+        G.licPayments = G.licPayments.filter((o) => o.id !== p.id);
+        renderAllViews();
+        renderDrawer();
+        await safely(dbDelete("fl_license_payments", p.id));
+      });
+      li.appendChild(x);
+      ul.appendChild(li);
+    });
+    box.appendChild(ul);
+  }
+  const pay = el("div", "mini-add");
+  const amount = textInput(defaultPayAmount(l, concepts[0][0]) || "", () => {}, "number");
+  amount.setAttribute("aria-label", "Valor del pago");
+  const concept = selectInput(concepts, concepts[0][0], (v) => {
+    amount.value = defaultPayAmount(l, v) || "";
+  });
+  concept.setAttribute("aria-label", "Concepto del pago");
+  const payDay = textInput(todayStr(), () => {}, "date");
+  payDay.setAttribute("aria-label", "Fecha del pago");
+  const pr = el("div", "row");
+  pr.appendChild(concept);
+  pr.appendChild(amount);
+  pr.appendChild(payDay);
+  pay.appendChild(pr);
+  pay.appendChild(button("Registrar pago", () => addLicPayment(l, concept.value, amount.value, payDay.value)));
+  box.appendChild(pay);
+
+  // ----- Conexión con el portal -----
+  box.appendChild(el("h3", "", "Conexión con el portal"));
+  if (l.access_key) {
+    box.appendChild(
+      el("p", "pay-sum", "Pega el código una vez en el portal de Legajo del cliente. Al bloquear, monitor y admin ven Falta de pago a pantalla completa, sin poder cerrarlo; admin_am ve una advertencia. Los procesos y los demás usuarios siguen funcionando.")
+    );
+    box.appendChild(el("code", "lic-key", l.access_key));
+    const keyActs = el("div", "msg-acts");
+    keyActs.appendChild(button("Copiar código para el portal", () => copyText(portalSnippet(l), "Código copiado.")));
+    keyActs.appendChild(button("Copiar clave", () => copyText(l.access_key, "Clave copiada.")));
+    box.appendChild(keyActs);
+  } else {
+    box.appendChild(el("p", "pay-sum", "Falta la clave: corre supabase/licencias.sql en Supabase y recarga el panel."));
+  }
+
+  box.appendChild(field("Notas", textArea(l.notes, (v) => save({ notes: v || null }), 3)));
+
+  const acts = el("div", "msg-acts");
+  const client = clientOf(l.client_id);
+  if (client && client.email) {
+    const a = el("a", "btn btn-primary", "Recordar por correo");
+    a.href = reminderHref(l, client);
+    acts.appendChild(a);
+  }
+  if (client) acts.appendChild(button("Ver cliente", () => openDrawer("client", client.id)));
+  box.appendChild(acts);
+  if (client && !client.email) box.appendChild(el("p", "pay-sum", "Pon el correo del cliente para enviarle recordatorios de pago."));
+
+  const danger = el("div", "drawer-danger");
+  danger.appendChild(button(sub ? "Borrar suscripción" : "Borrar licencia", async () => {
+    if (!window.confirm("¿Borrar con sus pagos y arreglos? No se puede deshacer.")) return;
+    G.licenses = G.licenses.filter((o) => o.id !== l.id);
+    G.licPayments = G.licPayments.filter((o) => o.license_id !== l.id);
+    G.support = G.support.filter((o) => o.license_id !== l.id);
+    closeDrawer();
+    renderAllViews();
+    await safely(dbDelete("fl_licenses", l.id));
+  }));
+  box.appendChild(danger);
 }
 
 /* Trae las webs de los repos que tienen Website en GitHub */
@@ -1852,6 +3138,21 @@ function renderFormats() {
     "El formulario de Contacto pide un motivo. El correo te llega con el motivo en el asunto y su ficha.",
     ["[Cotización] rojo: solo el mensaje", "[Colaboración] verde: en qué y enlace", "[Empleo] morado: empresa y vacante", "[Contacto] gris: solo el mensaje", "[CAÍDA] rojo y [RESUELTO] verde: avisos del monitor", "Responder le contesta directo a quien escribió"]
   );
+  card(
+    "Suscripciones y licencias",
+    "Cómo se calcula lo que se cobra en Suscripciones.",
+    [
+      "Legajo por suscripción: módulos Conciliación e Insolvencia, valor por periodo",
+      "Cada pago de un periodo corre la fecha Pagado hasta",
+      "Sin pago, Bloquear portal: el portal del cliente muestra el aviso de suspensión",
+      "Licencia de uso: de contado o en cuotas mensuales, con mantenimiento aparte",
+      "Arreglos: horas × tarifa de soporte, con mínimo de horas",
+      "Urgente o fuera de horario: recargo de la tarifa",
+      "Con mantenimiento vigente el arreglo queda cubierto",
+      "Recordar por correo arma el mensaje con lo que se debe",
+    ],
+    button("Ir a Suscripciones", () => goToView("licencias"))
+  );
   root.appendChild(grid);
 }
 
@@ -1861,7 +3162,7 @@ function showView(name) {
   document.querySelectorAll("#side-nav .side-link, #tabbar [data-view]").forEach((b) => b.classList.toggle("is-active", b.dataset.view === name));
   document.getElementById("tab-menu").classList.toggle("is-active", !document.querySelector('#tabbar [data-view="' + name + '"]'));
   document.querySelectorAll(".shell-main > .view").forEach((v) => (v.hidden = v.id !== "view-" + name));
-  if (!["proyectos", "clientes", "bandeja"].includes(name)) closeDrawerQuiet();
+  if (!["proyectos", "clientes", "bandeja", "licencias", "sitios"].includes(name)) closeDrawerQuiet();
   try {
     history.replaceState(null, "", "#" + name);
   } catch (e) {}
@@ -1880,11 +3181,13 @@ function renderAllViews() {
   if (G.view === "formatos") renderFormats();
   if (G.view === "bandeja") renderInbox();
   const active = document.activeElement;
-  const typingInSites = active && active.matches("input:not([type=checkbox])") && document.getElementById("view-sitios").contains(active);
-  if (G.view === "sitios" && !typingInSites) renderSites();
+  // Un aviso en vivo no repinta una vista mientras escribes en ella
+  const typingIn = (id) => active && active.matches("input:not([type=checkbox]), textarea, select") && document.getElementById(id).contains(active);
+  if (G.view === "sitios" && !typingIn("view-sitios")) renderSites();
+  if (G.view === "licencias" && !typingIn("view-licencias")) renderLicenses();
 }
 
-const PANEL_VIEWS = ["proyectos", "bandeja", "presupuestos", "entregas", "clientes", "sitios", "formatos", "web"];
+const PANEL_VIEWS = ["proyectos", "bandeja", "presupuestos", "licencias", "entregas", "clientes", "sitios", "formatos", "web"];
 
 function goToView(name) {
   if (name !== "presupuestos" && G.editing) {

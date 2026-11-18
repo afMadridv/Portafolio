@@ -377,9 +377,144 @@ body.admin-page {
   backdrop-filter: var(--p-glass);
 }
 
+/* ----- Sitios en cuadros y carpetas ----- */
+.site-sum { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: -0.2rem 0 0.8rem; }
+.site-sum .tag { padding: 0.15rem 0.6rem; font-size: 0.74rem; }
+.site-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem 1rem; margin-bottom: 0.9rem; }
+.site-tools .inbox-filters { margin: 0; }
+.site-tools .site-add { flex: 1 1 560px; max-width: 860px; margin: 0; }
+.site-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 1.2rem; }
+.site-card,
+.folder-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.8rem 0.85rem;
+  background: var(--p-card);
+  border: 1px solid var(--p-line);
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-lift);
+  -webkit-backdrop-filter: var(--p-glass);
+  backdrop-filter: var(--p-glass);
+  color: var(--p-ink);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.site-card:hover,
+.folder-card:hover { background: var(--p-card-hover); border-color: var(--p-line-strong); }
+.site-card:focus-visible,
+.folder-card:focus-visible { outline: 2px solid var(--p-accent); outline-offset: 2px; }
+.site-card.is-down,
+.folder-card.is-down { background: rgba(250, 64, 64, 0.1); border-color: rgba(250, 64, 64, 0.6); }
+.site-card.is-off { opacity: 0.6; }
+.site-card.is-main { border-color: rgba(250, 64, 64, 0.4); box-shadow: var(--p-lift), inset 3px 0 0 var(--p-accent); }
+.sc-main { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #ff9a9a; }
+.site-pager { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.6rem; margin: -0.4rem 0 1.2rem; font-size: 0.8rem; color: var(--p-soft); }
+.sc-top { display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; }
+.sc-ms { font-size: 0.72rem; color: var(--p-soft); }
+.sc-name { font-size: 0.92rem; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.sc-url { overflow: hidden; font-size: 0.74rem; color: #ff9a9a; text-overflow: ellipsis; white-space: nowrap; }
+.sc-lic { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; font-size: 0.76rem; color: var(--p-soft); }
+.sc-ssl { align-self: flex-start; }
+.sc-meta { margin-top: auto; padding-top: 0.25rem; font-size: 0.72rem; color: var(--p-soft); }
+.folder-card { flex-direction: row; align-items: center; gap: 0.8rem; }
+.fc-icon svg { display: block; width: 46px; height: 46px; }
+.fc-body { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+.fc-body .sc-meta { margin: 0; padding: 0; }
+.fc-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.site-crumb { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin-bottom: 0.8rem; }
+.site-crumb .view-sub { flex: 1 1 auto; margin: 0; font-family: var(--font-display); font-weight: 400; }
+.site-group-title { margin-top: 0.4rem; }
+.site-line { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; margin: 0 0 0.6rem; font-size: 0.82rem; color: var(--p-soft); }
+.site-cause { margin: -0.4rem 0 0.8rem; font-size: 0.84rem; }
+.drawer .site-url { margin-bottom: 0.8rem; font-size: 0.82rem; }
+.check-inline { display: flex; align-items: center; gap: 0.45rem; margin: 0.2rem 0 0.6rem; font-size: 0.84rem; cursor: pointer; }
+
+/* ----- Licencias ----- */
+.stat-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 0.9rem; }
+.stat {
+  padding: 0.8rem 0.9rem;
+  background: var(--p-card);
+  border: 1px solid var(--p-line);
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-lift);
+  -webkit-backdrop-filter: var(--p-glass);
+  backdrop-filter: var(--p-glass);
+}
+.stat span { display: block; font-size: 0.74rem; color: var(--p-soft); }
+.stat strong { display: block; margin-top: 0.15rem; font-size: 1.25rem; font-weight: 600; }
+.stat.is-hot { border-color: rgba(250, 64, 64, 0.55); }
+.stat.is-hot strong { color: var(--p-red); }
+.stat.is-warn strong { color: var(--p-amber); }
+.rates-box {
+  margin-bottom: 0.9rem;
+  padding: 0.9rem 1rem;
+  background: var(--p-card);
+  border: 1px solid var(--p-line);
+  border-radius: var(--p-radius);
+  -webkit-backdrop-filter: var(--p-glass);
+  backdrop-filter: var(--p-glass);
+}
+.rates-box summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.8rem; cursor: pointer; list-style: none; }
+.rates-box summary::-webkit-details-marker { display: none; }
+.rates-box summary::before { content: "▸"; color: var(--p-soft); }
+.rates-box[open] summary::before { content: "▾"; }
+.rates-box[open] summary { margin-bottom: 0.4rem; }
+.rates-box h2 { margin: 0; font-size: 0.95rem; font-weight: 600; }
+.rates-now { font-size: 0.82rem; color: var(--p-soft); }
+.rates-box > p { max-width: 80ch; margin: 0 0 0.6rem; font-size: 0.82rem; color: var(--p-soft); }
+.rates-row { display: grid; grid-template-columns: repeat(3, minmax(0, 200px)); gap: 0 0.7rem; }
+.rates-row .field label { display: block; margin-bottom: 0.2rem; }
+.rates-box .rates-example { margin: 0.2rem 0 0; color: var(--p-ink); }
+.lic-client { display: block; font-size: 0.74rem; color: var(--p-soft); }
+.tbl td.is-due { color: var(--p-red); font-weight: 600; }
+.tbl tr.is-off td { opacity: 0.55; }
+.tbl tr.is-blocked td { background: rgba(250, 64, 64, 0.07); }
+.lic-block { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.7rem; padding: 0.55rem 0.7rem; background: var(--p-sunken); border: 1px solid var(--p-line); border-radius: 10px; }
+.lic-block.is-blocked { background: rgba(250, 64, 64, 0.12); border-color: rgba(250, 64, 64, 0.55); }
+.lic-block-text { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--p-soft); }
+.lic-mods { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 1rem; margin-bottom: 0.4rem; font-size: 0.8rem; }
+.lic-mods .check-inline { margin: 0; }
+.lic-key { display: block; margin: 0.3rem 0; padding: 0.45rem 0.6rem; overflow-wrap: anywhere; background: var(--p-sunken); border: 1px solid var(--p-line); border-radius: 8px; font: 0.8rem "IBM Plex Mono", monospace; }
+.lic-sum { display: flex; flex-direction: column; margin-bottom: 0.9rem; padding: 0.55rem 0.8rem; background: var(--p-sunken); border: 1px solid var(--p-line); border-radius: 10px; }
+.lic-line { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 0.5rem; padding: 0.3rem 0; font-size: 0.82rem; }
+.lic-k { color: var(--p-soft); }
+.lic-v { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
+.lic-total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 0.3rem; padding-top: 0.5rem; border-top: 1px solid var(--p-line); font-size: 0.84rem; }
+.lic-total strong { font-size: 1.1rem; }
+.lic-total.is-due strong { color: var(--p-red); }
+.mini-add { display: grid; gap: 0.4rem; margin: 0.5rem 0 0.4rem; }
+.mini-add .row { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.mini-add .row > .input { flex: 1 1 110px; min-width: 0; }
+.mini-add .check-inline { margin: 0; }
+.mini-add .note { font-size: 0.8rem; color: var(--p-soft); }
+.mini-add > .btn { justify-self: start; }
+.check-list .tag { flex: none; }
+.admin-page .check-list .btn { padding: 0.18rem 0.5rem; font-size: 0.72rem; }
+
+@media (max-width: 1200px) {
+  .site-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .site-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .site-tools .site-add { flex-wrap: wrap; }
+  .site-tools .site-add .input { flex: 1 1 calc(50% - 0.35rem); }
+}
+@media (max-width: 520px) {
+  .site-grid { grid-template-columns: minmax(0, 1fr); }
+  .rates-row { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* Quien pide menos transparencia recibe paneles sólidos */
 @media (prefers-reduced-transparency: reduce) {
-  .side, .col, .table-wrap, .drawer, .toast, .gate-win, .fmt-card, .q-form fieldset, .view-web #admin-panel-body {
+  .side, .col, .table-wrap, .drawer, .toast, .gate-win, .fmt-card, .q-form fieldset, .view-web #admin-panel-body,
+  .site-card, .folder-card, .stat, .rates-box {
     background: #161616;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;

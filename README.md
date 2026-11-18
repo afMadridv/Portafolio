@@ -133,9 +133,10 @@ marca del panel y de los correos es **AM Developer** (constante `BRAND` en
 | **Proyectos** | Tablero Pendiente / En marcha / Terminado; se arrastran las tarjetas. Detalle con cliente, valor, fecha, entregables (el % sale solo) y pagos |
 | **Bandeja** | Lo que llega por el formulario de Contacto. Seguimiento de cada mensaje: estado (Nuevo, Contactado, En seguimiento, Ganado, Descartado), fecha para volver a escribir y notas. Responder, o crear cliente y proyecto |
 | **Presupuestos** | Cotizaciones por horas o a precio fijo, con la hoja al lado y **Guardar como PDF** |
+| **Suscripciones** | Legajo por suscripción (módulos Conciliación e Insolvencia) o licencia de uso: periodos con fecha de pagado hasta, cuotas, soporte por horas, pagos y recordatorio por correo. **Bloquear / Desbloquear portal**: el portal del cliente lo lee en `/api/estado`. Tablas en `supabase/licencias.sql` |
 | **Entregas** | Fechas de proyectos y entregables, de la más cercana a la más lejana |
 | **Clientes** | Datos de cada cliente y su saldo |
-| **Sitios** | Monitor de tus webs: estado, tiempo de respuesta e historial de caídas |
+| **Sitios** | Monitor de webs en cuadros de 4 × 4 con páginas. Carpetas (p. ej. Legajo) con su sitio principal y los demás dentro; **+ Carpeta** crea una vacía. Disponibilidad a 7 y 30 días, causa probable de cada caída y vencimiento del certificado SSL |
 | **Formatos** | Guía de los formatos de cotización y de correo |
 | **Web del portafolio** | Lo de abajo: iconos, fondo, proyectos, habilidades y educación |
 
@@ -514,6 +515,30 @@ node -e "const c=require('crypto').createECDH('prime256v1');c.generateKeys();con
 
 La privada nunca va al repositorio. En iPhone y iPad los avisos solo funcionan con el
 panel añadido a la pantalla de inicio desde Safari (iOS 16.4 o superior).
+
+## Bloqueo de portales (Legajo)
+
+Cada suscripción tiene una clave. El portal del cliente pregunta su estado al cargar:
+
+```
+GET https://andresmadrid.vercel.app/api/estado?key=<clave>
+→ { "ok": true, "active": false, "status": "bloqueado", "message": "…", "modules": ["conciliacion"], "paid_until": "2026-12-01" }
+```
+
+En el panel, **Suscripciones → detalle → Copiar código para el portal** da el bloque listo para
+pegar una vez en el portal. El portal llama `amRevisarSuscripcion({ rol, usuario })` al iniciar
+sesión y `amRevisarSuscripcion(null)` al salir. Con el portal bloqueado:
+
+| Quién | Qué ve |
+|---|---|
+| Rol **monitor** o **admin** | "Falta de pago" a pantalla completa, sin botón de cerrar. Si lo quitan de la página, vuelve |
+| **admin_am** | Una advertencia arriba, que se puede cerrar |
+| Los demás usuarios | Nada: siguen trabajando |
+
+Los procesos del portal no se detienen. Se revisa cada 5 minutos: al desbloquear, el aviso
+se va solo. Si este servidor no contesta, el portal sigue abierto. La respuesta de
+`/api/estado` queda en caché 30 segundos. El bloqueo vive en el navegador: frena el uso
+normal, no a alguien que sepa de programación.
 
 ## Diseño anterior
 

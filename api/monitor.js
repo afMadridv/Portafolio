@@ -8,14 +8,68 @@
 
    Caída = sin respuesta o error 5xx en 2 revisiones seguidas, para
    no avisar por un fallo de un momento. Un 401/403/404 cuenta como
-   arriba: el servidor responde.
+   arriba: el servidor responde. El error dice la causa (DNS,
+   conexión rechazada, certificado…) y cada 12 horas se mira cuándo
+   vence el certificado SSL.
    ========================================================= */
 const crypto = require("crypto");
+const tls = require("tls");
+const net = require("net");
 const { BRAND, SITE_URL, reply, esc, stamp, canSendMail, sendMail, canUseDb, db, sessionIsAdmin, brandEmail } = require("./_lib");
 const { pushAll } = require("./_push");
 
 const CHECK_TIMEOUT_MS = 8000;
 const FAILS_TO_ALERT = 2;
+const SSL_EVERY_MS = 12 * 3600 * 1000;
+
+/* Códigos de red de Node → lo que le pasó al servidor */
+const NET_ERRORS = {
+  ENOTFOUND: "Dominio no encontrado (DNS)",
+  EAI_AGAIN: "Dominio no encontrado (DNS)",
+  ECONNREFUSED: "Conexión rechazada por el servidor",
+  ECONNRESET: "La conexión se cortó",
+  EPIPE: "La conexión se cortó",
+  EHOSTUNREACH: "Servidor inalcanzable",
+  ENETUNREACH: "Servidor inalcanzable",
+  CERT_HAS_EXPIRED: "Certificado SSL vencido",
+  UND_ERR_CONNECT_TIMEOUT: "Sin respuesta al conectar",
+  UND_ERR_SOCKET: "La conexión se cortó",
+};
+
+function netError(e) {
+  let c = e;
+  let code = "";
+  for (let i = 0; c && i < 4 && !code; i++, c = c.cause) code = c.code || "";
+  if (NET_ERRORS[code]) return NET_ERRORS[code];
+  if (/CERT|SELF_SIGNED|ALTNAME|UNABLE_TO_VERIFY|ERR_TLS/.test(code)) return "Certificado SSL no válido";
+  return "No se pudo conectar";
+}
+
+/* Fecha de vencimiento del certificado, o null si no se pudo leer */
+function certExpiry(url) {
+  return new Promise((resolve) => {
+    let u;
+    try {
+      u = new URL(url);
+    } catch (e) {
+      return resolve(null);
+    }
+    if (u.protocol !== "https:") return resolve(null);
+    const opts = { host: u.hostname, port: Number(u.port) || 443, rejectUnauthorized: false, timeout: 6000 };
+    if (!net.isIP(u.hostname)) opts.servername = u.hostname;
+    const sock = tls.connect(opts, () => {
+      const cert = sock.getPeerCertificate();
+      sock.end();
+      const when = cert && cert.valid_to ? new Date(cert.valid_to) : null;
+      resolve(when && !isNaN(when) ? when : null);
+    });
+    sock.on("timeout", () => {
+      sock.destroy();
+      resolve(null);
+    });
+    sock.on("error", () => resolve(null));
+  });
+}
 
 function secretOk(req) {
   const want = process.env.MONITOR_SECRET || "";
@@ -39,7 +93,7 @@ async function probe(url) {
     return { up: r.status < 500, http: r.status, ms, error: r.status < 500 ? null : "HTTP " + r.status };
   } catch (e) {
     const timedOut = e && e.name === "AbortError";
-    return { up: false, http: null, ms: null, error: timedOut ? "Sin respuesta en " + CHECK_TIMEOUT_MS / 1000 + " s" : "No se pudo conectar" };
+    return { up: false, http: null, ms: null, error: timedOut ? "Sin respuesta en " + CHECK_TIMEOUT_MS / 1000 + " s" : netError(e) };
   } finally {
     clearTimeout(timer);
   }
@@ -75,7 +129,8 @@ function alertMail(site, kind, now, detail, downFor) {
 }
 
 async function checkSite(site, now) {
-  const result = await probe(site.url);
+  const sslDue = /^https:/i.test(site.url) && (!site.ssl_checked_at || now - new Date(site.ssl_checked_at) > SSL_EVERY_MS);
+  const [result, cert] = await Promise.all([probe(site.url), sslDue ? certExpiry(site.url) : null]);
   const fails = result.up ? 0 : (site.fail_count || 0) + 1;
   const patch = {
     last_checked_at: now.toISOString(),
@@ -95,6 +150,17 @@ async function checkSite(site, now) {
   if (event || site.status === "unknown") patch.last_change_at = now.toISOString();
 
   await db("fl_sites?id=eq." + site.id, { method: "PATCH", body: patch });
+  // Aparte: si aún no existen las columnas del SSL, la revisión principal sigue funcionando
+  if (sslDue) {
+    try {
+      await db("fl_sites?id=eq." + site.id, {
+        method: "PATCH",
+        body: Object.assign({ ssl_checked_at: now.toISOString() }, cert ? { ssl_expires_on: cert.toISOString().slice(0, 10) } : {}),
+      });
+    } catch (e) {
+      console.error("SSL sin guardar:", site.name, e.message);
+    }
+  }
   if (!event) return { name: site.name, status: patch.status || site.status };
 
   const detail = result.error || "";
@@ -164,3 +230,5 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.probe = probe;
+module.exports.certExpiry = certExpiry;
+module.exports.netError = netError;
